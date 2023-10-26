@@ -23,7 +23,26 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen15(){
+fun AddListingScreen15(listingType: String = "Staycation"){
+
+    val header = if (listingType == "Staycation") {
+        "Your listing has been published"
+    } else if (listingType == "Business"){
+        "Your business has been published"
+    }
+    else {
+        "Your tour has been published"
+    }
+
+    val description = if (listingType == "Staycation") {
+        "You can still edit information about your staycation on the staycation manager. Good luck!"
+    } else if (listingType == "Business"){
+        "You can still edit information about your business on the business manager. Good luck!"
+    }
+    else {
+        "You can still edit information about your tour on the tour manager. Good luck!"
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -58,14 +77,14 @@ fun AddListingScreen15(){
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "Your listing has been published",
+                    text = header,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
                 )
                 Spacer(modifier = Modifier.height(5.dp))
                 Text(
-                    text = "You can still edit information about your staycation on the staycation manager. Good luck!",
+                    text = description,
                     fontSize = 12.sp,
 //                    modifier = Modifier
 //                        .width(309.dp)
