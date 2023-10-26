@@ -37,7 +37,29 @@ import com.example.tripnila.components.Orange
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen1(){
+fun AddListingScreen1(listingType: String = "Staycation"){
+
+    val header = if (listingType == "Staycation") {
+        "Tell us about your space"
+    } else if (listingType == "Business"){
+        "Tell us about your business"
+    }
+    else {
+        "Tell us about your tour"
+    }
+
+    val description = if (listingType == "Staycation") {
+        "In this step, we’ll ask you what type of property you want to list and " +
+        "if guests will book the entire space or just a room. Then tell us how many" +
+        " guests will be allowed to book, and how many rooms does your space have."
+    } else if (listingType == "Business"){
+        "In this step, we’ll ask you what type of business you want to upload, " +
+        "and basic information about it."
+    }
+    else {
+        "In this step, we’ll ask you what type of tour you want to list, and basic information about it."
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -72,7 +94,7 @@ fun AddListingScreen1(){
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "Tell us about your space",
+                    text = header,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
@@ -80,9 +102,7 @@ fun AddListingScreen1(){
                 )
                 Spacer(modifier = Modifier.height(5.dp))
                 Text(
-                    text = "In this step, we’ll ask you what type of property you want to list and if " +
-                            "guests will book the entire space or just a room. Then tell us how many " +
-                            "guests will be allowed to book, and how many rooms does your space have.",
+                    text = description,
                     fontSize = 12.sp,
 //                    modifier = Modifier
 //                        .width(309.dp)

@@ -1,6 +1,7 @@
 package com.example.tripnila.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,12 +9,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -34,6 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,35 +50,90 @@ import com.example.tripnila.data.PropertyDescription
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen2(){
+fun AddListingScreen2(listingType: String = "Business"){
 
     var selectedPropertyIndex by remember { mutableStateOf(-1) }
-    val types = listOf(
-        PropertyDescription(
-            icon = R.drawable.house,
-            label = "House"
-        ),
-        PropertyDescription(
-            icon = R.drawable.apartment,
-            label = "Apartment"
-        ),
-        PropertyDescription(
-            icon = R.drawable.condominium,
-            label = "Condominium"
-        ),
-        PropertyDescription(
-            icon = R.drawable.camp,
-            label = "Camp"
-        ),
-        PropertyDescription(
-            icon = R.drawable.guesthouse,
-            label = "Guest House"
-        ),
-        PropertyDescription(
-            icon = R.drawable.hotel,
-            label = "Hotel"
-        ),
-    )
+    val header = if (listingType == "Staycation") {
+        "Which of these best describe your space?"
+    } else if (listingType == "Business"){
+        "Which of these best describe your business?"
+    }
+    else {
+        "Which of these best describe your tour?"
+    }
+    val types = if (listingType == "Staycation") {
+                    listOf(
+                        PropertyDescription(
+                            icon = R.drawable.house,
+                            label = "House"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.apartment,
+                            label = "Apartment"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.condominium,
+                            label = "Condominium"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.camp,
+                            label = "Camp"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.guesthouse,
+                            label = "Guest House"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.hotel,
+                            label = "Hotel"
+                        ),
+                    )
+                }
+                else if (listingType == "Business") {
+                    listOf(
+                        PropertyDescription(
+                            icon = R.drawable.house,
+                            label = "Restaurant"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.apartment,
+                            label = "Activity Center"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.condominium,
+                            label = "Bar or Club"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.camp,
+                            label = "Retail Store"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.guesthouse,
+                            label = "Salon or Spa"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.hotel,
+                            label = "Park or Resort"
+                        ),
+                    )
+                }
+                else {
+                    listOf(
+                        PropertyDescription(
+                            icon = R.drawable.house,
+                            label = "Photo Tour"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.apartment,
+                            label = "Food Trip"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.apartment,
+                            label = "Bar Hopping"
+                        )
+                    )
+                }
+    val numRows = (types.size + 1) / 2
 
     Surface(
         modifier = Modifier
@@ -103,33 +163,63 @@ fun AddListingScreen2(){
                     .padding(horizontal = 25.dp, vertical = 20.dp)
                     .padding(it)
             ) {
-                Text(
-                    text = "Which of these best describe your space?",
-                    color = Color(0xff333333),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier
-                        .width(246.dp)
-                )
-
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(vertical = 25.dp),
+                LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(15.dp),
-                    horizontalArrangement = Arrangement.spacedBy(15.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(types) { type ->
-                        PropertyTypeCard(
-                            icon = type.icon,
-                            label = type.label,
-                            selected = selectedPropertyIndex == types.indexOf(type),
-                            onSelectedChange = { isSelected ->
-                                selectedPropertyIndex = if (isSelected) types.indexOf(type) else -1
-                            },
+                    item {
+                        Text(
+                            text = header,
+                            color = Color(0xff333333),
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .width(267.dp)
+                                .padding(bottom = 10.dp)
                         )
                     }
+                    items(numRows) { row ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            val startIndex = row * 2
+                            val endIndex = minOf(startIndex + 2, types.size)
+
+                            for (i in startIndex until endIndex) {
+                                val type = types[i]
+                                PropertyTypeCard(
+                                    icon = type.icon,
+                                    label = type.label,
+                                    selected = selectedPropertyIndex == types.indexOf(type),
+                                    onSelectedChange = { isSelected ->
+                                        selectedPropertyIndex = if (isSelected) types.indexOf(type) else -1
+                                    },
+                                )
+                            }
+                        }
+                    }
+
                 }
+
+//                LazyVerticalGrid(
+//                    columns = GridCells.Fixed(2),
+//                    contentPadding = PaddingValues(vertical = 25.dp),
+//                    verticalArrangement = Arrangement.spacedBy(15.dp),
+//                    horizontalArrangement = Arrangement.spacedBy(15.dp),
+//                    modifier = Modifier.fillMaxWidth()
+//                ) {
+//                    items(types) { type ->
+//                        PropertyTypeCard(
+//                            icon = type.icon,
+//                            label = type.label,
+//                            selected = selectedPropertyIndex == types.indexOf(type),
+//                            onSelectedChange = { isSelected ->
+//                                selectedPropertyIndex = if (isSelected) types.indexOf(type) else -1
+//                            },
+//                        )
+//                    }
+//                }
 
                 Spacer(modifier = Modifier.weight(1f))
                 AddListingStepIndicator(modifier = Modifier, currentPage = 0, pageCount = 4)

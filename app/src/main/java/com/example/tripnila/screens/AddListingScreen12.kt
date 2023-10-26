@@ -7,61 +7,58 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tripnila.R
 import com.example.tripnila.components.Orange
-import com.example.tripnila.data.PropertyDescription
+import com.example.tripnila.data.Discount
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen3(){
+fun AddListingScreen12(){
 
-    var selectedPropertyIndex by remember { mutableStateOf(-1) }
-    val types = listOf(
-        PropertyDescription(
-            icon = R.drawable.house,
-            label = "An entire place"
+    val discounts = listOf(
+        Discount(
+            discountPercentage = 20,
+            label = "New listing promotion",
+            description = "Offer 20% off for first 3 bookings",
         ),
-        PropertyDescription(
-            icon = R.drawable.room,
-            label = "A room"
-        )
+        Discount(
+            discountPercentage = 10,
+            label = "Weekly discount",
+            description = "for stays of 7 nights or more",
+        ),
+        Discount(
+            discountPercentage = 15,
+            label = "Monthly discount",
+            description = "for stays of 28 nights or more",
+        ),
     )
+    val selectedDiscountIndices = remember { mutableStateListOf<Int>() }
 
     Surface(
         modifier = Modifier
@@ -91,97 +88,99 @@ fun AddListingScreen3(){
                     .padding(horizontal = 25.dp, vertical = 20.dp)
                     .padding(it)
             ) {
+
                 LazyColumn(
+                    //contentPadding = PaddingValues(vertical = 25.dp),
                     verticalArrangement = Arrangement.spacedBy(15.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     item {
                         Text(
-                            text = "How much of the space will the guest have?",
+                            text = "Add discounts",
                             color = Color(0xff333333),
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier
-                                .width(267.dp)
+                                .fillMaxWidth()
                                 .padding(bottom = 10.dp)
                         )
                     }
-                    items(types) { type ->
-                        PropertySpaceCard(
-                            icon = type.icon,
-                            label = type.label,
-                            selected = selectedPropertyIndex == types.indexOf(type),
+                    items(discounts) { discount ->
+                        DiscountCard(
+                            discount = discount,
+                            selected = discounts.indexOf(discount) in selectedDiscountIndices,
                             onSelectedChange = { isSelected ->
-                                selectedPropertyIndex = if (isSelected) types.indexOf(type) else -1
+                                if (isSelected) {
+                                    selectedDiscountIndices.add(discounts.indexOf(discount))
+                                } else {
+                                    selectedDiscountIndices.remove(discounts.indexOf(discount))
+                                }
                             },
                         )
                     }
-
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                AddListingStepIndicator(modifier = Modifier, currentPage = 0, pageCount = 4)
-
+                AddListingStepIndicator(modifier = Modifier, currentPage = 2, pageCount = 4)
             }
         }
     }
 }
 
 @Composable
-fun PropertySpaceCard(
-    icon: Int,
-    label: String,
+fun DiscountCard(
+    discount: Discount,
     selected: Boolean,
     onSelectedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val borderColor = if (selected) Orange else Color(0xff999999)
     val containerColor = if (selected) Orange.copy(alpha = 0.2f) else Color.White
-    val spaceDescription = if (label == "An entire place"){
-                                "Guests have the whole place to themselves."
-                            }
-                            else {
-                                "Guests have their own room in a place, plus access to shared spaces."
-                            }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(height = 86.dp)
             .clip(shape = RoundedCornerShape(10.dp))
             .border(
                 border = BorderStroke(1.dp, borderColor),
                 shape = RoundedCornerShape(10.dp)
             )
             .background(containerColor)
-            .clickable { onSelectedChange(!selected) } // Toggle the selection state
+            .clickable { onSelectedChange(!selected) }
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 10.dp, end = 10.dp, top = 15.dp, bottom = 15.dp)
+                .padding(start = 10.dp, end = 10.dp, top = 15.dp, bottom = 15.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row {
+            Text(
+                text = "${discount.discountPercentage} %",
+                color = Color(0xff333333),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.weight(0.5f))
+            Column {
                 Text(
-                    text = label,
+                    text = discount.label,
                     color = Color(0xff333333),
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.Medium
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                Icon(
-                    imageVector = ImageVector.vectorResource(icon),
-                    contentDescription = label,
-                    tint = Color(0xff333333),
-                    modifier = Modifier.offset(y = 5.dp)
+                Text(
+                    text = discount.description,
+                    color = Color(0xff999999),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
             Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = spaceDescription,
-                color = Color(0xff999999),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.width(181.dp)
+            Checkbox(
+                checked = selected,
+                onCheckedChange = { onSelectedChange(it) },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = Color(0xFF333333)
+                )
             )
         }
     }
@@ -189,20 +188,14 @@ fun PropertySpaceCard(
 
 @Preview
 @Composable
-private fun AddListing3Preview(){
-    val property = PropertyDescription(
-        icon = R.drawable.house,
-        label = "An entire place"
-    )
+private fun AddListingPreview(){
 
-    PropertySpaceCard(
-        property.icon, property.label,  false, {}
-    )
+
 
 }
 
 @Preview
 @Composable
-private fun AddListingScreen3Preview(){
-    AddListingScreen3()
+private fun AddListingScreenPreview(){
+    AddListingScreen12()
 }

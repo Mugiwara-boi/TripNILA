@@ -45,18 +45,6 @@ import com.example.tripnila.data.PropertyDescription
 @Composable
 fun AddListingScreen5(){
 
-    var selectedPropertyIndex by remember { mutableStateOf(-1) }
-    val types = listOf(
-        PropertyDescription(
-            icon = R.drawable.house,
-            label = "An entire place"
-        ),
-        PropertyDescription(
-            icon = R.drawable.room,
-            label = "A room"
-        )
-    )
-
     Surface(
         modifier = Modifier
             .fillMaxSize()

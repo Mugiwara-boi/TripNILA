@@ -5,9 +5,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -93,6 +95,7 @@ import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
 import com.example.tripnila.data.BottomNavigationItem
 import com.example.tripnila.data.Review
+import com.example.tripnila.screens.AppOutlinedButtonWithBadge
 
 val Orange = Color(0xfff9a664)
 
@@ -886,6 +889,7 @@ fun AppLocationCard(
     location: String,
     locationImage: Int,
     locationDescription: String,
+    withEditButton: Boolean = false,
     modifier: Modifier = Modifier
 ){
     Box(
@@ -903,14 +907,26 @@ fun AppLocationCard(
                 ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = header,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .padding(bottom = 4.dp)
-                    .align(Alignment.Start)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = header,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .padding(bottom = 4.dp)
+                )
+                if (withEditButton) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    AppOutlinedButtonWithBadge(
+                        buttonLabel = "Edit",
+                        modifier = Modifier
+                            .width(40.dp)
+                    )
+                }
+            }
             ElevatedCard(
                 shape = RoundedCornerShape(10.dp),
                 elevation = CardDefaults.elevatedCardElevation(

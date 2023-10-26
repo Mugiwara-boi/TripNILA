@@ -23,26 +23,16 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen6(listingType: String = "Business"){
-
-    val header = if (listingType == "Staycation") {
-        "Make your staycation stand out"
-    } else if (listingType == "Business"){
-        "Make your business stand out"
-    }
-    else {
-        "Make your tour stand out"
-    }
+fun AddListingScreen10(listingType: String = "Staycation"){
 
     val description = if (listingType == "Staycation") {
-        "In this step, we’ll ask you to add some of the amenities your place offers, " +
-        "photos, then title and description of your staycation. "
-    } else if (listingType == "Business"){
-        "In this step, we’ll ask you to add things your place offers, photos, and menu. "
-    }
-    else {
-        "In this step, we’ll ask you to add things your tour offers, photos, and inclusions. "
-    }
+                        "Finally, you’ll set up pricing, availability and publish your listing."
+                    } else if (listingType == "Business"){
+                        "Finally, you’ll set up schedule and publish your business."
+                    }
+                    else {
+                        "Finally, you’ll set up availability, pricing and publish your tour."
+                    }
 
     Surface(
         modifier = Modifier
@@ -73,12 +63,12 @@ fun AddListingScreen6(listingType: String = "Business"){
                     .padding(it)
             ) {
                 Text(
-                    text = "Step 2",
+                    text = "Step 3",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = header,
+                    text = "Let’s finish it up and publish",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
@@ -92,22 +82,15 @@ fun AddListingScreen6(listingType: String = "Business"){
 //                        .width(309.dp)
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                AddListingStepIndicator(modifier = Modifier, currentPage = 1, pageCount = 4)
-
-
+                AddListingStepIndicator(modifier = Modifier, currentPage = 2, pageCount = 4)
             }
         }
+
     }
 }
 
 @Preview
 @Composable
-private fun AddListingPreview(){
-    AddListingStepIndicator(modifier = Modifier, currentPage = 0, pageCount = 4)
-}
-
-@Preview
-@Composable
-private fun AddListingScreen6Preview(){
-    AddListingScreen6()
+private fun AddListingScreen10Preview(){
+    AddListingScreen10()
 }

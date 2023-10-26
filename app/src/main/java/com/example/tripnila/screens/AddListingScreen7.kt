@@ -54,31 +54,72 @@ import com.example.tripnila.data.PropertyDescription
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen7(){
+fun AddListingScreen7(listingType: String = "Staycation"){
+
+    val header = if (listingType == "Staycation") {
+        "Tell us what your staycation has to offer"
+    } else if (listingType == "Business"){
+        "Tell us what your business has to offer"
+    }
+    else {
+        "Tell us about your tour has to offer"
+    }
 
     var selectedPropertyIndices by remember { mutableStateOf(listOf<Int>()) }
-    val offers = listOf(
-        PropertyDescription(
-            icon = R.drawable.wifi,
-            label = "Wifi"
-        ),
-        PropertyDescription(
-            icon = R.drawable.tv,
-            label = "TV"
-        ),
-        PropertyDescription(
-            icon = R.drawable.kitchen,
-            label = "Kitchen"
-        ),
-        PropertyDescription(
-            icon = R.drawable.washing_machine,
-            label = "Washing machine"
-        ),
-        PropertyDescription(
-            icon = R.drawable.workspace,
-            label = "Dedicated workspace"
-        )
-    )
+    val offers = if (listingType == "Staycation") {
+                    listOf(
+                        PropertyDescription(
+                            icon = R.drawable.wifi,
+                            label = "Wifi"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.tv,
+                            label = "TV"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.kitchen,
+                            label = "Kitchen"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.washing_machine,
+                            label = "Washing machine"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.workspace,
+                            label = "Dedicated workspace"
+                        )
+                    )
+                }
+                else if (listingType == "Business") {
+                    listOf(
+                        PropertyDescription(
+                            icon = R.drawable.wifi,
+                            label = "Wifi"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.tv,
+                            label = "Food"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.kitchen,
+                            label = "Drinks"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.washing_machine,
+                            label = "Nature trip"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.workspace,
+                            label = "Dedicated workspace"
+                        )
+                    )
+                }
+                else {
+                    listOf(
+
+                    )
+                }
+
 
     val amenities = listOf(
         PropertyDescription(
@@ -102,9 +143,9 @@ fun AddListingScreen7(){
         ),
     )
 
-    val numOffersRows = (offers.size + 2) / 2
-    val numAmenitiesRows = (amenities.size + 2) / 2
-    val numViewsRows = (views.size + 2) / 2
+    val numOffersRows = (offers.size + 1) / 2
+    val numAmenitiesRows = (amenities.size + 1) / 2
+    val numViewsRows = (views.size + 1) / 2
     var lastIndex: Int
 
     Surface(
@@ -144,7 +185,7 @@ fun AddListingScreen7(){
 
                     item {
                         Text(
-                            text = "Tell us what your staycation has to offer",
+                            text = header,
                             color = Color(0xff333333),
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Medium,
@@ -160,7 +201,7 @@ fun AddListingScreen7(){
                         lastIndex = 0
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(15.dp)
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             val startIndex = row * 2
                             val endIndex = minOf(startIndex + 2, offers.size)
@@ -182,57 +223,73 @@ fun AddListingScreen7(){
                                 )
                                 lastIndex = i
                             }
-                            if (lastIndex == offers.size - 1) {
+                            if (lastIndex == offers.size - 1 && !(offers.size % 2 == 0)) {
                                 AddMoreAmenity()
                             }
                         }
                     }
 
-                    item {
-                        Text(
-                            text = "Do you have any standout amenities?",
-                            color = Color(0xff333333),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier
-                                // .width(300.dp)
-                                .fillMaxWidth()
-                                .padding(vertical = 10.dp)
-
-                        )
+                    if (offers.size % 2 == 0) {
+                        item {
+                            AddMorePhoto()
+                        }
                     }
 
-                    items(numAmenitiesRows) { row ->
-                        lastIndex = 0
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(15.dp)
-                        ) {
-                            val startIndex = row * 2
-                            val endIndex = minOf(startIndex + 2, amenities.size)
+                    if (listingType == "Staycation") {
+                        item {
+                            Text(
+                                text = "Do you have any standout amenities?",
+                                color = Color(0xff333333),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    // .width(300.dp)
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp)
 
-                            for (i in startIndex until endIndex) {
-                                val amenity = amenities[i]
-                                PropertyTypeCard(
-                                    icon = amenity.icon,
-                                    label = amenity.label,
-                                    selected = selectedPropertyIndices.contains(i),
-                                    onSelectedChange = { isSelected ->
-                                        if (isSelected) {
-                                            selectedPropertyIndices =
-                                                (selectedPropertyIndices + i).distinct()
-                                        } else {
-                                            selectedPropertyIndices = selectedPropertyIndices - i
+                            )
+                        }
+
+                        items(numAmenitiesRows) { row ->
+                            lastIndex = 0
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                val startIndex = row * 2
+                                val endIndex = minOf(startIndex + 2, amenities.size)
+
+                                for (i in startIndex until endIndex) {
+                                    val amenity = amenities[i]
+                                    PropertyTypeCard(
+                                        icon = amenity.icon,
+                                        label = amenity.label,
+                                        selected = selectedPropertyIndices.contains(i),
+                                        onSelectedChange = { isSelected ->
+                                            if (isSelected) {
+                                                selectedPropertyIndices =
+                                                    (selectedPropertyIndices + i).distinct()
+                                            } else {
+                                                selectedPropertyIndices =
+                                                    selectedPropertyIndices - i
+                                            }
                                         }
-                                    }
-                                )
-                                lastIndex = i
+                                    )
+                                    lastIndex = i
+                                }
+                                if (lastIndex == amenities.size - 1 && !(amenities.size % 2 == 0)) {
+                                    AddMoreAmenity()
+                                }
                             }
-                            if (lastIndex == amenities.size - 1) {
-                                AddMoreAmenity()
+                        }
+
+                        if (amenities.size % 2 == 0) {
+                            item {
+                                AddMorePhoto()
                             }
                         }
                     }
+
                     item {
                         Text(
                             text = "Do you have any scenic view?",
@@ -250,7 +307,7 @@ fun AddListingScreen7(){
                         lastIndex = 0
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(15.dp)
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             val startIndex = row * 2
                             val endIndex = minOf(startIndex + 2, views.size)
@@ -272,16 +329,22 @@ fun AddListingScreen7(){
                                 )
                                 lastIndex = i
                             }
-                            if (lastIndex == views.size - 1) {
+                            if (lastIndex == views.size - 1 && !(views.size % 2 == 0)) {
                                 AddMoreAmenity()
                             }
+                        }
+                    }
+
+                    if (views.size % 2 == 0) {
+                        item {
+                            AddMorePhoto()
                         }
                     }
 
 
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                AddListingStepIndicator(modifier = Modifier, currentPage = 0, pageCount = 4)
+                AddListingStepIndicator(modifier = Modifier, currentPage = 1, pageCount = 4)
             }
         }
     }

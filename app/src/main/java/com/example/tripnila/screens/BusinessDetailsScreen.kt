@@ -184,57 +184,57 @@ fun BusinessDetailsScreen(){
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.business1),
-                        contentDescription = "Business",
-                        contentScale = ContentScale.FillWidth
-                    )
-                    TopBarIcons()
-                }
-            }
-            item {
-                BusinessDescriptionCard1(
-                    businessName = "Leo’s Bar & Grill",
-                    tags = tags,
-                    location = "Rainforest, Pasig City",
-                    averageRating = 4.7,
-                    totalReviews = 254,
-                    modifier = Modifier
-                        .offset(y = (-17).dp)
-                )
-            }
-            item {
-                BusinessDescriptionCard2(
-                    hostImage = R.drawable.joshua,
-                    hostName = "Juswa",
-                    businessDescription = "Enjoy our wide selection of meat and vegetables in our menu, along with our selection of cocktails and drinks. Chill and have fun with your families and friends.",
-                    modifier = Modifier
-                        .offset(y = (-5).dp)
-                        .padding(bottom = 12.dp)
-                )
-            }
-            item {
-                BusinessAmenitiesCard(
-                    amenities = amenities,
-                    modifier = Modifier
-                        .offset(y = (-5).dp)
-                        .padding(bottom = 12.dp)
-                )
-            }
-            item {
-                BusinessMenuCard(
-                    menuImage = R.drawable.business1,
-                    promos = promos,
-                    modifier = Modifier
-                        .offset(y = (-5).dp)
-                        .padding(bottom = 12.dp)
-                )
-            }
+//            item {
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                ) {
+//                    Image(
+//                        painter = painterResource(id = R.drawable.business1),
+//                        contentDescription = "Business",
+//                        contentScale = ContentScale.FillWidth
+//                    )
+//                    TopBarIcons()
+//                }
+//            }
+//            item {
+//                BusinessDescriptionCard1(
+//                    businessName = "Leo’s Bar & Grill",
+//                    tags = tags,
+//                    location = "Rainforest, Pasig City",
+//                    averageRating = 4.7,
+//                    totalReviews = 254,
+//                    modifier = Modifier
+//                        .offset(y = (-17).dp)
+//                )
+//            }
+//            item {
+//                BusinessDescriptionCard2(
+//                    hostImage = R.drawable.joshua,
+//                    hostName = "Juswa",
+//                    businessDescription = "Enjoy our wide selection of meat and vegetables in our menu, along with our selection of cocktails and drinks. Chill and have fun with your families and friends.",
+//                    modifier = Modifier
+//                        .offset(y = (-5).dp)
+//                        .padding(bottom = 12.dp)
+//                )
+//            }
+//            item {
+//                BusinessAmenitiesCard(
+//                    amenities = amenities,
+//                    modifier = Modifier
+//                        .offset(y = (-5).dp)
+//                        .padding(bottom = 12.dp)
+//                )
+//            }
+//            item {
+//                BusinessMenuCard(
+//                    menuImage = R.drawable.business1,
+//                    promos = promos,
+//                    modifier = Modifier
+//                        .offset(y = (-5).dp)
+//                        .padding(bottom = 12.dp)
+//                )
+//            }
             item {
                 BusinessScheduleCard(
                     dailySchedule = dailySchedule,
@@ -276,6 +276,7 @@ fun BusinessDescriptionCard1(
     location: String,
     averageRating: Double,
     totalReviews: Int,
+    withEditButton: Boolean = false,
     modifier: Modifier = Modifier
 ) {
 
@@ -293,15 +294,26 @@ fun BusinessDescriptionCard1(
                 )
                 .fillMaxWidth()
         ) {
-            Text(
-                text = businessName,
-                color = Color.Black,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.align(Alignment.Start)
-
-
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = businessName,
+                    color = Color.Black,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+                if (withEditButton) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    AppOutlinedButtonWithBadge(
+                        buttonLabel = "Edit",
+                        modifier = Modifier
+                            .offset(y = 3.dp)
+                            .width(40.dp)
+                    )
+                }
+            }
             Row(
                 horizontalArrangement = Arrangement.Start,
                 modifier = Modifier.padding(top = 10.dp),
@@ -343,7 +355,13 @@ fun BusinessDescriptionCard1(
 }
 
 @Composable
-fun BusinessDescriptionCard2(hostImage: Int, hostName: String, businessDescription: String, modifier: Modifier = Modifier){
+fun BusinessDescriptionCard2(
+    hostImage: Int,
+    hostName: String,
+    businessDescription: String,
+    withEditButton: Boolean = false,
+    modifier: Modifier = Modifier
+){
 
     Box(
         modifier = modifier
@@ -379,6 +397,16 @@ fun BusinessDescriptionCard2(hostImage: Int, hostName: String, businessDescripti
                     modifier = Modifier
                         .padding(horizontal = 8.dp, vertical = 6.dp)
                 )
+                if (withEditButton) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    AppOutlinedButtonWithBadge(
+                        buttonLabel = "Edit",
+                        modifier = Modifier
+                            .offset(y = 9.dp)
+                            .width(40.dp)
+                    )
+                }
+
             }
             Text(
                 text = businessDescription,
@@ -391,7 +419,12 @@ fun BusinessDescriptionCard2(hostImage: Int, hostName: String, businessDescripti
 }
 
 @Composable
-fun BusinessAmenitiesCard(amenities: List<Amenity>, modifier: Modifier = Modifier) {
+fun BusinessAmenitiesCard(
+    amenities: List<Amenity>,
+    withEditButton: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -408,14 +441,26 @@ fun BusinessAmenitiesCard(amenities: List<Amenity>, modifier: Modifier = Modifie
                 ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Services and offers",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .padding(bottom = 4.dp)
-                    .align(Alignment.Start)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Services and offers",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .padding(bottom = 4.dp)
+                )
+                if (withEditButton) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    AppOutlinedButtonWithBadge(
+                        buttonLabel = "Edit",
+                        modifier = Modifier
+                            .width(40.dp)
+                    )
+                }
+            }
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -448,7 +493,11 @@ fun BusinessAmenitiesCard(amenities: List<Amenity>, modifier: Modifier = Modifie
 }
 
 @Composable
-fun BusinessMenuCard(menuImage: Int, promos: List<String>, modifier: Modifier = Modifier) {
+fun BusinessMenuCard(
+    menuImage: Int, promos: List<String>,
+    withEditButton: Boolean = false,
+    modifier: Modifier = Modifier
+) {
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -465,14 +514,27 @@ fun BusinessMenuCard(menuImage: Int, promos: List<String>, modifier: Modifier = 
                 ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Prices and menu",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .padding(bottom = 4.dp)
-                    .align(Alignment.Start)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Prices and menu",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .padding(bottom = 4.dp)
+                )
+                if (withEditButton) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    AppOutlinedButtonWithBadge(
+                        buttonLabel = "Edit",
+                        modifier = Modifier
+                            .width(40.dp)
+                    )
+                }
+            }
+
             ElevatedCard(
                 shape = RoundedCornerShape(10.dp),
                 elevation = CardDefaults.elevatedCardElevation(
@@ -514,7 +576,11 @@ fun BusinessMenuCard(menuImage: Int, promos: List<String>, modifier: Modifier = 
 }
 
 @Composable
-fun BusinessScheduleCard(dailySchedule: List<DailySchedule>, modifier: Modifier = Modifier) {
+fun BusinessScheduleCard(
+    dailySchedule: List<DailySchedule>,
+    withEditButton: Boolean = false,
+    modifier: Modifier = Modifier
+) {
 
     Box(
         modifier = modifier
@@ -532,14 +598,26 @@ fun BusinessScheduleCard(dailySchedule: List<DailySchedule>, modifier: Modifier 
                 ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Schedule",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .padding(bottom = 4.dp)
-                    .align(Alignment.Start)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Schedule",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .padding(bottom = 4.dp)
+                )
+                if (withEditButton) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    AppOutlinedButtonWithBadge(
+                        buttonLabel = "Edit",
+                        modifier = Modifier
+                            .width(40.dp)
+                    )
+                }
+            }
             dailySchedule.forEach {schedule ->
                     ScheduleRow(
                         day = schedule.day,

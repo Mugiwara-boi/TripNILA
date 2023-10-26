@@ -23,27 +23,7 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen6(listingType: String = "Business"){
-
-    val header = if (listingType == "Staycation") {
-        "Make your staycation stand out"
-    } else if (listingType == "Business"){
-        "Make your business stand out"
-    }
-    else {
-        "Make your tour stand out"
-    }
-
-    val description = if (listingType == "Staycation") {
-        "In this step, we’ll ask you to add some of the amenities your place offers, " +
-        "photos, then title and description of your staycation. "
-    } else if (listingType == "Business"){
-        "In this step, we’ll ask you to add things your place offers, photos, and menu. "
-    }
-    else {
-        "In this step, we’ll ask you to add things your tour offers, photos, and inclusions. "
-    }
-
+fun AddListingScreen15(){
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -73,41 +53,33 @@ fun AddListingScreen6(listingType: String = "Business"){
                     .padding(it)
             ) {
                 Text(
-                    text = "Step 2",
+                    text = "",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = header,
+                    text = "Your listing has been published",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
-                    //.width(width = 145.dp)
                 )
                 Spacer(modifier = Modifier.height(5.dp))
                 Text(
-                    text = description,
+                    text = "You can still edit information about your staycation on the staycation manager. Good luck!",
                     fontSize = 12.sp,
 //                    modifier = Modifier
 //                        .width(309.dp)
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                AddListingStepIndicator(modifier = Modifier, currentPage = 1, pageCount = 4)
-
-
+                AddListingStepIndicator(modifier = Modifier, currentPage = 3, pageCount = 4)
             }
         }
+
     }
 }
 
 @Preview
 @Composable
-private fun AddListingPreview(){
-    AddListingStepIndicator(modifier = Modifier, currentPage = 0, pageCount = 4)
-}
-
-@Preview
-@Composable
-private fun AddListingScreen6Preview(){
-    AddListingScreen6()
+private fun AddListingScreen15Preview() {
+    AddListingScreen15()
 }
