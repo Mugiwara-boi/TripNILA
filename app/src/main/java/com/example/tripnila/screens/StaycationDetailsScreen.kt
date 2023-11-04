@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
@@ -722,39 +723,60 @@ fun StaycationBottomBookingBar(modifier: Modifier = Modifier){
 }
 
 @Composable
-fun BookingOutlinedButton(buttonText: String, onClick: () -> Unit, modifier: Modifier = Modifier, cornerSize: Dp = 10.dp){
+fun BookingOutlinedButton(
+    buttonText: String,
+    containerColor: Color = Color.White,
+    buttonShape: RoundedCornerShape = RoundedCornerShape(10.dp),
+    borderStroke: BorderStroke = BorderStroke(1.dp, Orange),
+    contentPadding: PaddingValues = PaddingValues(10.dp),
+    contentFontSize: TextUnit = 16.sp,
+    contentFontWeight: FontWeight = FontWeight.Medium,
+    contentColor: Color = Orange,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+){
     OutlinedButton(
         onClick = onClick,
-        border = BorderStroke(1.dp, Orange),
-        shape = RoundedCornerShape(cornerSize),
-        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-        contentPadding = PaddingValues(10.dp),
+        border = borderStroke,
+        shape = buttonShape,
+        colors = ButtonDefaults.buttonColors(containerColor),
+        contentPadding = contentPadding,
         modifier = modifier
     ) {
         Text(
             text = buttonText,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            color = Orange
+            fontSize = contentFontSize,
+            fontWeight = contentFontWeight,
+            color = contentColor
         )
     }
 }
 
 @Composable
-fun BookingFilledButton(buttonText: String, onClick: () -> Unit, modifier: Modifier = Modifier){
+fun BookingFilledButton(
+    buttonText: String,
+    buttonShape: RoundedCornerShape = RoundedCornerShape(10.dp),
+    onClick: () -> Unit,
+    containerColor: Color = Orange,
+    contentPadding: PaddingValues = PaddingValues(10.dp),
+    contentFontSize: TextUnit = 16.sp,
+    contentFontWeight: FontWeight = FontWeight.Medium,
+    contentColor: Color = Color.White,
+    modifier: Modifier = Modifier
+){
 
     Button(
         onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Orange),
-        contentPadding = PaddingValues(10.dp),
+        shape = buttonShape,
+        colors = ButtonDefaults.buttonColors(containerColor = containerColor),
+        contentPadding = contentPadding,
         modifier = modifier
     ) {
         Text(
             text = buttonText,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color.White
+            fontSize = contentFontSize,
+            fontWeight = contentFontWeight,
+            color = contentColor
         )
     }
 

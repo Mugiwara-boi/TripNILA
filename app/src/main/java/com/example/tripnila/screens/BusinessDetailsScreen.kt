@@ -184,57 +184,57 @@ fun BusinessDetailsScreen(){
             modifier = Modifier
                 .fillMaxSize()
         ) {
-//            item {
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                ) {
-//                    Image(
-//                        painter = painterResource(id = R.drawable.business1),
-//                        contentDescription = "Business",
-//                        contentScale = ContentScale.FillWidth
-//                    )
-//                    TopBarIcons()
-//                }
-//            }
-//            item {
-//                BusinessDescriptionCard1(
-//                    businessName = "Leo’s Bar & Grill",
-//                    tags = tags,
-//                    location = "Rainforest, Pasig City",
-//                    averageRating = 4.7,
-//                    totalReviews = 254,
-//                    modifier = Modifier
-//                        .offset(y = (-17).dp)
-//                )
-//            }
-//            item {
-//                BusinessDescriptionCard2(
-//                    hostImage = R.drawable.joshua,
-//                    hostName = "Juswa",
-//                    businessDescription = "Enjoy our wide selection of meat and vegetables in our menu, along with our selection of cocktails and drinks. Chill and have fun with your families and friends.",
-//                    modifier = Modifier
-//                        .offset(y = (-5).dp)
-//                        .padding(bottom = 12.dp)
-//                )
-//            }
-//            item {
-//                BusinessAmenitiesCard(
-//                    amenities = amenities,
-//                    modifier = Modifier
-//                        .offset(y = (-5).dp)
-//                        .padding(bottom = 12.dp)
-//                )
-//            }
-//            item {
-//                BusinessMenuCard(
-//                    menuImage = R.drawable.business1,
-//                    promos = promos,
-//                    modifier = Modifier
-//                        .offset(y = (-5).dp)
-//                        .padding(bottom = 12.dp)
-//                )
-//            }
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.business1),
+                        contentDescription = "Business",
+                        contentScale = ContentScale.FillWidth
+                    )
+                    TopBarIcons()
+                }
+            }
+            item {
+                BusinessDescriptionCard1(
+                    businessName = "Leo’s Bar & Grill",
+                    tags = tags,
+                    location = "Rainforest, Pasig City",
+                    averageRating = 4.7,
+                    totalReviews = 254,
+                    modifier = Modifier
+                        .offset(y = (-17).dp)
+                )
+            }
+            item {
+                BusinessDescriptionCard2(
+                    hostImage = R.drawable.joshua,
+                    hostName = "Juswa",
+                    businessDescription = "Enjoy our wide selection of meat and vegetables in our menu, along with our selection of cocktails and drinks. Chill and have fun with your families and friends.",
+                    modifier = Modifier
+                        .offset(y = (-5).dp)
+                        .padding(bottom = 12.dp)
+                )
+            }
+            item {
+                BusinessAmenitiesCard(
+                    amenities = amenities,
+                    modifier = Modifier
+                        .offset(y = (-5).dp)
+                        .padding(bottom = 12.dp)
+                )
+            }
+            item {
+                BusinessMenuCard(
+                    menuImage = R.drawable.business1,
+                    promos = promos,
+                    modifier = Modifier
+                        .offset(y = (-5).dp)
+                        .padding(bottom = 12.dp)
+                )
+            }
             item {
                 BusinessScheduleCard(
                     dailySchedule = dailySchedule,

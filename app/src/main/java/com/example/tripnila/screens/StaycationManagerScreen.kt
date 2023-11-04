@@ -10,11 +10,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,7 +40,6 @@ import com.example.tripnila.components.AppReviewsCard
 import com.example.tripnila.components.Orange
 import com.example.tripnila.components.Tag
 import com.example.tripnila.data.Amenity
-import com.example.tripnila.data.Attraction
 import com.example.tripnila.data.Review
 import com.example.tripnila.data.Transaction
 
@@ -200,7 +197,7 @@ fun StaycationManagerScreen(){
                 )
             }
             item {
-                StaycationTransactionsCard(
+                AppTransactionsCard(
                     transactions = transactions,
                     modifier = Modifier
                         .offset(y = (-5).dp)
@@ -223,7 +220,7 @@ fun StaycationManagerScreen(){
 }
 
 @Composable
-fun StaycationTransactionsCard(transactions: List<Transaction>, modifier: Modifier = Modifier){
+fun AppTransactionsCard(transactions: List<Transaction>, modifier: Modifier = Modifier){
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -385,7 +382,7 @@ private fun StaycationManagerPreview() {
 
     )
 
-    StaycationTransactionsCard(transactions)
+    AppTransactionsCard(transactions)
 
     //TransactionCard(transaction)
 

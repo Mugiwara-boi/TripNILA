@@ -121,79 +121,7 @@ fun TourDetailsScreen(){
             price = 3100.00
         ),
     )
-    val amenities = listOf(
-        Amenity(
-            image = R.drawable.person,
-            count = 4,
-            name = "person"
-        ),
-        Amenity(
-            image = R.drawable.pool,
-            count = 1,
-            name = "swimming pool"
-        ),
-        Amenity(
-            image = R.drawable.bedroom,
-            count = 2,
-            name = "bedroom"
-        ),
-        Amenity(
-            image = R.drawable.bathroom,
-            count = 2,
-            name = "bathroom"
-        ),
-        Amenity(
-            image = R.drawable.kitchen,
-            count = 1,
-            name = "kitchen"
-        )
-    )
-    val promos = listOf("Senior citizen & PWD : 20%")
     val tags = listOf("Nature", "Food", "History")
-    val dailySchedule = listOf(
-        DailySchedule(
-            day = "Monday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = true
-        ),
-        DailySchedule(
-            day = "Tuesday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = true
-        ),
-        DailySchedule(
-            day = "Wednesday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = true
-        ),
-        DailySchedule(
-            day = "Thursday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = true
-        ),
-        DailySchedule(
-            day = "Friday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = true
-        ),
-        DailySchedule(
-            day = "Saturday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = true
-        ),
-        DailySchedule(
-            day = "Sunday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = false
-        )
-    )
     val reviews = listOf(
         Review(
             rating = 4.5,
@@ -238,8 +166,6 @@ fun TourDetailsScreen(){
             reviewDate = "2023-04-20"
         ),
     )
-
-
 
     Surface(
         modifier = Modifier
@@ -346,6 +272,7 @@ fun TourDescriptionCard1(
     location: String,
     averageRating: Double,
     totalReviews: Int,
+    withEditButton: Boolean = false,
     modifier: Modifier = Modifier
 ) {
 
@@ -363,15 +290,25 @@ fun TourDescriptionCard1(
                 )
                 .fillMaxWidth()
         ) {
-            Text(
-                text = tourName,
-                color = Color.Black,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.align(Alignment.Start)
-
-
-            )
+            Row {
+                Text(
+                    text = tourName,
+                    color = Color.Black,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                )
+                if (withEditButton) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    AppOutlinedButtonWithBadge(
+                        buttonLabel = "Edit",
+                        modifier = Modifier
+                            .offset(y = 9.dp)
+                            .width(40.dp)
+                    )
+                }
+            }
             Row(
                 horizontalArrangement = Arrangement.Start,
                 modifier = Modifier.padding(top = 10.dp),
@@ -418,6 +355,7 @@ fun TourDescriptionCard2(
     hostName: String,
     duration: String,
     language: String,
+    withEditButton: Boolean = false,
     modifier: Modifier = Modifier
 ){
 
@@ -451,13 +389,24 @@ fun TourDescriptionCard2(
                 Column(
                     modifier = Modifier.padding(horizontal = 8.dp)
                 ) {
-                    Text(
-                        text = "Hosted by $hostName",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier
-                            .padding(top = 6.dp)
-                    )
+                    Row {
+                        Text(
+                            text = "Hosted by $hostName",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                        )
+                        if (withEditButton) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            AppOutlinedButtonWithBadge(
+                                buttonLabel = "Edit",
+                                modifier = Modifier
+                                    .offset(y = 9.dp)
+                                    .width(40.dp)
+                            )
+                        }
+                    }
                     Text(
                         text = "$duration hours • Hosted in $language",
                         fontWeight = FontWeight.Medium,
@@ -478,6 +427,7 @@ fun TourDescriptionCard3(
     image1: Int,
     image2: Int,
     image3: Int,
+    withEditButton: Boolean = false,
     modifier: Modifier = Modifier
 ){
 
@@ -497,13 +447,26 @@ fun TourDescriptionCard3(
                     vertical = 20.dp // 12
                 ),
         ) {
-            Text(
-                text = "What you'll do",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .align(Alignment.Start)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ){
+                Text(
+                    text = "What you'll do",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .padding(bottom = 4.dp)
+                )
+                if (withEditButton) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    AppOutlinedButtonWithBadge(
+                        buttonLabel = "Edit",
+                        modifier = Modifier
+                            .width(40.dp)
+                    )
+                }
+            }
             AppExpandingText(
                 longText = description,
                 modifier = Modifier.padding(vertical = 10.dp)
@@ -625,7 +588,7 @@ fun TourAvailabilityCard(availableDates: List<TourAvailableDates> , modifier: Mo
 }
 
 @Composable
-fun TourAdditionalInformationCard(modifier: Modifier = Modifier){
+fun TourAdditionalInformationCard(withEditButton: Boolean = false, modifier: Modifier = Modifier){
 
     Box(
         modifier = modifier
@@ -642,14 +605,26 @@ fun TourAdditionalInformationCard(modifier: Modifier = Modifier){
                 ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Additional information",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .padding(bottom = 4.dp)
-                    .align(Alignment.Start)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Additional information",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .padding(bottom = 4.dp)
+                )
+                if (withEditButton) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    AppOutlinedButtonWithBadge(
+                        buttonLabel = "Edit",
+                        modifier = Modifier
+                            .width(40.dp)
+                    )
+                }
+            }
             AdditionalInformationRow("What to bring")
             AdditionalInformationRow("Health & safety")
             AdditionalInformationRow("Cancellation & reschedule policy")

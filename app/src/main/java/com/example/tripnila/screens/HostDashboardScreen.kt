@@ -268,22 +268,39 @@ fun HostWalletCard(
                 }
             }
             Spacer(modifier = Modifier.weight(1f))
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.End
-            ) {
-                Text(
-                    text = "Available balance",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-                Text(
-                    text =  "₱ ${String.format("%.2f", hostBalance)}",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                )
+//            Column(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalAlignment = Alignment.End
+//            ) {
+//                Text(
+//                    text = "Available balance",
+//                    color = Color.White,
+//                    fontSize = 12.sp,
+//                    fontWeight = FontWeight.Medium,
+//                )
+//                Text(
+//                    text =  "₱ ${String.format("%.2f", hostBalance)}",
+//                    color = Color.White,
+//                    fontSize = 16.sp,
+//                    fontWeight = FontWeight.Medium,
+//                )
+//            }
+            Row {
+                Spacer(modifier = Modifier.weight(1f))
+                Column {
+                    Text(
+                        text = "Available balance",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Text(
+                        text = "₱ ${String.format("%.2f", hostBalance)}",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
             }
         }
     }

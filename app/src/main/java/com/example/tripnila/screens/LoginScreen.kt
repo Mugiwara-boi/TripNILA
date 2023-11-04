@@ -32,62 +32,6 @@ import com.example.tripnila.components.*
 @Composable
 fun LoginScreen() {
 
-//    Surface(
-//        modifier = Modifier
-//            .fillMaxSize()
-//    ) {
-//        Column(
-//            horizontalAlignment = Alignment.CenterHorizontally,
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(vertical = 90.dp)) {
-//            TripNilaHeader(Color.Black)
-//            Text(
-//                modifier = Modifier.
-//                    offset(y = (-12).dp) ,
-//                text = "TRIP IN MANILA",
-//                style = MaterialTheme.typography.titleMedium)
-//            Spacer(
-//                modifier = Modifier
-//                    .height(40.dp)
-//            )
-//            TextFieldWithIcon(
-//                labelValue = "Username",
-//                painterResource(id = R.drawable.person)
-//            )
-//            Spacer(
-//                modifier = Modifier
-//                    .height(23.dp)
-//            )
-//            PasswordFieldWithIcon(
-//                labelValue = "Password",
-//                painterResource(id = R.drawable.encrypted)
-//            )
-//            Spacer(
-//                modifier = Modifier
-//                    .height(23.dp)
-//            )
-//            UnderlinedText(
-//                textLabel = "Forgot your password?", Color.Black.copy(alpha = 0.4f), FontWeight.Normal)
-//            Spacer(
-//                modifier = Modifier
-//                    .height(43.dp)
-//            )
-//            FilledButton(
-//                buttonText = "Login")
-//            Spacer(
-//                modifier = Modifier
-//                    .height(31.dp)
-//            )
-//            Row {
-//                Text(text = "Don't have an account? ",
-//                        color = Color.Black.copy(alpha = 0.4f)
-//                )
-//                UnderlinedText(textLabel = "Sign up", Color.Black.copy(alpha = 0.4f), FontWeight.Bold)
-//            }
-//        }
-//    }
-
     Surface(
         modifier = Modifier
             .fillMaxSize()
