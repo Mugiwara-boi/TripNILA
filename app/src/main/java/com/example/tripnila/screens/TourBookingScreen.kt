@@ -24,9 +24,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
-import com.example.tripnila.components.AppConfirmAndPayDivider
-import com.example.tripnila.components.AppFilledButton
-import com.example.tripnila.components.AppYourTripRow
+import com.example.tripnila.common.AppConfirmAndPayDivider
+import com.example.tripnila.common.AppYourTripRow
 
 @Composable
 fun TourBookingScreen(){

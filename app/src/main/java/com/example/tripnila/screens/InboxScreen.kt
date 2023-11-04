@@ -39,7 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
-import com.example.tripnila.components.AppBottomNavigationBar
+import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.data.Inbox
 
 @Composable

@@ -61,8 +61,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.tripnila.components.AppBottomNavigationBar
-import com.example.tripnila.components.Orange
+import com.example.tripnila.common.AppBottomNavigationBar
+import com.example.tripnila.common.Orange
 import com.example.tripnila.R
 
 @Composable

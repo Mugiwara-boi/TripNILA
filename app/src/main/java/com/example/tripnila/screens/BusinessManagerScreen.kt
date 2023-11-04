@@ -16,8 +16,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tripnila.R
-import com.example.tripnila.components.AppLocationCard
-import com.example.tripnila.components.AppReviewsCard
+import com.example.tripnila.common.AppLocationCard
+import com.example.tripnila.common.AppReviewsCard
 import com.example.tripnila.data.Amenity
 import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.Review

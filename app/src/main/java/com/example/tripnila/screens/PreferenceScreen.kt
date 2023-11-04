@@ -18,9 +18,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
-import com.example.tripnila.components.AppFilledButton
-import com.example.tripnila.components.PreferenceCard
-import com.example.tripnila.components.TripNilaIcon
+import com.example.tripnila.common.PreferenceCard
+import com.example.tripnila.common.TripNilaIcon
 
 
 @Composable

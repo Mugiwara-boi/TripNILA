@@ -53,8 +53,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import com.example.tripnila.R
-import com.example.tripnila.components.AppBottomNavigationBar
-import com.example.tripnila.components.Orange
+import com.example.tripnila.common.AppBottomNavigationBar
+import com.example.tripnila.common.Orange
 import com.example.tripnila.data.Staycation
 
 

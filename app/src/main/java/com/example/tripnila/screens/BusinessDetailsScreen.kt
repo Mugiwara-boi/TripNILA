@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
@@ -42,11 +41,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
-import com.example.tripnila.components.AppLocationCard
-import com.example.tripnila.components.AppOutlinedButton
-import com.example.tripnila.components.AppReviewsCard
-import com.example.tripnila.components.Tag
-import com.example.tripnila.components.UnderlinedText
+import com.example.tripnila.common.AppLocationCard
+import com.example.tripnila.common.AppOutlinedButton
+import com.example.tripnila.common.AppReviewsCard
+import com.example.tripnila.common.Tag
+import com.example.tripnila.common.UnderlinedText
 import com.example.tripnila.data.DailySchedule
 
 

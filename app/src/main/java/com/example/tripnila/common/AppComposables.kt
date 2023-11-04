@@ -1,4 +1,4 @@
-package com.example.tripnila.components
+package com.example.tripnila.common
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image

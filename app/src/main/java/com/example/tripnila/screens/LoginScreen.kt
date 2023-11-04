@@ -27,7 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import com.example.tripnila.R
-import com.example.tripnila.components.*
+import com.example.tripnila.common.*
 
 @Composable
 fun LoginScreen() {

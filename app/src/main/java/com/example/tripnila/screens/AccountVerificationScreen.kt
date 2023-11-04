@@ -54,7 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import com.example.tripnila.R
-import com.example.tripnila.components.Orange
+import com.example.tripnila.common.Orange
 
 @Composable
 fun AccountVerificationScreen(){

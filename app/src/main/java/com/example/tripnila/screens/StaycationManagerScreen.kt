@@ -35,10 +35,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
-import com.example.tripnila.components.AppOutlinedButton
-import com.example.tripnila.components.AppReviewsCard
-import com.example.tripnila.components.Orange
-import com.example.tripnila.components.Tag
+import com.example.tripnila.common.AppOutlinedButton
+import com.example.tripnila.common.AppReviewsCard
+import com.example.tripnila.common.Orange
+import com.example.tripnila.common.Tag
 import com.example.tripnila.data.Amenity
 import com.example.tripnila.data.Review
 import com.example.tripnila.data.Transaction
