@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -358,7 +360,10 @@ fun StaycationDescriptionCard1(withEditButton: Boolean = false, modifier: Modifi
                     textLabel = "254 reviews",
                     color = Color.Black,
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    onClick = {
+
+                    }
                 )
                 Spacer(modifier = Modifier.width(5.dp))
                 Tag(tag = "Nature")
@@ -761,6 +766,9 @@ fun BookingFilledButton(
     contentFontSize: TextUnit = 16.sp,
     contentFontWeight: FontWeight = FontWeight.Medium,
     contentColor: Color = Color.White,
+    isLoading: Boolean = false,
+    strokeWidth: Dp = 3.dp,
+    circularProgressIndicatorSize: Dp = 20.dp,
     modifier: Modifier = Modifier
 ){
 
@@ -771,12 +779,21 @@ fun BookingFilledButton(
         contentPadding = contentPadding,
         modifier = modifier
     ) {
-        Text(
-            text = buttonText,
-            fontSize = contentFontSize,
-            fontWeight = contentFontWeight,
-            color = contentColor
-        )
+        if (isLoading) {
+            CircularProgressIndicator(
+                color = Color.White,
+                strokeWidth = strokeWidth,
+                modifier = Modifier.size(circularProgressIndicatorSize)
+            )
+        } else {
+            Text(
+                text = buttonText,
+                fontSize = contentFontSize,
+                fontWeight = contentFontWeight,
+                color = contentColor
+            )
+        }
+
     }
 
 }

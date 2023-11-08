@@ -448,7 +448,7 @@ fun AppBottomSheet(openBottomSheet: Boolean, onOpenBottomSheetChange: (Boolean) 
     }
 }
 @Composable
-fun BottomSheetContent(
+private fun BottomSheetContent(
     onHideButtonClick: () -> Unit
 ) {
 

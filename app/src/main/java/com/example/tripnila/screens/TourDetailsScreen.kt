@@ -311,7 +311,10 @@ fun TourDescriptionCard1(
                     textLabel = "$totalReviews reviews",
                     color = Color.Black,
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    onClick = {
+
+                    }
                 )
                 Spacer(modifier = Modifier.width(5.dp))
                 tags.forEach { tag ->

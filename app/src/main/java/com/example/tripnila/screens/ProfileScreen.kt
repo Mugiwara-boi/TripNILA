@@ -46,13 +46,13 @@ import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
 import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.common.Orange
-import com.example.tripnila.data.User
+import com.example.tripnila.data.ProfileData
 
 
 @Composable
 fun ProfileScreen(){
 
-    val currentUser = User(
+    val currentProfileData = ProfileData(
         profilePicture = R.drawable.joshua,
         fullName = "Joshua Araneta",
         userName = "@joshAr26"
@@ -94,7 +94,7 @@ fun ProfileScreen(){
                 }
                 item{
                     UserProfileComposable(
-                        user = currentUser,
+                        profileData = currentProfileData,
                         modifier = Modifier.padding(horizontal = horizontalPaddingValue)
                     )
                 }
@@ -302,7 +302,7 @@ fun AppFilledCard(cardText: String, modifier: Modifier = Modifier, cornerSize: D
 }
 
 @Composable
-fun UserProfileComposable(user : User, modifier: Modifier = Modifier){
+fun UserProfileComposable(profileData : ProfileData, modifier: Modifier = Modifier){
 
     Box(
         modifier = modifier
@@ -311,18 +311,18 @@ fun UserProfileComposable(user : User, modifier: Modifier = Modifier){
             .clip(RoundedCornerShape(100.dp))
     ){
         Image(
-            painter = painterResource(id = user.profilePicture),
+            painter = painterResource(id = profileData.profilePicture),
             contentDescription = "Profile Picture",
             contentScale = ContentScale.Crop
         )
     }
     Text(
-        text = user.fullName,
+        text = profileData.fullName,
         fontSize = 24.sp,
         fontWeight = FontWeight.Medium
     )
     Text(
-        text = user.userName,
+        text = profileData.userName,
         fontSize = 16.sp,
         fontWeight = FontWeight.Medium,
         color = Color(0xFF999999)

@@ -28,8 +28,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -56,6 +58,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +68,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
@@ -149,66 +155,174 @@ fun TripNilaIcon(modifier: Modifier = Modifier){
 }
 
 
+//@Composable
+//fun TextFieldWithIcon(
+//    labelValue: String,
+//    keyboardOptions: KeyboardOptions,
+//    keyboardActions: KeyboardActions,
+//    painterResource: Painter
+//){
+//    val textValue = remember {
+//        mutableStateOf("")
+//    }
+//
+//    OutlinedTextField(
+//        label = { Text(text = labelValue) },
+//        colors = OutlinedTextFieldDefaults.colors(
+//            focusedBorderColor = Orange,
+//            focusedLabelColor = Orange
+//        ),
+//        keyboardOptions = keyboardOptions,
+//        keyboardActions = keyboardActions,
+//        singleLine = true,
+//        maxLines = 1,
+//        value = textValue.value,
+//        onValueChange = {
+//            textValue.value = it
+//        },
+//        leadingIcon = {
+//            Icon(painter = painterResource, contentDescription = "")
+//        }
+//    )
+//}
+
 @Composable
-fun TextFieldWithIcon(labelValue: String, painterResource: Painter){
-    val textValue = remember {
-        mutableStateOf("")
-    }
-    val localFocusManager = LocalFocusManager.current
+fun TextFieldWithIcon(
+    textValue: String,
+    onValueChange: (String) -> Unit,
+    labelValue: String,
+    keyboardOptions: KeyboardOptions,
+    keyboardActions: KeyboardActions,
+    supportingText: @Composable (() -> Unit)?,
+    painterResource: Painter
+) {
+
+    var isFocused by remember { mutableStateOf(false) }
+    //val focusRequester = FocusRequester()
 
     OutlinedTextField(
+        value = textValue,
+        onValueChange = { onValueChange(it) },
         label = { Text(text = labelValue) },
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Orange,
-            focusedLabelColor = Orange
+            focusedLabelColor = Orange,
+            cursorColor = Orange,
+            selectionColors = TextSelectionColors(Orange, Orange)
         ),
-        keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Next
-        ),
-        keyboardActions = KeyboardActions {
-            localFocusManager.moveFocus(FocusDirection.Down)
-        },
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
         singleLine = true,
         maxLines = 1,
-        value = textValue.value,
-        onValueChange = {
-            textValue.value = it
-        },
+        supportingText = supportingText,
         leadingIcon = {
-            Icon(painter = painterResource, contentDescription = "")
-        }
+            Icon(
+                painter = painterResource,
+                contentDescription = null // Provide appropriate content description
+            )
+        },
+        trailingIcon = {
+            if (isFocused && textValue.isNotEmpty()) {
+                IconButton(onClick = { onValueChange("") }) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Clear text")
+                }
+            }
+        },
+        modifier = Modifier
+           // .focusRequester(focusRequester)
+            .onFocusChanged { isFocused = it.isFocused },
     )
+//    DisposableEffect(Unit) {
+//        focusRequester.requestFocus()
+//        onDispose {
+//            focusRequester.freeFocus()
+//        }
+//    }
 }
+
+//@Composable
+//fun TextFieldWithIcon(
+//    textValue: String,
+//    onValueChange: (String) -> Unit,
+//    labelValue: String,
+//    keyboardOptions: KeyboardOptions,
+//    keyboardActions: KeyboardActions,
+//    painterResource: Painter
+//) {
+//    var isFocused by remember { mutableStateOf(false) }
+//
+//    val focusRequester = FocusRequester()
+//
+//    OutlinedTextField(
+//        value = textValue,
+//        onValueChange = { newValue ->
+//            onValueChange(newValue)
+//        },
+//        label = { Text(text = labelValue) },
+//        colors = OutlinedTextFieldDefaults.colors(
+//            focusedBorderColor = Orange,
+//            focusedLabelColor = Orange
+//        ),
+//        keyboardOptions = keyboardOptions,
+//        keyboardActions = keyboardActions,
+//        singleLine = true,
+//        maxLines = 1,
+//        leadingIcon = {
+//            Icon(
+//                painter = painterResource,
+//                contentDescription = null
+//            )
+//        },
+//        trailingIcon = {
+//            if (isFocused && textValue.isNotEmpty()) {
+//                IconButton(onClick = { onValueChange("") }) {
+//                    Icon(
+//                        painter = painterResource,
+//                        contentDescription = "Clear Text"
+//                    )
+//                }
+//            }
+//        },
+//        modifier = Modifier.focusRequester(focusRequester),
+//        onFocusChanged = { isFocused = it.isFocused }
+//    )
+//
+//    DisposableEffect(Unit) {
+//        focusRequester.requestFocus()
+//        onDispose { /* cleanup */ }
+//    }
+//}
+
 
 
 @Composable
-fun PasswordFieldWithIcon(labelValue: String, painterResource: Painter){
-    val password = remember {
-        mutableStateOf("")
-    }
+fun PasswordFieldWithIcon(
+    password: String,
+    onValueChange: (String) -> Unit,
+    labelValue: String,
+    keyboardOptions: KeyboardOptions,
+    keyboardActions: KeyboardActions,
+    painterResource: Painter
+){
     val isHidden = remember {
         mutableStateOf(true)
     }
-    val localFocusManager = LocalFocusManager.current
-
 
     OutlinedTextField(
+        value = password,
         label = { Text(text = labelValue) },
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Orange,
-            focusedLabelColor = Orange
+            focusedLabelColor = Orange,
+            cursorColor = Orange
         ),
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Password,
-            imeAction = ImeAction.Done
-        ),
+        keyboardOptions = keyboardOptions,
         singleLine = true,
-        keyboardActions = KeyboardActions {
-            localFocusManager.clearFocus()
-        },
+        keyboardActions = keyboardActions,
         maxLines = 1,
-        value = password.value,
-        onValueChange = {password.value = it},
+        onValueChange = { onValueChange(it) },
         leadingIcon = {
             Icon(painter = painterResource, contentDescription = "")
         },
@@ -270,7 +384,13 @@ fun CreatePasswordFieldWithIcon(labelValue: String, painterResource: Painter){
 }
 
 @Composable
-fun UnderlinedText(textLabel: String, color: Color, fontSize: TextUnit, fontWeight: FontWeight){
+fun UnderlinedText(
+    textLabel: String,
+    color: Color,
+    fontSize: TextUnit,
+    fontWeight: FontWeight,
+    onClick: () -> Unit?
+){
 
     val annotatedString = AnnotatedString(
         text = textLabel,
@@ -282,7 +402,12 @@ fun UnderlinedText(textLabel: String, color: Color, fontSize: TextUnit, fontWeig
             color = color),
     )
 
-    ClickableText(text = annotatedString, onClick = {})
+    Text(
+        text = annotatedString,
+        modifier = Modifier.clickable {
+            onClick()
+        }
+    )
 }
 
 //@Composable
