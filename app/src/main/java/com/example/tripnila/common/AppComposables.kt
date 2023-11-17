@@ -1,9 +1,11 @@
 package com.example.tripnila.common
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,7 +32,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -39,7 +40,6 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
@@ -58,7 +58,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,11 +65,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
@@ -100,10 +99,100 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
 import com.example.tripnila.data.BottomNavigationItem
-import com.example.tripnila.data.Review
+import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.screens.AppOutlinedButtonWithBadge
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
+import coil.annotation.ExperimentalCoilApi
+import coil.compose.rememberImagePainter
+import java.text.NumberFormat
 
 val Orange = Color(0xfff9a664)
+
+@Composable
+fun LoadingScreen(
+    isLoadingCompleted: Boolean,
+    isLightModeActive: Boolean,
+) {
+    Box(
+        modifier = Modifier
+            .background(color = Color.LightGray)
+            .fillMaxSize()
+            .shimmerLoadingAnimation(isLoadingCompleted, isLightModeActive)
+    )
+}
+
+fun Modifier.shimmerLoadingAnimation(
+    isLoadingCompleted: Boolean = true, // <-- New parameter for start/stop.
+    isLightModeActive: Boolean = true, // <-- New parameter for display modes.
+    widthOfShadowBrush: Int = 500,
+    angleOfAxisY: Float = 270f,
+    durationMillis: Int = 1000,
+): Modifier {
+    if (isLoadingCompleted) { // <-- Step 1.
+        return this
+    }
+    else {
+        return composed {
+
+            // Step 2.
+            val shimmerColors = ShimmerAnimationData(isLightMode = isLightModeActive).getColours()
+
+            val transition = rememberInfiniteTransition(label = "")
+
+            val translateAnimation = transition.animateFloat(
+                initialValue = 0f,
+                targetValue = (durationMillis + widthOfShadowBrush).toFloat(),
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = durationMillis,
+                        easing = LinearEasing,
+                    ),
+                    repeatMode = RepeatMode.Restart,
+                ),
+                label = "Shimmer loading animation",
+            )
+
+            this.background(
+                brush = Brush.linearGradient(
+                    colors = shimmerColors,
+                    start = Offset(x = translateAnimation.value - widthOfShadowBrush, y = 0.0f),
+                    end = Offset(x = translateAnimation.value, y = angleOfAxisY),
+                ),
+            )
+        }
+    }
+}
+
+data class ShimmerAnimationData(
+    private val isLightMode: Boolean
+) {
+    fun getColours(): List<Color> {
+        return if (isLightMode) {
+            val color = Color.White
+
+            listOf(
+                color.copy(alpha = 0.3f),
+                color.copy(alpha = 0.5f),
+                color.copy(alpha = 1.0f),
+                color.copy(alpha = 0.5f),
+                color.copy(alpha = 0.3f),
+            )
+        } else {
+            val color = Color.Black
+
+            listOf(
+                color.copy(alpha = 0.0f),
+                color.copy(alpha = 0.3f),
+                color.copy(alpha = 0.5f),
+                color.copy(alpha = 0.3f),
+                color.copy(alpha = 0.0f),
+            )
+        }
+    }
+}
 
 @Composable
 fun TripNilaHeader(color: Color){
@@ -316,7 +405,8 @@ fun PasswordFieldWithIcon(
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Orange,
             focusedLabelColor = Orange,
-            cursorColor = Orange
+            cursorColor = Orange,
+            selectionColors = TextSelectionColors(Orange, Orange)
         ),
         keyboardOptions = keyboardOptions,
         singleLine = true,
@@ -443,81 +533,6 @@ fun AppFilledButton(buttonText: String, modifier: Modifier = Modifier) {
         )
     }
 }
-
-@Composable
-fun PreferenceCard(cardLabel: String, painterResource: Painter, modifier: Modifier) {
-
-    var isChecked = remember { mutableStateOf(false) }
-
-    Card(
-        modifier
-            .padding(horizontal = 8.dp, vertical = 7.dp)
-            .height(86.dp)
-            .width(154.dp),
-        shape = RoundedCornerShape(10.dp)
-    ) {
-        Box {
-            Image(
-                painter = painterResource,
-                contentDescription = cardLabel,
-                contentScale = ContentScale.Crop
-            )
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-            )
-            Box(modifier = Modifier.fillMaxSize()){
-                CircularCheckbox(
-                    modifier = Modifier
-                        .size(13.dp)
-                        .align(Alignment.TopEnd)
-                        .offset(x = (-6).dp, y = 6.dp),
-                    checked = isChecked.value,
-                    onCheckedChange = { checked ->
-                        isChecked.value = checked
-                    }
-                )
-            }
-            Text(
-                text = cardLabel,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                color = Color.White,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
-    }
-}
-
-
-@Composable
-fun CircularCheckbox(
-    modifier: Modifier = Modifier,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Box(
-        modifier = modifier
-            .size(24.dp)
-            .background(
-                color = if (checked) Color(0xfff9a664) else Color.White,
-                shape = CircleShape,
-            )
-            .border(width = 1.dp, color = Color(0xFF838383), shape = CircleShape)
-            .clickable { onCheckedChange(!checked) },
-        contentAlignment = Alignment.Center
-    ) {
-        if (checked) {
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(16.dp)
-            )
-        }
-    }
-}
-
 
 @Composable
 fun Staycationdetails(modifier: Modifier = Modifier) {
@@ -718,7 +733,12 @@ fun Tag(tag: String, modifier: Modifier = Modifier){
 }
 
 @Composable
-fun AppReviewsCard(reviews: List<Review>, modifier: Modifier = Modifier){
+fun AppReviewsCard(
+    totalReviews: Int = 254,
+    averageRating: Double = 4.7,
+    reviews: List<ReviewUiState>,
+    modifier: Modifier = Modifier
+){
 
     Box(
         modifier = modifier
@@ -745,14 +765,14 @@ fun AppReviewsCard(reviews: List<Review>, modifier: Modifier = Modifier){
                     contentDescription = "Star"
                 )
                 Text(
-                    text = "4.7",
+                    text = averageRating.toString(),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(start = 3.dp, end = 20.dp)
                 )
 
                 Text(
-                    text = "254 reviews",
+                    text = "$totalReviews reviews",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     textDecoration = TextDecoration.Underline
@@ -782,8 +802,9 @@ fun AppReviewsCard(reviews: List<Review>, modifier: Modifier = Modifier){
     }
 }
 
+@OptIn(ExperimentalCoilApi::class)
 @Composable
-fun ReviewCard(review: Review, modifier: Modifier = Modifier) {
+fun ReviewCard(review: ReviewUiState, modifier: Modifier = Modifier) {
     OutlinedCard(
         modifier = modifier
             .width(width = 135.dp)
@@ -832,8 +853,17 @@ fun ReviewCard(review: Review, modifier: Modifier = Modifier) {
                 verticalAlignment = Alignment.Bottom
             ) {
                 Box {
+                    val hostImage = review.touristImage
+                    val placeholderImage = "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
+
+                    val imageLoader = rememberImagePainter(
+                        data = hostImage ?: placeholderImage,
+                        builder = {
+                            crossfade(true)
+                        }
+                    )
                     Image(
-                        painter = painterResource(id = review.touristImage),
+                        painter = imageLoader,
                         contentDescription = review.touristName,
                         modifier = Modifier
                             .size(24.dp)
@@ -1103,11 +1133,12 @@ fun AppLocationCard(
 }
 
 @Composable
-fun AdditionalInformationRow(textInfo: String, modifier: Modifier = Modifier){
+fun AdditionalInformationRow(textInfo: String, onClick: () -> Unit, modifier: Modifier = Modifier){
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 2.dp)
+            .clickable { onClick() }
     ){
         Row {
             Text(
@@ -1134,6 +1165,8 @@ fun AppConfirmAndPayDivider(
     unit: String,
     modifier: Modifier = Modifier
 ) {
+    val formattedNumber = NumberFormat.getNumberInstance().format(price)
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -1169,7 +1202,8 @@ fun AppConfirmAndPayDivider(
             Text(
                 text = buildAnnotatedString {
                     withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = 12.sp)) {
-                        append("₱ ${"%.2f".format(price)}")
+                       // append("₱ ${"%.2f".format(price)}")
+                        append("₱ $formattedNumber")
                     }
                     withStyle(style = SpanStyle(fontSize = 12.sp)){
                         append(" / $unit")
@@ -1185,7 +1219,13 @@ fun AppConfirmAndPayDivider(
 }
 
 @Composable
-fun AppYourTripRow(rowLabel: String, rowText: String, modifier: Modifier = Modifier){
+fun AppYourTripRow(
+    rowLabel: String,
+    rowText: String,
+    fontColor: Color = Color(0xFF999999),
+    onClickEdit: (() -> Unit?)? = null,
+    modifier: Modifier = Modifier
+){
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -1204,7 +1244,7 @@ fun AppYourTripRow(rowLabel: String, rowText: String, modifier: Modifier = Modif
                 text = rowText,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF999999)
+                color = fontColor
             )
         }
         Text(
@@ -1215,6 +1255,9 @@ fun AppYourTripRow(rowLabel: String, rowText: String, modifier: Modifier = Modif
             modifier = Modifier
                 .padding(top = 8.dp)
                 .clickable {
+                    if (onClickEdit != null) {
+                        onClickEdit()
+                    }
                 }
         )
     }
@@ -1281,7 +1324,9 @@ fun AppDropDownFilter(options: List<String>, modifier: Modifier = Modifier) {
 @Composable
 fun AppComposablesPreview(){
 
-    val filter = listOf("Relevance", "Recent", "Top rated")
-    
-    AppDropDownFilter(options = filter)
+    LoadingScreen(isLoadingCompleted = false, true)
+
+//    val filter = listOf("Relevance", "Recent", "Top rated")
+//
+//    AppDropDownFilter(options = filter)
 }

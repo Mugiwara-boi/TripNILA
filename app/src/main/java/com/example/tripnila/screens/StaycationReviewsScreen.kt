@@ -127,7 +127,7 @@ fun StaycationReviewsScreen(){
 
             },
             bottomBar = {
-                StaycationBottomBookingBar()
+                StaycationBottomBookingBar(onClickBook = {}, onClickChatHost = {}, onClickUnderlinedText = {})
             }
         ) {
             LazyColumn(

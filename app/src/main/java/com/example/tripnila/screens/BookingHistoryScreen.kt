@@ -472,7 +472,7 @@ private fun BottomSheetContent(
             price = 2500.00,
             unit = "night"
         )
-        YourTripDivider()
+        //YourTripDivider() /*TODO*/
         AppPaymentDivider(
             bookingFee = 2500.00,
             bookingDuration = 5,

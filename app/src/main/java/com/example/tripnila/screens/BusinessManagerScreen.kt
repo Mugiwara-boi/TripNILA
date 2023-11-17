@@ -18,35 +18,35 @@ import androidx.compose.ui.unit.dp
 import com.example.tripnila.R
 import com.example.tripnila.common.AppLocationCard
 import com.example.tripnila.common.AppReviewsCard
-import com.example.tripnila.data.Amenity
+import com.example.tripnila.data.AmenityBrief
 import com.example.tripnila.data.DailySchedule
-import com.example.tripnila.data.Review
+import com.example.tripnila.data.ReviewUiState
 
 @Composable
 fun BusinessManagerScreen(){
 
     val amenities = listOf(
-        Amenity(
+        AmenityBrief(
             image = R.drawable.person,
             count = 4,
             name = "person"
         ),
-        Amenity(
+        AmenityBrief(
             image = R.drawable.pool,
             count = 1,
             name = "swimming pool"
         ),
-        Amenity(
+        AmenityBrief(
             image = R.drawable.bedroom,
             count = 2,
             name = "bedroom"
         ),
-        Amenity(
+        AmenityBrief(
             image = R.drawable.bathroom,
             count = 2,
             name = "bathroom"
         ),
-        Amenity(
+        AmenityBrief(
             image = R.drawable.kitchen,
             count = 1,
             name = "kitchen"
@@ -100,45 +100,45 @@ fun BusinessManagerScreen(){
     )
 
     val reviews = listOf(
-        Review(
+        ReviewUiState(
             rating = 4.5,
             comment = "A wonderful staycation experience!",
-            touristImage = R.drawable.joshua,
+           // touristImage = R.drawable.joshua,
             touristName = "John Doe",
             reviewDate = "2023-05-15"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+           // touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+          //  touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+          //  touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+           // touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+          //  touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),

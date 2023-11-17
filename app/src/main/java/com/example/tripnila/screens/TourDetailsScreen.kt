@@ -1,7 +1,6 @@
 package com.example.tripnila.screens
 
 import androidx.compose.foundation.BorderStroke
-import com.example.tripnila.data.Review
 
 
 import androidx.compose.foundation.Image
@@ -56,6 +55,7 @@ import com.example.tripnila.common.AppReviewsCard
 import com.example.tripnila.common.Orange
 import com.example.tripnila.common.Tag
 import com.example.tripnila.common.UnderlinedText
+import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.data.TourAvailableDates
 
 
@@ -106,45 +106,45 @@ fun TourDetailsScreen(){
     )
     val tags = listOf("Nature", "Food", "History")
     val reviews = listOf(
-        Review(
+        ReviewUiState(
             rating = 4.5,
             comment = "A wonderful staycation experience!",
-            touristImage = R.drawable.joshua,
+         //   touristImage = R.drawable.joshua,
             touristName = "John Doe",
             reviewDate = "2023-05-15"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+        //    touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+        //    touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+        //    touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+         //   touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+        //    touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
@@ -611,10 +611,10 @@ fun TourAdditionalInformationCard(withEditButton: Boolean = false, modifier: Mod
                     )
                 }
             }
-            AdditionalInformationRow("What to bring")
-            AdditionalInformationRow("Health & safety")
-            AdditionalInformationRow("Cancellation & reschedule policy")
-            AdditionalInformationRow("Business Information")
+            AdditionalInformationRow(textInfo = "What to bring", onClick = {/*TODO*/})
+            AdditionalInformationRow(textInfo = "Health & safety", onClick = {/*TODO*/})
+            AdditionalInformationRow(textInfo = "Cancellation & reschedule policy", onClick = {/*TODO*/})
+            AdditionalInformationRow(textInfo = "Business Information", onClick = {/*TODO*/})
 
         }
     }

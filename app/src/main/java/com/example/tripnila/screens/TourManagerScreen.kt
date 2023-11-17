@@ -1,24 +1,37 @@
 package com.example.tripnila.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tripnila.R
 import com.example.tripnila.common.AppLocationCard
 import com.example.tripnila.common.AppReviewsCard
-import com.example.tripnila.data.Review
+import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.data.TourAvailableDates
 import com.example.tripnila.data.Transaction
 
@@ -69,45 +82,45 @@ fun TourManagerScreen(){
     )
     val tags = listOf("Nature", "Food", "History")
     val reviews = listOf(
-        Review(
+        ReviewUiState(
             rating = 4.5,
             comment = "A wonderful staycation experience!",
-            touristImage = R.drawable.joshua,
+          //  touristImage = R.drawable.joshua,
             touristName = "John Doe",
             reviewDate = "2023-05-15"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+         //   touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+         //   touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+        //    touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+       //     touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+          //  touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
@@ -257,6 +270,7 @@ private fun TourManagerPreviews(){
 
     // TourBottomBookingBar()
 
+
 }
 
 
@@ -264,6 +278,6 @@ private fun TourManagerPreviews(){
 @Composable
 private fun TourManagerScreenPreview() {
 
-    TourManagerScreen()
+   // TourManagerScreen()
 
 }

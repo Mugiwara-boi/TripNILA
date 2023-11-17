@@ -1,7 +1,6 @@
 package com.example.tripnila.screens
 
-import com.example.tripnila.data.Amenity
-import com.example.tripnila.data.Review
+import com.example.tripnila.data.AmenityBrief
 
 
 import androidx.compose.foundation.Image
@@ -47,6 +46,7 @@ import com.example.tripnila.common.AppReviewsCard
 import com.example.tripnila.common.Tag
 import com.example.tripnila.common.UnderlinedText
 import com.example.tripnila.data.DailySchedule
+import com.example.tripnila.data.ReviewUiState
 
 
 @Composable
@@ -54,27 +54,27 @@ fun BusinessDetailsScreen(){
 
 
     val amenities = listOf(
-        Amenity(
+        AmenityBrief(
             image = R.drawable.person,
             count = 4,
             name = "person"
         ),
-        Amenity(
+        AmenityBrief(
             image = R.drawable.pool,
             count = 1,
             name = "swimming pool"
         ),
-        Amenity(
+        AmenityBrief(
             image = R.drawable.bedroom,
             count = 2,
             name = "bedroom"
         ),
-        Amenity(
+        AmenityBrief(
             image = R.drawable.bathroom,
             count = 2,
             name = "bathroom"
         ),
-        Amenity(
+        AmenityBrief(
             image = R.drawable.kitchen,
             count = 1,
             name = "kitchen"
@@ -128,45 +128,45 @@ fun BusinessDetailsScreen(){
     )
 
     val reviews = listOf(
-        Review(
+        ReviewUiState(
             rating = 4.5,
             comment = "A wonderful staycation experience!",
-            touristImage = R.drawable.joshua,
+           // touristImage = R.drawable.joshua,
             touristName = "John Doe",
             reviewDate = "2023-05-15"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+            //touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+            //touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+           //touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+           // touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
-        Review(
+        ReviewUiState(
             rating = 5.0,
             comment = "Amazing place and great service!",
-            touristImage = R.drawable.joshua,
+           // touristImage = R.drawable.joshua,
             touristName = "Jane Smith",
             reviewDate = "2023-04-20"
         ),
@@ -422,7 +422,7 @@ fun BusinessDescriptionCard2(
 
 @Composable
 fun BusinessAmenitiesCard(
-    amenities: List<Amenity>,
+    amenities: List<AmenityBrief>,
     withEditButton: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -687,7 +687,7 @@ fun ScheduleRow(day: String, openingTime: String?, closingTime: String?, isOpen:
 
 
 @Composable
-fun BusinessAmenityDetail(amenity: Amenity, modifier: Modifier = Modifier){
+fun BusinessAmenityDetail(amenity: AmenityBrief, modifier: Modifier = Modifier){
     Box(
         modifier = modifier
             .width(148.dp)

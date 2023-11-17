@@ -72,4 +72,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("androidx.compose.ui:ui-text-google-fonts:1.5.0")
     implementation("androidx.navigation:navigation-compose:2.7.2")
+    implementation ("androidx.paging:paging-runtime:3.1.1")
+    implementation ("androidx.paging:paging-compose:1.0.0-alpha16")
+    implementation("io.coil-kt:coil-compose:1.3.2")
+    implementation("com.google.accompanist:accompanist-permissions:0.32.0")
 }

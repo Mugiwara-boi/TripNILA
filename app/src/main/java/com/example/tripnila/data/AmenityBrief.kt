@@ -1,6 +1,7 @@
 package com.example.tripnila.data
 
-data class Amenity(
+/*TODO*/ // RENAME TO FACILITY
+data class AmenityBrief(
     val image: Int,
     val count: Int?,
     val name: String

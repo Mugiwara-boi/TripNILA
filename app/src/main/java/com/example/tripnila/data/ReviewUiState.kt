@@ -1,9 +1,9 @@
 package com.example.tripnila.data
 
-data class Review(
+data class ReviewUiState(
     val rating: Double,
     val comment: String,
-    val touristImage: Int,
+    val touristImage: String? = null,
     val touristName: String,
     val reviewDate: String
 )
