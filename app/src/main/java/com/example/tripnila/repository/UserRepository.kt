@@ -22,6 +22,7 @@ import com.example.tripnila.data.Tag
 import com.example.tripnila.data.Tourist
 import com.example.tripnila.model.StaycationPagingSource
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
@@ -30,6 +31,9 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.tasks.await
 import org.checkerframework.checker.units.qual.min
 import java.security.MessageDigest
+import java.util.Calendar
+import java.util.Date
+import java.util.TimeZone
 import kotlin.experimental.and
 import kotlin.math.min
 
@@ -51,11 +55,121 @@ class UserRepository {
     private val reviewCollection = db.collection("review")
     private val likeCollection = db.collection("like")
     private val commentCollection = db.collection("comment")
+    private val paymentCollection = db.collection("payment")
 
 
     private var currentUser: Tourist? = null
     private var staycationList: List<Staycation>? = null
 
+    suspend fun addStaycationBooking(
+        //bookingDate: Date,
+        bookingStatus: String,
+        checkInDateMillis: Long,
+        checkOutDateMillis: Long,
+        timeZone: TimeZone,
+        noOfGuests: Int,
+        staycationId: String,
+        totalAmount: Double,
+        touristId: String,
+        commission: Double,
+        paymentStatus: String,
+        paymentMethod: String,
+    ): Boolean {
+        try {
+            val checkInDate = Date(checkInDateMillis)
+            val checkOutDate = Date(checkOutDateMillis)
+
+            val bookingData = hashMapOf(
+                "bookingDate" to FieldValue.serverTimestamp(),
+                "bookingStatus" to bookingStatus,
+                "checkInDate" to formatDateInTimeZone(checkInDate, timeZone),
+                "checkOutDate" to formatDateInTimeZone(checkOutDate, timeZone),
+                "noOfGuests" to noOfGuests,
+                "staycationId" to staycationId,
+                "totalAmount" to totalAmount,
+                "touristId" to touristId
+            )
+
+            val staycationBookingDocRef= staycationBookingCollection.add(bookingData).await()
+            val staycationBookingId = staycationBookingDocRef.id
+
+            deleteAvailabilityInRange(
+                staycationId = staycationId,
+                checkInDate = checkInDateMillis,
+                checkOutDate = checkOutDateMillis
+            )
+
+            addPaymentData(
+                amount = totalAmount,
+                commission = commission,
+                paymentStatus = paymentStatus,
+                serviceBookingId = staycationBookingId,
+                serviceType = "Staycation",
+                transactionId = "TODO", /*TODO*/
+                paymentMethod = paymentMethod,
+            )
+
+            return true
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+            // Handle the error case as needed
+        }
+    }
+
+    private suspend fun addPaymentData(
+        amount: Double,
+        commission: Double,
+       // paymentDate: String,
+        paymentMethod: String,
+        paymentStatus: String,
+        serviceBookingId: String,
+        serviceType: String,
+        transactionId: String
+    ) {
+        try {
+            val paymentData = hashMapOf(
+                "amount" to amount,
+                "commission" to commission,
+                "paymentDate" to FieldValue.serverTimestamp(),
+                "paymentStatus" to paymentStatus,
+                "serviceBookingId" to serviceBookingId,
+                "serviceType" to serviceType,
+                "paymentMethod" to paymentMethod,
+                "transactionId" to transactionId
+            )
+
+            paymentCollection.add(paymentData).await()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+    }
+
+    suspend fun deleteAvailabilityInRange(staycationId: String, checkInDate: Long, checkOutDate: Long) {
+        try {
+            val query = staycationAvailabilityCollection
+                .whereEqualTo("staycationId", staycationId)
+                .whereGreaterThanOrEqualTo("availableDate", Date(checkInDate))
+                .whereLessThan("availableDate", Date(checkOutDate))
+
+            val documents = query.get().await()
+
+            for (document in documents.documents) {
+                staycationAvailabilityCollection.document(document.id).delete().await()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+    }
+
+    private fun formatDateInTimeZone(date: Date, timeZone: TimeZone): Date {
+        val calendar = Calendar.getInstance(timeZone)
+        calendar.time = date
+        return calendar.time
+    }
     fun getCurrentUser(): Tourist? { return currentUser }
 
     suspend fun getServiceIdsByTag(tagName: String): List<Tag> {
@@ -465,7 +579,7 @@ class UserRepository {
 
         } catch (e: Exception) {
             e.printStackTrace()
-            null // Handle the error case as needed
+            null
         }
     }
 

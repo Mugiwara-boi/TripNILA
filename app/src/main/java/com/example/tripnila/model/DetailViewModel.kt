@@ -1,7 +1,6 @@
 package com.example.tripnila.model
 
-import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.MutableLiveData
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Staycation
@@ -9,10 +8,10 @@ import com.example.tripnila.repository.UserRepository
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.format.TextStyle
 
@@ -30,6 +29,15 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
 
     private val _nightsDifference = MutableStateFlow<Long?>(null)
     val nightsDifference: StateFlow<Long?> = _nightsDifference
+
+    private val _totalBookingAmount = MutableStateFlow<Double?>(0.0)
+    val totalBookingAmount: StateFlow<Double?> = _totalBookingAmount
+
+    private val _loadingState = MutableStateFlow(false)
+    val loadingState: StateFlow<Boolean> get() = _loadingState
+
+    private val _bookingResult = MutableStateFlow<String?>(null)
+    val bookingResult: StateFlow<String?> = _bookingResult
 
     private val _formattedDateRange = MutableStateFlow<String?>(null)
     val formattedDateRange: StateFlow<String?> = _formattedDateRange
@@ -51,6 +59,62 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
 
     private val _clearTrigger = MutableStateFlow(false)
     val clearTrigger: StateFlow<Boolean> = _clearTrigger
+
+
+
+//    private val _selectedPreferences = MutableStateFlow<List<String>>(emptyList())
+//    val selectedPreferences: StateFlow<List<String>> get() = _selectedPreferences.asStateFlow()
+//
+//    fun setSelectedPreference(preferences: List<String>) {
+//        _preferenceUiState.value = _preferenceUiState.value.copy(selectedPreferences = preferences )
+//        _selectedPreferences.value = preferences
+//    }
+//
+
+
+
+
+    private val _selectedPaymentMethod = MutableStateFlow<Int?>(-1)
+    val selectedPaymentMethod: StateFlow<Int?> get() = _selectedPaymentMethod//.asStateFlow()
+
+    fun setSelectedPaymentMethod(index: Int?) {
+        _selectedPaymentMethod.value = index
+        Log.d("ViewModel", "${_selectedPaymentMethod.value}")
+    }
+
+
+
+
+
+
+    private val _alertDialogMessage = MutableStateFlow<String?>(null)
+    val alertDialogMessage: StateFlow<String?> get() = _alertDialogMessage
+
+    private fun setTotalBookingAmount(totalBookingAmount: Double?) {
+        _totalBookingAmount.value = totalBookingAmount
+    }
+    fun setAlertDialogMessage() {
+        _alertDialogMessage.value = when {
+            !isNightsDifferenceValid() -> "Please select booking dates."
+            !isGuestsValid() -> "Please select booking guests."
+            !isPaymentMethodSelected() -> "Please select your payment method."
+
+            else -> "Are you sure you want to proceed?" // No issues, return null for no alert dialog
+        }
+    }
+    fun isNightsDifferenceValid(): Boolean {
+        return _nightsDifference.value != null
+    }
+
+    fun isGuestsValid(): Boolean {
+        return _guestCount.value != null
+    }
+
+    fun isPaymentMethodSelected(): Boolean {
+        return _selectedPaymentMethod.value!! >= 0
+    }
+
+
 
     fun setClearTrigger(value: Boolean) {
         _clearTrigger.value = value
@@ -92,7 +156,6 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
         _nightsDifference.value = nights
     }
 
-
     fun pluralize(word: String, count: Int): String {
         return if (count == 1) word else "${word}s"
     }
@@ -130,11 +193,93 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
         }
     }
 
-    // Function to fetch and set the Staycation by its ID
+    fun calculateTotalAmount(): Double? {
+        val duration = _nightsDifference.value?.toInt()
+        val bookingFee = _staycation.value?.staycationPrice
+
+        val maintenanceFee = bookingFee?.times(0.02)
+        val tripnilaFee = bookingFee?.times(0.05)
+
+        val totalAmount = bookingFee?.let { bookingFee ->
+            duration?.let { duration ->
+                maintenanceFee?.let { maintenanceFee ->
+                    tripnilaFee?.let { tripnilaFee ->
+                        (bookingFee * duration) + maintenanceFee + tripnilaFee
+                    }
+                }
+            }
+        }
+
+        return totalAmount
+    }
+
+    fun calculateCommission(): Double? {
+        val bookingFee = _staycation.value?.staycationPrice
+
+        return bookingFee?.times(0.05)
+    }
+
     fun getStaycationById(staycationId: String) {
         viewModelScope.launch {
             val staycation = repository.getStaycationById(staycationId)
             _staycation.value = staycation
+        }
+    }
+
+    suspend fun addBooking(touristId: String) {
+        _loadingState.value = true
+        try {
+            viewModelScope.launch {
+                val bookingStatus = "Pending" // Set the status accordingly
+                val checkInDateMillis = _startDate.value ?: return@launch
+                val checkOutDateMillis = _endDate.value ?: return@launch
+                val timeZone = TimeZone.getTimeZone("Asia/Manila")
+                val noOfGuests = _guestCount.value ?: return@launch
+                val staycationId = _staycation.value?.staycationId ?: return@launch
+                val totalAmount = calculateTotalAmount() // Implement your own logic
+                val commission = calculateCommission() // Implement your own logic
+                val paymentStatus = "Pending" // Set the initial payment status
+                val paymentMethod = when (_selectedPaymentMethod?.value) {
+                    0 -> {
+                        "Paypal"
+                    }
+                    1 -> {
+                        "Gcash"
+                    }
+                    2 -> {
+                        "Maya"
+                    }
+                    else -> {
+                        "Others"
+                    }
+                }
+
+                val isSuccess = repository.addStaycationBooking(
+                    bookingStatus = bookingStatus,
+                    checkInDateMillis = checkInDateMillis,
+                    checkOutDateMillis = checkOutDateMillis,
+                    timeZone = timeZone,
+                    noOfGuests = noOfGuests,
+                    staycationId = staycationId,
+                    totalAmount = totalAmount ?: 0.0,
+                    touristId = touristId,
+                    commission = commission ?: 0.0,
+                    paymentStatus = paymentStatus,
+                    paymentMethod = paymentMethod
+                )
+
+                _bookingResult.value = if (isSuccess) {
+                    "Booking successful!"
+                } else {
+                    "Booking failed: An error occurred" // Customize error message
+                }
+
+                Log.d("Result", "$_bookingResult")
+            }
+        } catch (e: Exception) {
+            // Handle exceptions as needed
+        } finally {
+            _loadingState.value = false // Set loading state to false, whether successful or not
         }
     }
 }

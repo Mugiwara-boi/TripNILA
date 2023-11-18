@@ -2,6 +2,7 @@ package com.example.tripnila.screens
 
 import android.annotation.SuppressLint
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,11 +26,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DateRangePicker
@@ -41,8 +47,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -55,8 +65,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -74,13 +86,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.tripnila.R
 import com.example.tripnila.common.AppConfirmAndPayDivider
 import com.example.tripnila.common.AppYourTripRow
 import com.example.tripnila.common.Orange
+import com.example.tripnila.data.PaymentMethod
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.model.DetailViewModel
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.text.NumberFormat
 
@@ -105,24 +120,23 @@ fun StaycationBookingScreen(
 
     val dateRangePickerState = rememberDateRangePickerState()
 
+    val coroutineScope = rememberCoroutineScope()
     val bottomSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
+    val snackbarHostState = remember { SnackbarHostState() }
     var openCalendarBottomSheet = remember { mutableStateOf(false) }
     var openGuestBottomSheet = remember { mutableStateOf(false) }
     var isSaveButtonClicked = remember { mutableStateOf(true) }
     var isClearButtonClicked = remember { mutableStateOf(false) }
     var titleText: MutableState<String?> = remember { mutableStateOf(null) }
     var enableBottomSaveButton: MutableState<Boolean> = remember { mutableStateOf(true) }
+    val openAlertDialog = remember { mutableStateOf(false) }
 
     var nights = remember { mutableStateOf(0) }
     var hasNavigationBar = WindowInsets.areNavigationBarsVisible
 
-    var isInitial = remember {
-        mutableStateOf(true)
-    }
-
-    var isSaveGuestClicked = remember { mutableStateOf(false) }
+    var isInitial = remember { mutableStateOf(true) }
 
 
     LaunchedEffect(touristId) {
@@ -130,6 +144,16 @@ fun StaycationBookingScreen(
         dateRangePickerState.setSelection(selectedStart?.value, selectedEnd?.value)
         detailViewModel?.setAdultCount(1)
         isInitial.value = true
+    }
+
+    LaunchedEffect(openAlertDialog) {
+        detailViewModel?.setAlertDialogMessage()
+    }
+
+    LaunchedEffect(detailViewModel?.bookingResult?.collectAsState()?.value) {
+        if (detailViewModel?.bookingResult?.value != null) {
+            snackbarHostState.showSnackbar(detailViewModel?.bookingResult?.value!!)
+        }
 
     }
 
@@ -155,7 +179,7 @@ fun StaycationBookingScreen(
             dateRangePickerState.setSelection(startDateMillis = null, endDateMillis = null)
         }
 
-        isSaveButtonClicked.value = false
+      //  isSaveButtonClicked.value = false
 
         titleText.value = countNights?.let { "$it nights" } ?: "Select date"
         nights.value = countNights?.toInt() ?: 0
@@ -180,7 +204,7 @@ fun StaycationBookingScreen(
             .fillMaxSize()
     ) {
         Scaffold(
-
+            snackbarHost = { SnackbarHost(snackbarHostState) }
         ) {
 
             Box(
@@ -202,7 +226,7 @@ fun StaycationBookingScreen(
             }
             Box(
                 modifier = Modifier
-                    .padding(top = 170.dp) // 160
+                    .padding(top = 160.dp) // 170
                     .fillMaxHeight()
                     .fillMaxWidth()
                     .clip(shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
@@ -242,18 +266,18 @@ fun StaycationBookingScreen(
                         )
                     }
                     AppPaymentDivider(
+                        detailViewModel = detailViewModel,
                         bookingFee = staycation?.value?.staycationPrice ?: 2500.00,
                         bookingDuration = duration?.value?.toInt() ?: 5,
                         maintenanceFee = staycation?.value?.staycationPrice?.times(0.02) ?: 250.00,
                         tripnilaFee = staycation?.value?.staycationPrice?.times(0.05) ?: 625.00
-
                     )
                     PaymentAgreementText()
                     Spacer(modifier = Modifier.padding(vertical = 15.dp))
                     BookingFilledButton(
                         buttonText = "Confirm and pay",
                         onClick = {
-
+                            openAlertDialog.value = true
                         },
                         modifier = Modifier
                             .padding(horizontal = 10.dp)
@@ -297,15 +321,10 @@ fun StaycationBookingScreen(
                                 }
                             },
                             onClick = {
-
-                                    dateRangePickerState.setSelection(null, null)
-                                    isSaveButtonClicked.value = false
-
+                                dateRangePickerState.setSelection(null, null)
+                                isSaveButtonClicked.value = false
                             }
-
                         )
-
-
                     }
                 },
                 onDismissRequest = { openCalendarBottomSheet.value = false },
@@ -508,6 +527,75 @@ fun StaycationBookingScreen(
 
         }
 
+
+        if (openAlertDialog.value) {
+            Dialog(onDismissRequest = { openAlertDialog.value = false }) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 20.dp
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        //.height(200.dp)
+                        .padding(20.dp),
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+
+                     //   var text =
+
+                        Text(
+                            text = detailViewModel?.alertDialogMessage?.collectAsState()?.value ?: "",
+                            color = Color.Black,
+                            fontSize = 18.sp,
+                            modifier = Modifier
+                                .padding(horizontal = 20.dp)
+                                .padding(top = 25.dp),
+                        )
+                        Spacer(modifier = Modifier.height(30.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            //   horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            if (detailViewModel?.alertDialogMessage?.collectAsState()?.value != "Are you sure you want to proceed?") {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                            TextButton(
+                                onClick = { openAlertDialog.value = false },
+                                modifier = Modifier.padding(horizontal = 10.dp),
+                            ) {
+                                Text("Dismiss", color = Color.Black)
+                            }
+                            if (detailViewModel?.alertDialogMessage?.collectAsState()?.value == "Are you sure you want to proceed?") {
+                                Spacer(modifier = Modifier.weight(1f))
+                                TextButton(
+                                    onClick = {
+
+                                        coroutineScope.launch {
+                                            openAlertDialog.value = false
+                                            detailViewModel?.addBooking(touristId)
+                                        }
+
+
+
+
+                                    },
+                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                ) {
+                                    Text("Confirm", color = Color.Black)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -624,7 +712,7 @@ fun YourTripDivider(
             fontWeight = FontWeight.Medium
         )
         val dateRowText = formattedDateRange.takeIf { it?.isNotBlank() == true } ?: "Select dates*"
-        val dateRowTextColor = if (formattedDateRange?.isNotBlank() == true) Color.Black else Color(0xFF999999)
+        val dateRowTextColor = if (formattedDateRange?.isNotBlank() == true) Color(0xFF999999) else Color.Red
 
 
         AppYourTripRow(
@@ -664,6 +752,7 @@ fun YourTripDivider(
 
 @Composable
 fun AppPaymentDivider(
+    detailViewModel: DetailViewModel? = null,
     bookingFee: Double,
     bookingDuration: Int,
     maintenanceFee: Double? = null,
@@ -680,6 +769,16 @@ fun AppPaymentDivider(
 
     val productBookingFee = bookingFee * bookingDuration
     val totalFee = productBookingFee + (maintenanceFee ?: 0.0) + tripnilaFee
+
+    var selectedPaymentMethod by remember { mutableStateOf(-1) }
+    var isSelectionEnabled by remember { mutableStateOf(true) }
+
+    LaunchedEffect(selectedPaymentMethod) {
+        detailViewModel?.setSelectedPaymentMethod(selectedPaymentMethod)
+        detailViewModel?.setAlertDialogMessage()
+
+        Log.d("selectedPaymentMethod", "$selectedPaymentMethod")
+    }
 
     Column(
         modifier = modifier
@@ -769,6 +868,7 @@ fun AppPaymentDivider(
             }
         }
         else {
+
             Text(
                 text = "Payment method",
                 fontWeight = FontWeight.SemiBold,
@@ -778,15 +878,38 @@ fun AppPaymentDivider(
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                PaymentMethodCard(logoId = R.drawable.paypal)
-                PaymentMethodCard(logoId = R.drawable.gcash)
-                PaymentMethodCard(
-                    logoId = R.drawable.paymaya,
-                    modifier = Modifier
-                        //                    .fillMaxHeight()
-                        .height(40.dp)
-                        .width(80.dp)
+
+                var paymentMethods = listOf(
+                    PaymentMethod(R.drawable.paypal),
+                    PaymentMethod(R.drawable.gcash),
+                    PaymentMethod(R.drawable.paymaya)
                 )
+
+                paymentMethods.forEach { paymentMethod ->
+                    PaymentMethodCard(
+                        logoId = paymentMethod.logoId,
+                        isSelected = selectedPaymentMethod == paymentMethods.indexOf(paymentMethod),
+                        onCardSelect = {
+
+                            if (selectedPaymentMethod == paymentMethods.indexOf(paymentMethod)) {
+                                // If the card is already selected, unselect it
+                                selectedPaymentMethod = -1
+                            } else {
+                                // Otherwise, select the clicked card
+                                selectedPaymentMethod = paymentMethods.indexOf(paymentMethod)
+                            }
+
+                        },
+                        modifier = if (paymentMethods.indexOf(paymentMethod) == 2) {
+                            Modifier
+                                .height(40.dp)
+                                .width(80.dp)
+                        } else {
+                            Modifier
+                        }
+                    )
+                }
+
                 Spacer(modifier = Modifier.weight(1f))
                 PaymentOutlinedButton(
                     buttonText = "Add",
@@ -803,6 +926,60 @@ fun AppPaymentDivider(
         modifier = Modifier.padding(top = 5.dp) // 10.dp
     )
 }
+
+
+
+
+//                paymentMethods.forEach { paymentMethod ->
+//                    PaymentMethodCard(
+//                        logoId = paymentMethod.logoId,
+//                        isSelected = selectedPaymentMethod?.value == paymentMethod.index,
+//                        onCardClick = {
+//                            selectedPaymentMethod?.value = if (selectedPaymentMethod?.value == paymentMethod.index) null else paymentMethod.index
+//                            detailViewModel?.setSelectedPaymentMethod(selectedPaymentMethod?.value)
+//                        },
+//                        modifier = if (paymentMethod.index == 2) {
+//                            Modifier
+//                                .height(40.dp)
+//                                .width(80.dp)
+//                        } else {
+//                            Modifier
+//                        }
+//                    )
+//                }
+
+
+//// Ensure the selectedPaymentMethod is not null before calling setSelectedPaymentMethod
+//                selectedPaymentMethod?.let { detailViewModel?.setSelectedPaymentMethod(it) }
+
+
+//                val paymentMethods = listOf(
+//                    PaymentMethod(R.drawable.paypal, 0),
+//                    PaymentMethod(R.drawable.gcash, 1),
+//                    PaymentMethod(R.drawable.paymaya, 2)
+//                )
+//
+//                var selectedPaymentMethod by remember {
+//                    mutableStateOf<Int?>(detailViewModel?.selectedPaymentMethod?.value)
+//                }
+//
+//                paymentMethods.forEach { paymentMethod ->
+//                    PaymentMethodCard(
+//                        logoId = paymentMethod.logoId,
+//                        isSelected = selectedPaymentMethod == paymentMethod.index,
+//                        onCardClick = {
+//                            selectedPaymentMethod = if (selectedPaymentMethod == paymentMethod.index) null else paymentMethod.index
+//                            detailViewModel?.setSelectedPaymentMethod(selectedPaymentMethod)
+//                        },
+//                        modifier = if (paymentMethod.index == 2) {
+//                            Modifier
+//                                .height(40.dp)
+//                                .width(80.dp)
+//                        } else {
+//                            Modifier
+//                        }
+//                    )
+//                }
 
 
 @Composable
@@ -837,17 +1014,20 @@ fun PaymentRow(feeLabel: String, feePrice: Double, modifier: Modifier = Modifier
 }
 
 @Composable
-fun PaymentMethodCard(logoId: Int, modifier: Modifier = Modifier) {
-
-    var isClicked by remember { mutableStateOf(false) }
-    val borderColor = if (isClicked) Orange else Color(0xFFF3F3F3)
+fun PaymentMethodCard(
+    logoId: Int,
+    isSelected: Boolean,
+    onCardSelect: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val borderColor = if (isSelected) Orange else Color(0xFFF3F3F3)
 
     val interactionSource = remember { MutableInteractionSource() }
     val clickableModifier = Modifier.clickable(
         interactionSource = interactionSource,
         indication = null
     ) {
-        isClicked = !isClicked
+        onCardSelect()
     }
 
     ElevatedCard(
@@ -864,6 +1044,7 @@ fun PaymentMethodCard(logoId: Int, modifier: Modifier = Modifier) {
             .padding(vertical = 5.dp, horizontal = 5.dp)
             .border(1.dp, borderColor, RoundedCornerShape(10.dp))
             .then(clickableModifier)
+          //  .clickable { onCardSelect() }
     ) {
         Box(
             modifier = Modifier.fillMaxSize()
@@ -877,6 +1058,7 @@ fun PaymentMethodCard(logoId: Int, modifier: Modifier = Modifier) {
         }
     }
 }
+
 
 @Composable
 fun PaymentOutlinedButton(buttonText: String, modifier: Modifier = Modifier, cornerSize: Dp = 10.dp){
@@ -903,7 +1085,7 @@ fun PaymentAgreementText(modifier: Modifier = Modifier) {
             withStyle(
                 style = SpanStyle(
                     color = Color.Black,
-                    fontSize = 8.sp
+                    fontSize = 9.sp
                 )
             ) {
                 append("By selecting the button below, I agree to the ")
@@ -911,7 +1093,7 @@ fun PaymentAgreementText(modifier: Modifier = Modifier) {
             withStyle(
                 style = SpanStyle(
                     color = Color.Black,
-                    fontSize = 8.sp, // 10
+                    fontSize = 9.sp, // 10
                     fontWeight = FontWeight.Medium,
                     textDecoration = TextDecoration.Underline
                 )
@@ -921,13 +1103,13 @@ fun PaymentAgreementText(modifier: Modifier = Modifier) {
             withStyle(
                 style = SpanStyle(
                     color = Color.Black,
-                    fontSize = 8.sp
+                    fontSize = 9.sp
                 )
             ) {append(", ")
             }
             withStyle(
                 style = SpanStyle(
-                    fontSize = 8.sp,
+                    fontSize = 9.sp,
                     color = Color.Black,
                     fontWeight = FontWeight.Medium,
                     textDecoration = TextDecoration.Underline
@@ -938,7 +1120,7 @@ fun PaymentAgreementText(modifier: Modifier = Modifier) {
             withStyle(
                 style = SpanStyle(
                     color = Color.Black,
-                    fontSize = 8.sp
+                    fontSize = 9.sp
                 )
             ) {
                 append(", ")
@@ -946,7 +1128,7 @@ fun PaymentAgreementText(modifier: Modifier = Modifier) {
             withStyle(
                 style = SpanStyle(
                     color = Color.Black,
-                    fontSize = 8.sp,
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Medium,
                     textDecoration = TextDecoration.Underline
                 )
@@ -956,11 +1138,12 @@ fun PaymentAgreementText(modifier: Modifier = Modifier) {
             withStyle(
                 style = SpanStyle(
                     color = Color.Black,
-                    fontSize = 8.sp
+                    fontSize = 9.sp
                 )
             ) {append(" and Tripnila can charge my payment method if I’m responsible for any damage on the property")
             }
         },
+        lineHeight = 9.sp,
         modifier = modifier
             .padding(
                 horizontal = 10.dp,
@@ -1056,77 +1239,72 @@ fun GuestsCounter(
 @Composable
 fun BookingScreenPreview(){
 
-
-
-    Surface(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        Column(
-            Modifier.fillMaxHeight(0.8f)
+    Dialog(onDismissRequest = {  }) {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 20.dp
+            ),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                //.height(200.dp)
+                .padding(20.dp),
         ) {
             Column(
-                Modifier
-                    .fillMaxHeight()
-                    .padding(horizontal = 16.dp)
+                modifier = Modifier
+                    //.fillMaxSize()
+                ,
+                verticalArrangement = Arrangement.Center,
             ) {
-                var adultsCount by remember { mutableStateOf(1) }
-                var childrenCount by remember { mutableStateOf(0) }
-                var infantsCount by remember { mutableStateOf(0) }
-                var petsCount by remember { mutableStateOf(0) }
 
-
-                // Total occupancy limit
-                val totalOccupancyLimit = 5 // Set your desired total limit
-
-                Column(
+                var text = "Are you sure you want to proceed"
+              //  Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = text,
+                    color = Color.Black,
+                    fontSize = 18.sp,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(horizontal = 20.dp)
+                        .padding(top = 25.dp),
+                )
+                Spacer(modifier = Modifier.height(30.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                 //   horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-//                    GuestsCounter(
-//                        label = "Adults",
-//                        defaultCount = adultsCount,
-//                        onCountChange = { count -> adultsCount = count },
-//                        totalOccupancyLimit = totalOccupancyLimit,
-//                        adultsCount = adultsCount,
-//                        childrenCount = childrenCount
-//                    )
-//
-//                    GuestsCounter(
-//                        label = "Children",
-//                        defaultCount = childrenCount,
-//                        onCountChange = { count -> childrenCount = count },
-//                        totalOccupancyLimit = totalOccupancyLimit,
-//                        adultsCount = adultsCount,
-//                        childrenCount = childrenCount
-//                    )
-//
-//                    GuestsCounter(
-//                        label = "Infant",
-//                        defaultCount = infantsCount,
-//                        onCountChange = { count -> infantsCount = count },
-//                        totalOccupancyLimit = 5,
-//                        adultsCount = adultsCount,
-//                        childrenCount = childrenCount
-//                    )
-//
-//                    GuestsCounter(
-//                        label = "Pets",
-//                        defaultCount = petsCount,
-//                        onCountChange = { count -> petsCount = count },
-//                        totalOccupancyLimit = 0,
-//                        adultsCount = adultsCount,
-//                        childrenCount = childrenCount
-//                    )
 
+                    if (text != "Are you sure you want to proceed?") {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                    TextButton(
+                        onClick = {},
+                        modifier = Modifier.padding(horizontal = 10.dp),
+                    ) {
+                        Text("Dismiss", color = Color.Black)
+                    }
+                    if (text == "Are you sure you want to proceed?") {
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        TextButton(
+                            onClick = { },
+                            modifier = Modifier.padding(horizontal = 10.dp),
+                        ) {
+                            Text("Confirm", color = Color.Black)
+                        }
+                    }
                 }
-
             }
         }
 
     }
+
+
+
 }
 
 

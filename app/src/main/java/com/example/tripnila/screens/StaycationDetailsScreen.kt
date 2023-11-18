@@ -1388,6 +1388,7 @@ private fun StaycationDetailsPreview() {
         touristId = "5JCZ1j5hODQ7BcURS2GI",
         onNavToBooking = onNavToBooking
 
+
     )
 
 
