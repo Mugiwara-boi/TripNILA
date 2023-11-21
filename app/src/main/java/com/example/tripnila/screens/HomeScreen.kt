@@ -62,13 +62,15 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.paging.CombinedLoadStates
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.tripnila.R
-import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.common.Orange
+import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.model.HomeViewModel
 
@@ -79,7 +81,8 @@ import com.example.tripnila.model.HomeViewModel
 fun HomeScreen(
     touristId: String,
     homeViewModel: HomeViewModel? = null,
-    onNavToDetailScreen: (String, String) -> Unit
+    onNavToDetailScreen: (String, String) -> Unit,
+    navController: NavHostController
 ){
 
     var searchText = remember{ mutableStateOf("") }
@@ -89,8 +92,6 @@ fun HomeScreen(
     }
 
     val selectedTab = homeViewModel?.selectedTab?.collectAsState()
-
-
 
 
     val paddingValues = if (isActive.value) {
@@ -105,12 +106,16 @@ fun HomeScreen(
     ) {
         Scaffold(
             bottomBar = {
-                AppBottomNavigationBar(
-                    selectedItemIndex = selectedItemIndex,
-                    onItemSelected = { newIndex ->
-                        selectedItemIndex = newIndex
-                    }
-                )
+                navController?.let {
+                    TouristBottomNavigationBar(
+                        touristId = touristId,
+                        navController = it,
+                        selectedItemIndex = selectedItemIndex,
+                        onItemSelected = { newIndex ->
+                            selectedItemIndex = newIndex
+                        }
+                    )
+                }
             }
         ) {
             Column(

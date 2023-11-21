@@ -5,6 +5,6 @@ data class BottomNavigationItem(
     val selectedIcon: Int,
     val unselectedIcon: Int,
     val hasNews: Boolean,
-    val badgeCount: Int? = null
+    val badgeCount: Int? = null,
 )
 

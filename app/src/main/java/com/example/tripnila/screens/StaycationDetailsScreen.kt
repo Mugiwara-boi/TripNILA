@@ -53,14 +53,12 @@ import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,8 +68,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
@@ -84,9 +80,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberImagePainter
 import com.example.tripnila.R
@@ -105,7 +98,10 @@ import com.example.tripnila.data.Staycation
 import com.example.tripnila.model.DetailViewModel
 import java.text.NumberFormat
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.util.Calendar
+import java.util.TimeZone
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -114,7 +110,8 @@ fun StaycationDetailsScreen(
     staycationId: String,
     touristId: String,
     detailViewModel: DetailViewModel? = null,
-    onNavToBooking: (String, String) -> Unit
+    onNavToBooking: (String, String) -> Unit,
+    onBack: () -> Unit
 ) {
 
     var staycation = detailViewModel?.staycation?.collectAsState()
@@ -132,16 +129,19 @@ fun StaycationDetailsScreen(
     var nights = remember { mutableStateOf(0) }
     var hasNavigationBar = WindowInsets.areNavigationBarsVisible
 
-    val staycationReviews = staycation?.value?.staycationBookings?.map { it.bookingReview }
+    val staycationReviews = staycation?.value?.staycationBookings?.mapNotNull { it.bookingReview }
     val reviews: List<ReviewUiState> = staycationReviews?.map { review ->
-        ReviewUiState(
-            rating = review?.rating?.toDouble() ?: 0.0,
-            comment = review?.comment ?: "",
-            touristImage = review?.reviewerImage ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
-            touristName = "${review?.reviewerFirstName} ${review?.reviewerLastName}",
-            reviewDate = review?.reviewDate?.toString() ?: ""
-        )
+        review.let {
+            ReviewUiState(
+                rating = it.rating.toDouble(),
+                comment = it.comment ?: "",
+                touristImage = it?.reviewer?.profilePicture ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
+                touristName = "${it?.reviewer?.firstName} ${it.reviewer?.lastName}",
+                reviewDate = it.reviewDate.toString()
+            )
+        }
     } ?: emptyList()
+
     val attractions = listOf(
         Attraction(
             image = R.drawable.map_image,
@@ -174,8 +174,37 @@ fun StaycationDetailsScreen(
         isSaveButtonClicked.value
     ) {
 
+        val manilaZoneId = ZoneId.of("Asia/Manila")
+
         var selectedStartDateMillis = dateRangePickerState.selectedStartDateMillis
+
         var selectedEndDateMillis = dateRangePickerState.selectedEndDateMillis
+
+        Log.d("Before", "$selectedStartDateMillis")
+        Log.d("Before", "$selectedEndDateMillis")
+
+
+//        if (selectedStartDateMillis != null && selectedEndDateMillis != null){
+//            val startDate = Calendar.getInstance()
+//            val endDate = Calendar.getInstance()
+//
+//            // Set the time in milliseconds
+//
+//            // Set the time in milliseconds
+//            startDate.setTimeInMillis(selectedStartDateMillis)
+//            endDate.setTimeInMillis(selectedEndDateMillis)
+//
+//            val manilaTimeZone: TimeZone = TimeZone.getTimeZone("Asia/Manila")
+//
+//            startDate.setTimeZone(manilaTimeZone)
+//            endDate.setTimeZone(manilaTimeZone)
+//
+//            val selectedStartDateMillisManila: Long = startDate.timeInMillis
+//            val selectedEndDateMillisManila: Long = endDate.timeInMillis
+//
+//            Log.d("After", "$selectedStartDateMillisManila")
+//            Log.d("After", "$selectedEndDateMillisManila")
+//        }
 
         val countNights = if (selectedStartDateMillis != null && selectedEndDateMillis != null) {
             calculateNights(selectedStartDateMillis, selectedEndDateMillis)
@@ -266,7 +295,11 @@ fun StaycationDetailsScreen(
                                 contentScale = ContentScale.FillWidth
                             )
                             //TopBarIcons()
-                            DetailsTopAppBar()
+                            DetailsTopAppBar(
+                                onBack = {
+                                    onBack()
+                                }
+                            )
                         }
                     }
                     item {
@@ -1052,21 +1085,26 @@ fun BookingOutlinedButton(
     contentFontWeight: FontWeight = FontWeight.Medium,
     contentColor: Color = Orange,
     onClick: () -> Unit,
+    enableButton: Boolean = true,
     modifier: Modifier = Modifier
 ){
+
+
+
     OutlinedButton(
         onClick = onClick,
-        border = borderStroke,
+        border = if (enableButton) borderStroke else BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)),
         shape = buttonShape,
-        colors = ButtonDefaults.buttonColors(containerColor),
+        colors = ButtonDefaults.outlinedButtonColors(containerColor),
         contentPadding = contentPadding,
+        enabled = enableButton,
         modifier = modifier
     ) {
         Text(
             text = buttonText,
             fontSize = contentFontSize,
             fontWeight = contentFontWeight,
-            color = contentColor
+            color = if (enableButton) contentColor else contentColor.copy(alpha = 0.3f)
         )
     }
 }
@@ -1120,7 +1158,10 @@ fun BookingFilledButton(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailsTopAppBar(modifier: Modifier = Modifier){
+fun DetailsTopAppBar(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+){
     var isFavorite by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(state = rememberTopAppBarState())
 
@@ -1129,7 +1170,7 @@ fun DetailsTopAppBar(modifier: Modifier = Modifier){
         scrollBehavior = scrollBehavior,
         title = { /*TODO*/ },
         navigationIcon = {
-            IconButton(onClick = { /*TODO*/ }) {
+            IconButton(onClick = { onBack() }) {
                 Icon(
                     imageVector = Icons.Filled.ArrowBack,
                     contentDescription = "Back",
@@ -1386,7 +1427,10 @@ private fun StaycationDetailsPreview() {
         detailViewModel = detailViewModel,
         staycationId = "LxpNxRFdwkQzBxujF3gx",
         touristId = "5JCZ1j5hODQ7BcURS2GI",
-        onNavToBooking = onNavToBooking
+        onNavToBooking = onNavToBooking,
+        onBack = {
+
+        }
 
 
     )

@@ -226,9 +226,6 @@ fun LoginScreen(
 //                            }
                         }
                     }
-
-
-
                 }
             }
         ) {

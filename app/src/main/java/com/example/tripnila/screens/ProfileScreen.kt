@@ -1,7 +1,9 @@
 package com.example.tripnila.screens
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -21,11 +23,14 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -43,19 +48,42 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import coil.compose.rememberImagePainter
 import com.example.tripnila.R
 import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.common.Orange
+import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.ProfileData
+import com.example.tripnila.model.LoginViewModel
+import com.example.tripnila.model.ProfileViewModel
 
 
 @Composable
-fun ProfileScreen(){
+fun ProfileScreen(
+    profileViewModel: ProfileViewModel? = null,
+    loginViewModel: LoginViewModel? = null,
+    touristId: String = "",
+    navController: NavHostController? = null,
+    onNavToBookingHistory: (String) -> Unit,
+    onNavToPreference: (String) -> Unit,
+    onNavToEditProfile: (String) -> Unit,
+    onNavToVerifyAccount: (String) -> Unit,
+    onLogout: () -> Unit,
+){
+    Log.d("ID", "$touristId")
+
+    LaunchedEffect(touristId) {
+        profileViewModel?.fetchUserData(touristId)
+        Log.d("Fetching", "")
+    }
+
+    val currentUser = profileViewModel?.currentUser?.collectAsState()?.value
 
     val currentProfileData = ProfileData(
-        profilePicture = R.drawable.joshua,
-        fullName = "Joshua Araneta",
-        userName = "@joshAr26"
+        profilePicture = currentUser?.profilePicture ?: "",
+        fullName = "${currentUser?.firstName} ${currentUser?.lastName}",
+        userName = "@${currentUser?.username}"
     )
 
     val horizontalPaddingValue = 16.dp
@@ -71,12 +99,16 @@ fun ProfileScreen(){
     ) {
         Scaffold(
             bottomBar = {
-                AppBottomNavigationBar(
-                    selectedItemIndex = selectedItemIndex,
-                    onItemSelected = { newIndex ->
-                        selectedItemIndex = newIndex
-                    }
-                )
+                navController?.let {
+                    TouristBottomNavigationBar(
+                        touristId = touristId,
+                        navController = it,
+                        selectedItemIndex = selectedItemIndex,
+                        onItemSelected = { newIndex ->
+                            selectedItemIndex = newIndex
+                        }
+                    )
+                }
             }
         ) {
             LazyColumn(
@@ -89,6 +121,10 @@ fun ProfileScreen(){
                     AppTopBarWithIcon(
                         headerText = "Profile",
                         headerIcon = ImageVector.vectorResource(id = R.drawable.logout),
+                        onLogout = {
+                            loginViewModel?.updateIsSuccessLogin(false)
+                            onLogout()
+                        }
 
                     )
                 }
@@ -106,14 +142,32 @@ fun ProfileScreen(){
                             .padding(horizontal = horizontalPaddingValue),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        AppFilledCard(cardText = "Bookings")
-                        AppOutlinedCard(cardText = "Preferences")
-                        AppFilledCard(cardText = "Edit Profile")
+                        AppFilledCard(
+                            cardText = "Bookings",
+                            onClick = {
+                                onNavToBookingHistory(touristId)
+                            }
+                        )
+                        AppOutlinedCard(
+                            cardText = "Preferences",
+                            onClick = {
+                                onNavToPreference(touristId)
+                            }
+                        )
+                        AppFilledCard(
+                            cardText = "Edit Profile",
+                            onClick = {
+                                onNavToEditProfile(touristId)
+                            }
+                        )
                     }
                 }
                 item{
                     AppOutlinedCard(
                         cardText = "Verify your account",
+                        onClick = {
+                              onNavToVerifyAccount(touristId)
+                        },
                         modifier = Modifier
                             .padding(horizontal = horizontalPaddingValue)
                     )
@@ -224,7 +278,7 @@ fun ProfileScreen(){
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppTopBarWithIcon(headerText: String, headerIcon: ImageVector, modifier: Modifier = Modifier) {
+fun AppTopBarWithIcon(headerText: String, onLogout: () -> Unit, headerIcon: ImageVector, modifier: Modifier = Modifier) {
     TopAppBar(
         title = {
             Text(
@@ -234,11 +288,13 @@ fun AppTopBarWithIcon(headerText: String, headerIcon: ImageVector, modifier: Mod
             )
         },
         actions = {
-                Icon(
-                    imageVector = headerIcon,
-                    contentDescription = "",
-                    modifier = Modifier.size(32.dp)
-                )
+                IconButton(onClick = { onLogout() }) {
+                    Icon(
+                        imageVector = headerIcon,
+                        contentDescription = "",
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
         },
         modifier = modifier
 
@@ -246,9 +302,14 @@ fun AppTopBarWithIcon(headerText: String, headerIcon: ImageVector, modifier: Mod
 }
 
 @Composable
-fun AppOutlinedCard(cardText: String, modifier: Modifier = Modifier, cornerSize: Dp = 10.dp) {
+fun AppOutlinedCard(
+    cardText: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    cornerSize: Dp = 10.dp
+) {
     Card(
-        modifier = modifier,
+        modifier = modifier.clickable { onClick() },
         shape = RoundedCornerShape(cornerSize),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -274,9 +335,14 @@ fun AppOutlinedCard(cardText: String, modifier: Modifier = Modifier, cornerSize:
 }
 
 @Composable
-fun AppFilledCard(cardText: String, modifier: Modifier = Modifier, cornerSize: Dp = 10.dp) {
+fun AppFilledCard(
+    cardText: String,
+    cornerSize: Dp = 10.dp,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Card(
-        modifier = modifier,
+        modifier = modifier.clickable { onClick() },
         shape = RoundedCornerShape(cornerSize),
         colors = CardDefaults.cardColors(
             containerColor = Orange
@@ -310,8 +376,16 @@ fun UserProfileComposable(profileData : ProfileData, modifier: Modifier = Modifi
             .size(140.dp)
             .clip(RoundedCornerShape(100.dp))
     ){
+
+        val imageLoader = rememberImagePainter(
+            data = profileData.profilePicture,
+            builder = {
+                crossfade(true)
+            }
+        )
+
         Image(
-            painter = painterResource(id = profileData.profilePicture),
+            painter = imageLoader,
             contentDescription = "Profile Picture",
             contentScale = ContentScale.Crop
         )
@@ -365,5 +439,5 @@ fun OptionsRow(icon: Int, rowText: String, modifier: Modifier = Modifier){
 @Preview
 @Composable
 fun ProfileScreenPreview(){
-    ProfileScreen()
+    //ProfileScreen("","","",{},{},{},{})
 }

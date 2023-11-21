@@ -60,20 +60,6 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
     private val _clearTrigger = MutableStateFlow(false)
     val clearTrigger: StateFlow<Boolean> = _clearTrigger
 
-
-
-//    private val _selectedPreferences = MutableStateFlow<List<String>>(emptyList())
-//    val selectedPreferences: StateFlow<List<String>> get() = _selectedPreferences.asStateFlow()
-//
-//    fun setSelectedPreference(preferences: List<String>) {
-//        _preferenceUiState.value = _preferenceUiState.value.copy(selectedPreferences = preferences )
-//        _selectedPreferences.value = preferences
-//    }
-//
-
-
-
-
     private val _selectedPaymentMethod = MutableStateFlow<Int?>(-1)
     val selectedPaymentMethod: StateFlow<Int?> get() = _selectedPaymentMethod//.asStateFlow()
 
@@ -81,11 +67,6 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
         _selectedPaymentMethod.value = index
         Log.d("ViewModel", "${_selectedPaymentMethod.value}")
     }
-
-
-
-
-
 
     private val _alertDialogMessage = MutableStateFlow<String?>(null)
     val alertDialogMessage: StateFlow<String?> get() = _alertDialogMessage
@@ -113,8 +94,6 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
     fun isPaymentMethodSelected(): Boolean {
         return _selectedPaymentMethod.value!! >= 0
     }
-
-
 
     fun setClearTrigger(value: Boolean) {
         _clearTrigger.value = value
@@ -235,6 +214,8 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
                 val checkOutDateMillis = _endDate.value ?: return@launch
                 val timeZone = TimeZone.getTimeZone("Asia/Manila")
                 val noOfGuests = _guestCount.value ?: return@launch
+                val noOfInfants = _infantCount.value ?: return@launch
+                val noOfPets = _petCount.value ?: return@launch
                 val staycationId = _staycation.value?.staycationId ?: return@launch
                 val totalAmount = calculateTotalAmount() // Implement your own logic
                 val commission = calculateCommission() // Implement your own logic
@@ -260,6 +241,8 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
                     checkOutDateMillis = checkOutDateMillis,
                     timeZone = timeZone,
                     noOfGuests = noOfGuests,
+                    noOfPets = noOfPets,
+                    noOfInfants = noOfInfants,
                     staycationId = staycationId,
                     totalAmount = totalAmount ?: 0.0,
                     touristId = touristId,

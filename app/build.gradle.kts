@@ -63,6 +63,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-text-android:1.5.0")
     implementation("com.google.firebase:firebase-auth:22.2.0")
     implementation("com.google.firebase:firebase-firestore:24.9.1")
+    implementation("com.google.firebase:firebase-storage:20.3.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
@@ -74,6 +75,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.2")
     implementation ("androidx.paging:paging-runtime:3.1.1")
     implementation ("androidx.paging:paging-compose:1.0.0-alpha16")
-    implementation("io.coil-kt:coil-compose:1.3.2")
+    implementation("io.coil-kt:coil-compose:2.1.0")
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
 }

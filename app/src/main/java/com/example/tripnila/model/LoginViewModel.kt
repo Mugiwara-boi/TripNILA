@@ -30,6 +30,12 @@ class LoginViewModel(private val repository: UserRepository = UserRepository()) 
         _loginUiState.value = _loginUiState.value.copy(username = newUsername)
     }
 
+    fun updateIsSuccessLogin(value: Boolean?) {
+        val currentState = _loginUiState.value
+        val updatedState = currentState.copy(isSuccessLogin = value)
+        _loginUiState.value = updatedState
+    }
+
     fun setPassword(newPassword: String) {
         _loginUiState.value = _loginUiState.value.copy(password = newPassword)
     }

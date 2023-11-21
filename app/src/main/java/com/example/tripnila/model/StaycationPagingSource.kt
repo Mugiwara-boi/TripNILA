@@ -47,6 +47,31 @@ class StaycationPagingSource(private val repository: UserRepository, private val
         }
     }
 }
+//    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Staycation> {
+//        return try {
+//            Log.d("StaycationPagingSource", "load called. Params: $params")
+//
+//            val page = params.key ?: 0
+//            val staycations = repository.getAllStaycationsByTag(tab, page)
+//
+//            // Assume you have a unique identifier for each staycation (e.g., staycationId)
+//            //val nextPage = if (staycations.isEmpty()) null else page + 1
+//
+//            val nextPage = if (staycations.isEmpty()) null else page + 1
+//            val endOfPaginationReached = staycations.isEmpty()
+//
+//            LoadResult.Page(
+//                data = staycations,
+//                prevKey = if (page == 0) null else page - 1,
+//                nextKey = nextPage
+//            )
+//        } catch (e: Exception) {
+//            Log.e("StaycationPagingSource", "Error loading data", e)
+//            LoadResult.Error(e)
+//        }
+//    }
+
+
 
 
 //    private fun List<StaycationBooking>.calculateAverageReviewRating(): Double {

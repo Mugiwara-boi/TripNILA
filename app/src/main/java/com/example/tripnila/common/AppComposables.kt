@@ -1,5 +1,6 @@
 package com.example.tripnila.common
 
+import android.util.Log
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -105,6 +106,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import java.text.NumberFormat
@@ -645,7 +653,10 @@ fun Staycationdetails(modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppBottomNavigationBar(selectedItemIndex: Int, onItemSelected: (Int) -> Unit) {
+fun AppBottomNavigationBar(
+    selectedItemIndex: Int,
+    onItemSelected: (Int) -> Unit,
+) {
     val items = listOf(
         BottomNavigationItem(
             title = "Home",
@@ -706,6 +717,96 @@ fun AppBottomNavigationBar(selectedItemIndex: Int, onItemSelected: (Int) -> Unit
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TouristBottomNavigationBar(
+    touristId: String = "",
+    selectedItemIndex: Int,
+    onItemSelected: (Int) -> Unit,
+    navController: NavHostController
+) {
+    val items = listOf(
+        BottomNavigationItem(
+            title = "Home",
+            selectedIcon = R.drawable.home_filled,
+            unselectedIcon = R.drawable.home_outlined,
+            hasNews = false,
+
+            ),
+        BottomNavigationItem(
+            title = "Itinerary",
+            selectedIcon = R.drawable.map_filled,
+            unselectedIcon = R.drawable.map_outlined,
+            hasNews = false,
+            //badgeCount = 45
+        ),
+        BottomNavigationItem(
+            title = "Inbox",
+            selectedIcon = R.drawable.inbox_filled,
+            unselectedIcon = R.drawable.inbox_outlined,
+            hasNews = false,
+        ),
+        BottomNavigationItem(
+            title = "Profile",
+            selectedIcon = R.drawable.account_filled,
+            unselectedIcon = R.drawable.account_outlined,
+            hasNews = false,
+        )
+    )
+
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    NavigationBar(
+        containerColor = Color.White,
+        tonalElevation = 10.dp
+    ) {
+        items.forEachIndexed { index, item ->
+            NavigationBarItem(
+                selected = currentDestination?.hierarchy?.any { it.route == "${item.title}" } == true,
+                onClick = {
+                    navController.navigate(route = "${item.title}/$touristId") {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                    onItemSelected(index)
+
+                    Log.d("Navigation", "Navigating to ${item.title} with touristId: $touristId")
+//                    navController.navigate(route = "${item.title}/{touristId}") {
+//                        // ... rest of your navigation code
+//                    }
+                },
+                icon = {
+                    BadgedBox(
+                        badge = {
+                            if(item.badgeCount != null) {
+                                Badge {
+                                    Text(text = item.badgeCount.toString())
+                                }
+                            } else if(item.hasNews) {
+                                Badge()
+                            }
+                        }
+                    ) {
+                        Icon(
+                            painter = if (index == selectedItemIndex) {
+                                painterResource(id = item.selectedIcon)
+                            } else painterResource(id = item.unselectedIcon),
+                            contentDescription = item.title,
+                            tint = if (index == selectedItemIndex) Orange else Color.Gray
+                        )
+                    }
+                }
+            )
+        }
+    }
+}
+
 
 @Composable
 fun Tag(tag: String, modifier: Modifier = Modifier){
@@ -1220,6 +1321,7 @@ fun AppConfirmAndPayDivider(
 
 @Composable
 fun AppYourTripRow(
+    forCancelBooking: Boolean = false,
     rowLabel: String,
     rowText: String,
     fontColor: Color = Color(0xFF999999),
@@ -1247,19 +1349,21 @@ fun AppYourTripRow(
                 color = fontColor
             )
         }
-        Text(
-            text = "Edit",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            textDecoration = TextDecoration.Underline,
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .clickable {
-                    if (onClickEdit != null) {
-                        onClickEdit()
+        if (!forCancelBooking) {
+            Text(
+                text = "Edit",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .clickable {
+                        if (onClickEdit != null) {
+                            onClickEdit()
+                        }
                     }
-                }
-        )
+            )
+        }
     }
 }
 

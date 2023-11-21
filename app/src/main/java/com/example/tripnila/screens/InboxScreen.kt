@@ -38,12 +38,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.example.tripnila.R
 import com.example.tripnila.common.AppBottomNavigationBar
+import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.Inbox
 
 @Composable
-fun InboxScreen(){
+fun InboxScreen(
+    touristId: String = "",
+    navController: NavHostController? = null
+){
 
     var selectedItemIndex by rememberSaveable {
         mutableStateOf(2)
@@ -111,12 +116,16 @@ fun InboxScreen(){
                 AppTopBar(headerText = "Inbox")
             },
             bottomBar = {
-                AppBottomNavigationBar(
-                    selectedItemIndex = selectedItemIndex,
-                    onItemSelected = { newIndex ->
-                        selectedItemIndex = newIndex
-                    }
-                )
+                navController?.let {
+                    TouristBottomNavigationBar(
+                        touristId = touristId,
+                        navController = it,
+                        selectedItemIndex = selectedItemIndex,
+                        onItemSelected = { newIndex ->
+                            selectedItemIndex = newIndex
+                        }
+                    )
+                }
             }
         ) {
             Divider()
@@ -216,6 +225,6 @@ fun AppTopBar(headerText: String, color: Color = Color(0xFF999999), modifier: Mo
 @Preview
 @Composable
 private fun InboxScreenPreview(){
-    InboxScreen()
+    InboxScreen("")
 
 }

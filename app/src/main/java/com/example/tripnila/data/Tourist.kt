@@ -7,5 +7,7 @@ data class Tourist(
     val lastName: String = "",
     val username: String = "",
     val password: String = "",
-    var preferences: List<Preference> = emptyList()
+    var preferences: List<Preference> = emptyList(),
+    val profilePicture: String = "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
 )
+

@@ -61,12 +61,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.common.Orange
 import com.example.tripnila.R
+import com.example.tripnila.common.TouristBottomNavigationBar
 
 @Composable
-fun ItineraryScreen(){
+fun ItineraryScreen(
+    touristId: String = "",
+    navController: NavHostController? = null
+){
 
     var selectedItemIndex by rememberSaveable {
         mutableStateOf(1)
@@ -86,12 +92,16 @@ fun ItineraryScreen(){
     ){
         Scaffold(
             bottomBar = {
-                AppBottomNavigationBar(
-                    selectedItemIndex = selectedItemIndex,
-                    onItemSelected = { newIndex ->
-                        selectedItemIndex = newIndex
-                    }
-                )
+                navController?.let {
+                    TouristBottomNavigationBar(
+                        touristId = touristId,
+                        navController = it,
+                        selectedItemIndex = selectedItemIndex,
+                        onItemSelected = { newIndex ->
+                            selectedItemIndex = newIndex
+                        }
+                    )
+                }
             }
         ){
             LazyColumn(

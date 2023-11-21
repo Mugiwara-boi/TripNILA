@@ -36,7 +36,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
 
     fun getStaycationsByTab(tab: String): Flow<PagingData<Staycation>> {
         val pagingConfig = PagingConfig(
-            pageSize = 4, // Adjust as needed
+            pageSize = 10, // Adjust as needed
             enablePlaceholders = false
         )
 

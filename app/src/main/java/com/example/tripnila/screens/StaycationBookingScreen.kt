@@ -93,6 +93,7 @@ import com.example.tripnila.common.AppYourTripRow
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.PaymentMethod
 import com.example.tripnila.data.Staycation
+import com.example.tripnila.model.BookingHistoryViewModel
 import com.example.tripnila.model.DetailViewModel
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -178,8 +179,6 @@ fun StaycationBookingScreen(
         if (countNights != null && countNights <= 0) {
             dateRangePickerState.setSelection(startDateMillis = null, endDateMillis = null)
         }
-
-      //  isSaveButtonClicked.value = false
 
         titleText.value = countNights?.let { "$it nights" } ?: "Select date"
         nights.value = countNights?.toInt() ?: 0
@@ -753,10 +752,12 @@ fun YourTripDivider(
 @Composable
 fun AppPaymentDivider(
     detailViewModel: DetailViewModel? = null,
+    bookingHistoryViewModel: BookingHistoryViewModel? = null,
     bookingFee: Double,
     bookingDuration: Int,
     maintenanceFee: Double? = null,
     tripnilaFee: Double,
+    daysBeforeCheckIn: Int? = null,
     forCancelBooking: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -773,12 +774,24 @@ fun AppPaymentDivider(
     var selectedPaymentMethod by remember { mutableStateOf(-1) }
     var isSelectionEnabled by remember { mutableStateOf(true) }
 
-    LaunchedEffect(selectedPaymentMethod) {
-        detailViewModel?.setSelectedPaymentMethod(selectedPaymentMethod)
-        detailViewModel?.setAlertDialogMessage()
+    if (!forCancelBooking) {
+        LaunchedEffect(selectedPaymentMethod) {
+            detailViewModel?.setSelectedPaymentMethod(selectedPaymentMethod)
+            detailViewModel?.setAlertDialogMessage()
 
-        Log.d("selectedPaymentMethod", "$selectedPaymentMethod")
+            Log.d("selectedPaymentMethod", "$selectedPaymentMethod")
+        }
     }
+
+//    if (!forCancelBooking) {
+//        LaunchedEffect(selectedPaymentMethod) {
+//            bookingHistoryViewModel?.setSelectedPaymentMethod(selectedPaymentMethod)
+//            bookingHistoryViewModel?.setAlertDialogMessage()
+//
+//            Log.d("selectedPaymentMethod", "$selectedPaymentMethod")
+//        }
+//    }
+
 
     Column(
         modifier = modifier
@@ -852,7 +865,7 @@ fun AppPaymentDivider(
                     .fillMaxWidth()
             ) {
                 Text(
-                    text = "4 days before check in",
+                    text = "$daysBeforeCheckIn days before check in",
                     fontWeight = FontWeight.Medium,
                     fontSize = 12.sp,
                     color = Color(0xFF999999),

@@ -57,7 +57,9 @@ import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 
 @Composable
-fun AccountVerificationScreen(){
+fun AccountVerificationScreen(
+    touristId: String = ""
+){
 
 
     val validIdOptions = listOf("Driver's License", "Passport", "Postal ID", "Philippine Identification (PhilID / ePhilID)")
@@ -112,7 +114,7 @@ fun AccountVerificationScreen(){
                         fontWeight = FontWeight.Medium,
                     )
                     AppDropDownMenu(options = validIdOptions)
-                    AppChoosePhoto()
+                    AppChoosePhoto(onClick = {})
                 }
 
             }
@@ -241,7 +243,10 @@ fun AppDropDownMenu(options: List<String>) {
 }
 
 @Composable
-fun AppChoosePhoto(modifier: Modifier = Modifier) {
+fun AppChoosePhoto(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
 
     val stroke = Stroke(
         width = 2f,
@@ -254,7 +259,8 @@ fun AppChoosePhoto(modifier: Modifier = Modifier) {
             .height(height = 114.dp)
             .drawBehind {
                 drawRoundRect(color = Orange, style = stroke)
-            },
+            }
+            .clickable { onClick() },
     ){
         Column(
             modifier = Modifier.fillMaxSize(),

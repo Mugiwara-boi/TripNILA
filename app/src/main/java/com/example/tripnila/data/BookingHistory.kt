@@ -1,13 +1,24 @@
 package com.example.tripnila.data
 
+import java.util.Date
+
 data class BookingHistory(
-    val ownerImage: Int,
+    val bookingId: String,
+    val ownerImage: String,
     val bookedRental: String,
     val date: String,
-    val rentalImage: Int,
+    val rentalImage: String,
     val rentalLocation: String,
     val bookedDates: String,
     val guestsNo: Int,
     val totalAmount: Double,
-    val rentalStatus: String
+    val rentalStatus: String,
+    val isReviewed: Boolean = false,
+    val staycationPrice: Double,
+    val bookingDuration: Int,
+    val checkInDate: Date,
+    val checkOutDate: Date,
+    val noOfGuests: Int,
+    val noOfInfants: Int,
+    val noOfPets: Int,
 )
