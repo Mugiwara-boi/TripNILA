@@ -337,7 +337,8 @@ fun StaycationListingCard(
                     Text(
                         modifier = Modifier
                             .fillMaxWidth(0.6f),
-                        text = "Staycation hosted by " + staycation.hostFirstName,
+                       // text = "Staycation hosted by " + staycation.hostFirstName,
+                        text = "Staycation hosted by " + staycation.host.firstName,
                         fontWeight = FontWeight.Medium,
                         fontSize = 11.sp,
                         lineHeight = 11.sp,

@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,6 +36,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,9 +59,22 @@ import com.example.tripnila.R
 import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.HostProperty
+import com.example.tripnila.model.HostDashboardViewModel
 
 @Composable
-fun HostDashboardScreen(){
+fun HostDashboardScreen(
+    touristId: String,
+    hostDashboardViewModel: HostDashboardViewModel? = null,
+    onNavToAddListing: (String, String) -> Unit
+){
+
+    Log.d("TouristId", "$touristId")
+
+    LaunchedEffect(touristId) {
+        hostDashboardViewModel?.getHostDetailsByTouristId(touristId)
+    }
+
+    val host = hostDashboardViewModel?.host?.collectAsState()?.value
 
     val horizontalPaddingValue = 16.dp
     val verticalPaddingValue = 10.dp
@@ -146,7 +162,9 @@ fun HostDashboardScreen(){
                         HostOptionButton(
                             buttonIcon = R.drawable.add_staycation,
                             buttonLabel = "Add listing",
-                            onClick = {}
+                            onClick = {
+                                host?.hostId?.let { hostId -> onNavToAddListing(hostId, "Staycation") }
+                            }
                         )
                         HostOptionButton(
                             buttonIcon = R.drawable.host_tour,
@@ -318,7 +336,9 @@ fun HostOptionButton(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         ElevatedButton(
-            onClick = onClick,
+            onClick = {
+                onClick()
+            },
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.White
@@ -657,5 +677,5 @@ private fun HostDashboardItemPreview(){
 @Preview
 @Composable
 private fun HostDashboardScreenPreview(){
-    HostDashboardScreen()
+   // HostDashboardScreen("", onNavToAddListing = {})
 }

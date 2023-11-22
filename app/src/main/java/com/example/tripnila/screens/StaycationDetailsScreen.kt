@@ -778,7 +778,8 @@ fun StaycationDescriptionCard3(
                     horizontalArrangement = Arrangement.Start
                 ) {
                     Text(
-                        text = "Hosted by ${staycation?.hostFirstName}",
+//                        text = "Hosted by ${staycation?.hostFirstName}",
+                        text = "Hosted by ${staycation?.host?.firstName}",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier

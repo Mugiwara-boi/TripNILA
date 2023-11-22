@@ -20,10 +20,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tripnila.model.AddListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen15(listingType: String = "Staycation"){
+fun AddListingScreen15(
+    listingType: String = "Staycation",
+    addListingViewModel: AddListingViewModel? = null,
+    onNavToNext: (String) -> Unit,
+    onNavToBack: () -> Unit,
+){
 
     val header = if (listingType == "Staycation") {
         "Your listing has been published"
@@ -49,7 +56,15 @@ fun AddListingScreen15(listingType: String = "Staycation"){
     ){
         Scaffold(
             bottomBar = {
-                AddListingBottomBookingBar()
+                AddListingBottomBookingBar(
+                    leftButtonText = "Back",
+                    onNext = {
+                        onNavToNext(listingType)
+                    },
+                    onCancel = {
+                        onNavToBack()
+                    }
+                )
             },
             topBar = {
                 TopAppBar(
@@ -100,5 +115,11 @@ fun AddListingScreen15(listingType: String = "Staycation"){
 @Preview
 @Composable
 private fun AddListingScreen15Preview() {
-    AddListingScreen15()
+    val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
+
+    AddListingScreen15(
+        addListingViewModel = addListingViewModel,
+        onNavToBack = {},
+        onNavToNext = {}
+    )
 }

@@ -38,10 +38,17 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tripnila.model.AddListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen14(){
+fun AddListingScreen14(
+    listingType: String = "Staycation",
+    addListingViewModel: AddListingViewModel? = null,
+    onNavToNext: (String) -> Unit,
+    onNavToBack: () -> Unit,
+){
 
     val checkboxLabels = listOf(
         "Security camera(s)",
@@ -56,7 +63,15 @@ fun AddListingScreen14(){
     ){
         Scaffold(
             bottomBar = {
-                AddListingBottomBookingBar()
+                AddListingBottomBookingBar(
+                    leftButtonText = "Back",
+                    onNext = {
+                        onNavToNext(listingType)
+                    },
+                    onCancel = {
+                        onNavToBack()
+                    }
+                )
             },
             topBar = {
                 TopAppBar(
@@ -245,5 +260,11 @@ private fun AddListingPreview(){
 @Preview
 @Composable
 private fun AddListingScreen14Preview(){
-    AddListingScreen14()
+    val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
+
+    AddListingScreen14(
+        addListingViewModel = addListingViewModel,
+        onNavToBack = {},
+        onNavToNext = {}
+    )
 }

@@ -23,10 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,10 +39,20 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tripnila.model.AddListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen9(){
+fun AddListingScreen9(
+    listingType: String = "Staycation",
+    addListingViewModel: AddListingViewModel? = null,
+    onNavToNext: (String) -> Unit,
+    onNavToBack: () -> Unit,
+){
+
+    var staycationTitle = remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationTitle) }
+    var staycationDescription = remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationDescription) }
 
     Surface(
         modifier = Modifier
@@ -51,7 +60,15 @@ fun AddListingScreen9(){
     ){
         Scaffold(
             bottomBar = {
-                AddListingBottomBookingBar()
+                AddListingBottomBookingBar(
+                    leftButtonText = "Back",
+                    onNext = {
+                        onNavToNext(listingType)
+                    },
+                    onCancel = {
+                        onNavToBack()
+                    }
+                )
             },
             topBar = {
                 TopAppBar(
@@ -92,7 +109,13 @@ fun AddListingScreen9(){
                         )
                     }
                     item {
-                        LongBasicTextFieldWithCharacterLimit(maxCharacterLimit = 50)
+                        LongBasicTextFieldWithCharacterLimit(
+                            inputText = staycationTitle,
+                            maxCharacterLimit = 50,
+                            onTextChanged = { newText ->
+                                addListingViewModel?.setStaycationTitle(newText)
+                            }
+                        )
                     }
                     item {
                         Text(
@@ -107,7 +130,13 @@ fun AddListingScreen9(){
                         )
                     }
                     item {
-                        LongBasicTextFieldWithCharacterLimit(maxCharacterLimit = 500)
+                        LongBasicTextFieldWithCharacterLimit(
+                            inputText = staycationDescription,
+                            maxCharacterLimit = 500,
+                            onTextChanged = { newText ->
+                                addListingViewModel?.setStaycationDescription(newText)
+                            }
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.weight(1f))
@@ -118,27 +147,33 @@ fun AddListingScreen9(){
 }
 
 @Composable
-fun LongBasicTextFieldWithCharacterLimit(maxCharacterLimit: Int, modifier: Modifier = Modifier){
+fun LongBasicTextFieldWithCharacterLimit(
+    inputText: MutableState<String?>,
+    maxCharacterLimit: Int,
+    onTextChanged: (String) -> Unit,
+    modifier: Modifier = Modifier
+){
 
-    var inputText by remember {
-        mutableStateOf("")
-    }
+//    var inputText by remember {
+//        mutableStateOf("")
+//    }
     val localFocusManager = LocalFocusManager.current
-    val remainingCharacters = maxCharacterLimit - inputText.length
+    val remainingCharacters = maxCharacterLimit - inputText.value?.length!!
 
     Column {
         BasicTextField(
-            value = inputText,
+            value = inputText.value ?: "",
             onValueChange = {
                 if (it.length <= maxCharacterLimit) {
-                    inputText = it
+                    inputText.value = it
+                    onTextChanged(it)
                 }
             },
             textStyle = TextStyle(fontSize = 12.sp, color = Color(0xFF6B6B6B)),
             modifier = modifier
                 .fillMaxWidth()
                 .height(95.dp)
-                .border(1.dp, Color(0xFF999999), shape = RoundedCornerShape(10.dp)),
+                .border(1.dp, if (remainingCharacters <= 0) Color.Red else Color(0xFF999999), shape = RoundedCornerShape(10.dp)),
             keyboardOptions = KeyboardOptions(
                 imeAction = ImeAction.Done
             ),
@@ -156,7 +191,7 @@ fun LongBasicTextFieldWithCharacterLimit(maxCharacterLimit: Int, modifier: Modif
                         // modifier =Modifier.fillMaxHeight(),
                         verticalAlignment = Alignment.Top
                     ) {
-                        if (inputText.isEmpty()) {
+                        if (inputText.value?.isEmpty() == true) {
                             Text(
                                 text = "Write something here...",
                                 fontSize = 12.sp,
@@ -182,7 +217,7 @@ fun LongBasicTextFieldWithCharacterLimit(maxCharacterLimit: Int, modifier: Modif
                 }
             },
             fontSize = 10.sp,
-            color = Color(0xFF6B6B6B)
+            color = if (remainingCharacters <= 0) Color.Red else Color(0xFF6B6B6B)
         )
     }
 
@@ -191,12 +226,18 @@ fun LongBasicTextFieldWithCharacterLimit(maxCharacterLimit: Int, modifier: Modif
 @Preview
 @Composable
 private fun AddListing8Preview(){
-    LongBasicTextFieldWithCharacterLimit(maxCharacterLimit = 50)
+   // LongBasicTextFieldWithCharacterLimit(maxCharacterLimit = 50)
 
 }
 
 @Preview
 @Composable
-private fun AddListingScreen8Preview(){
-    AddListingScreen9()
+private fun AddListingScreen9Preview(){
+    val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
+
+    AddListingScreen9(
+        addListingViewModel = addListingViewModel,
+        onNavToBack = {},
+        onNavToNext = {}
+    )
 }

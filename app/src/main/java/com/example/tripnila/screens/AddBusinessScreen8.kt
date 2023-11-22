@@ -118,14 +118,14 @@ fun AddBusinessScreen8(){
                                 lastIndex = i
                             }
                             if (lastIndex == photos.size - 1 && !(photos.size % 2 == 0)) {
-                                AddMorePhoto()
+                             //   AddMorePhoto()
                             }
                         }
                     }
 
                     if (photos.size % 2 == 0) {
                         item {
-                            AddMorePhoto()
+                   //         AddMorePhoto()
                         }
                     }
 
@@ -137,7 +137,11 @@ fun AddBusinessScreen8(){
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
                         )
-                        LongBasicTextFieldWithCharacterLimit(maxCharacterLimit = 500)
+                        /*TODO*/
+//                    LongBasicTextFieldWithCharacterLimit(
+//                        inputText = ,
+//                        maxCharacterLimit = 500
+//                    )
                     }
                 }
                 Spacer(modifier = Modifier.weight(1f))
@@ -150,7 +154,6 @@ fun AddBusinessScreen8(){
 @Preview
 @Composable
 private fun AddBusiness8Preview(){
-    AddMorePhoto()
 }
 
 @Preview

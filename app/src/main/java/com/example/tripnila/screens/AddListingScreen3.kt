@@ -39,15 +39,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.PropertyDescription
+import com.example.tripnila.model.AddListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen3(){
+fun AddListingScreen3(
+    listingType: String = "Staycation",
+    addListingViewModel: AddListingViewModel? = null,
+    onNavToNext: (String) -> Unit,
+    onNavToBack: () -> Unit,
+){
 
-    var selectedPropertyIndex by remember { mutableStateOf(-1) }
+    var selectedPropertyLabel by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationType) }
+   // var selectedPropertyIndex by remember { mutableStateOf(-1) }
     val types = listOf(
         PropertyDescription(
             icon = R.drawable.house,
@@ -65,7 +73,15 @@ fun AddListingScreen3(){
     ){
         Scaffold(
             bottomBar = {
-                AddListingBottomBookingBar()
+                AddListingBottomBookingBar(
+                    leftButtonText = "Back",
+                    onNext = {
+                        onNavToNext(listingType)
+                    },
+                    onCancel = {
+                        onNavToBack()
+                    }
+                )
             },
             topBar = {
                 TopAppBar(
@@ -106,10 +122,24 @@ fun AddListingScreen3(){
                         PropertySpaceCard(
                             icon = type.icon,
                             label = type.label,
-                            selected = selectedPropertyIndex == types.indexOf(type),
+                            selected = selectedPropertyLabel == type.label,
                             onSelectedChange = { isSelected ->
-                                selectedPropertyIndex = if (isSelected) types.indexOf(type) else -1
+                                if (isSelected) {
+                                    selectedPropertyLabel = type.label
+                                    selectedPropertyLabel?.let { type ->
+                                        addListingViewModel?.setStaycationSpace(
+                                            type
+                                        )
+                                    }
+                                } else {
+                                    selectedPropertyLabel = null
+                                    addListingViewModel?.clearStaycationSpace()
+                                }
                             },
+//                            selected = selectedPropertyIndex == types.indexOf(type),
+//                            onSelectedChange = { isSelected ->
+//                                selectedPropertyIndex = if (isSelected) types.indexOf(type) else -1
+//                            },
                         )
                     }
 
@@ -142,7 +172,7 @@ fun PropertySpaceCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(height = 86.dp)
+          //  .height(height = 86.dp)
             .clip(shape = RoundedCornerShape(10.dp))
             .border(
                 border = BorderStroke(1.dp, borderColor),
@@ -200,5 +230,12 @@ private fun AddListing3Preview(){
 @Preview
 @Composable
 private fun AddListingScreen3Preview(){
-    AddListingScreen3()
+
+    val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
+
+    AddListingScreen3(
+        addListingViewModel = addListingViewModel,
+        onNavToBack = {},
+        onNavToNext = {}
+    )
 }

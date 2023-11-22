@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import com.example.tripnila.common.Constants
 import com.example.tripnila.data.Amenity
+import com.example.tripnila.data.Host
 import com.example.tripnila.data.Photo
 import com.example.tripnila.data.Preference
 import com.example.tripnila.data.Promotion
@@ -36,7 +37,7 @@ class UserRepository {
     private val touristPreferencesCollection = db.collection("tourist_preference")
     private val staycationCollection = db.collection("staycation")
     private val staycationAvailabilityCollection = db.collection("staycation_availability")
-    val staycationBookingCollection = db.collection("staycation_booking")
+    private val staycationBookingCollection = db.collection("staycation_booking")
     private val amenityCollection = db.collection("amenity")
     private val serviceAmenityCollection = db.collection("service_amenity")
     private val promotionCollection = db.collection("promotion")
@@ -56,6 +57,8 @@ class UserRepository {
 
     private var currentUser: Tourist? = null
     private var staycationList: List<Staycation>? = null
+
+
 
 //    suspend fun getStaycationBookingsForTourist(touristId: String, startAt: Int, pageSize: Int): StaycationBooking {
 //        try {
@@ -338,10 +341,18 @@ class UserRepository {
                     staycationTitle = staycationTitle,
                     staycationType = staycationType,
                     staycationImages = staycationImages,
-                    hostImage = hostInfo?.profilePicture ?: "",
-                    hostFirstName = hostInfo?.firstName ?: "",
-                    hostMiddleName = hostInfo?.middleName ?: "",
-                    hostLastName = hostInfo?.lastName ?: "",
+                    host = Host(
+                        profilePicture = hostInfo?.profilePicture ?: "",
+                        firstName = hostInfo?.firstName ?: "",
+                        middleName = hostInfo?.middleName ?: "",
+                        lastName = hostInfo?.lastName ?: "",
+                        touristId = hostInfo?.touristId ?: "",
+                    )
+                  //  hostImage = hostInfo?.profilePicture ?: "",
+//                    hostFirstName = hostInfo?.firstName ?: "",
+//                    hostMiddleName = hostInfo?.middleName ?: "",
+//                    hostLastName = hostInfo?.lastName ?: "",
+
                     // Add other properties as needed
                 )
             }
@@ -350,6 +361,7 @@ class UserRepository {
         }
         return null
     }
+
 
     suspend fun getHostInfo(hostId: String): Tourist? {
         return try {
@@ -427,6 +439,39 @@ class UserRepository {
                     lastName = lastName,
                     username = username,
                     profilePicture = profilePicture,
+                ) // Return Tourist object
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+        return null
+    }
+
+    suspend fun getHostProfile(touristId: String): Host? {
+        try {
+            val touristDocument = touristCollection.document(touristId).get().await()
+
+            Log.d("Document", "$touristDocument")
+
+            if (touristDocument.exists()) {
+                val firstName = touristDocument.getString("fullName.firstName") ?: ""
+                val middleName = touristDocument.getString("fullName.middleName") ?: ""
+                val lastName = touristDocument.getString("fullName.lastName") ?: ""
+                val username = touristDocument.getString("username") ?: ""
+
+                val profilePicture = getTouristPhoto(touristId) ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
+
+                return Host(
+                    touristId = touristId,
+                    firstName = firstName,
+                    middleName = middleName,
+                    lastName = lastName,
+                    username = username,
+                    profilePicture = profilePicture,
+                    hostId = "HOST-$touristId",
                 ) // Return Tourist object
             } else {
                 null
@@ -579,22 +624,7 @@ class UserRepository {
         }
     }
 
-    suspend fun addStaycationBooking(
-        //bookingDate: Date,
-        bookingStatus: String,
-        checkInDateMillis: Long,
-        checkOutDateMillis: Long,
-        timeZone: TimeZone,
-        noOfGuests: Int,
-        noOfInfants: Int,
-        noOfPets: Int,
-        staycationId: String,
-        totalAmount: Double,
-        touristId: String,
-        commission: Double,
-        paymentStatus: String,
-        paymentMethod: String,
-    ): Boolean {
+    suspend fun addStaycationBooking(bookingStatus: String, checkInDateMillis: Long, checkOutDateMillis: Long, timeZone: TimeZone, noOfGuests: Int, noOfInfants: Int, noOfPets: Int, staycationId: String, totalAmount: Double, touristId: String, commission: Double, paymentStatus: String, paymentMethod: String): Boolean {
         try {
             val checkInDate = Date(checkInDateMillis)
             val checkOutDate = Date(checkOutDateMillis)
@@ -646,15 +676,7 @@ class UserRepository {
     }
 
 
-    private suspend fun addPaymentData(
-        amount: Double,
-        commission: Double,
-        paymentMethod: String,
-        paymentStatus: String,
-        serviceBookingId: String,
-        serviceType: String,
-        transactionId: String
-    ) {
+    private suspend fun addPaymentData(amount: Double, commission: Double, paymentMethod: String, paymentStatus: String, serviceBookingId: String, serviceType: String, transactionId: String) {
 
         val amountRefunded = 0
 
@@ -851,9 +873,16 @@ class UserRepository {
         val bookings = getStaycationBookings(staycationId)
         return Staycation(
             staycationId = staycationId,
-            hostFirstName = touristInfo?.firstName ?: "",
-            hostMiddleName = touristInfo?.middleName ?: "",
-            hostLastName = touristInfo?.lastName ?: "",
+//            hostFirstName = touristInfo?.firstName ?: "",
+//            hostMiddleName = touristInfo?.middleName ?: "",
+//            hostLastName = touristInfo?.lastName ?: "",
+            host = Host(
+                profilePicture = touristInfo?.profilePicture ?: "",
+                firstName = touristInfo?.firstName ?: "",
+                middleName = touristInfo?.middleName ?: "",
+                lastName = touristInfo?.lastName ?: "",
+                touristId = touristInfo?.touristId ?: "",
+            ),
             noOfGuests = noOfGuests,
             noOfBedrooms = noOfBedrooms,
             noOfBeds = noOfBeds,
@@ -912,9 +941,16 @@ class UserRepository {
 
                 val staycation = Staycation(
                     staycationId = staycationId,
-                    hostFirstName = touristInfo?.firstName ?: "",
-                    hostMiddleName = touristInfo?.middleName ?: "",
-                    hostLastName = touristInfo?.lastName ?: "",
+//                    hostFirstName = touristInfo?.firstName ?: "",
+//                    hostMiddleName = touristInfo?.middleName ?: "",
+//                    hostLastName = touristInfo?.lastName ?: "",
+                    host = Host(
+                        profilePicture = touristInfo?.profilePicture ?: "",
+                        firstName = touristInfo?.firstName ?: "",
+                        middleName = touristInfo?.middleName ?: "",
+                        lastName = touristInfo?.lastName ?: "",
+                        touristId = touristInfo?.touristId ?: "",
+                    ),
                     noOfGuests = noOfGuests,
                     noOfBedrooms = noOfBedrooms,
                     noOfBeds = noOfBeds,

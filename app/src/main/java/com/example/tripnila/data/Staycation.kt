@@ -10,10 +10,11 @@ import kotlin.math.abs
 
 data class Staycation(
     val staycationId: String = "",
-    val hostImage: String = "",  /*TODO*/
-    val hostFirstName: String = "",
-    val hostMiddleName: String = "",
-    val hostLastName: String = "",
+//    val hostImage: String = "",  /*TODO*/
+//    val hostFirstName: String = "",
+//    val hostMiddleName: String = "",
+//    val hostLastName: String = "",
+    val host: Host = Host(),
     val staycationTags: List<Tag> = emptyList(),
     val staycationTitle: String = "",
     val staycationDescription: String = "",
@@ -47,6 +48,13 @@ data class Staycation(
             }
         }
 }
+
+data class Amenity(
+    val amenityId: String = "",
+    val amenityName: String = "",
+    val amenityIcon: Int = 0
+)
+
 
 data class Photo(
     val photoId: String = "",
@@ -147,11 +155,6 @@ data class ReviewPhoto(
     val reviewUri: Uri? = null
 )
 
-data class Amenity(
-    val amenityId: String = "",
-    val amenityName: String = "",
-    val amenityIcon: Int = 0
-)
 
 
 data class Promotion(

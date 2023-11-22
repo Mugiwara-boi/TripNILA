@@ -1,6 +1,5 @@
 package com.example.tripnila.screens
 
-import android.graphics.drawable.Icon
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,7 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -114,7 +111,11 @@ fun AddBusinessScreen4(){
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
-                    LongBasicTextFieldWithCharacterLimit(maxCharacterLimit = 500)
+                    /*TODO*/
+//                    LongBasicTextFieldWithCharacterLimit(
+//                        inputText = ,
+//                        maxCharacterLimit = 500
+//                    )
                     Text(
                         text = "Provide some contact information",
                         color = Color(0xff333333),

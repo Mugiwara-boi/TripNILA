@@ -223,7 +223,8 @@ fun BookingHistoryScreen(
 
                         val bookingHistory = BookingHistory(
                             bookingId = staycationBooking.staycationBookingId,
-                            ownerImage = staycationBooking.staycation?.hostImage
+                         //   ownerImage = staycationBooking.staycation?.hostImage
+                            ownerImage = staycationBooking.staycation?.host?.profilePicture
                                 ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
                             bookedRental = staycationBooking.staycation?.staycationTitle ?: "",
                             date = dateFormat.format(staycationBooking.bookingDate ?: Date()),

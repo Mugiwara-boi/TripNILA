@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -34,10 +36,24 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.common.Orange
+import com.example.tripnila.model.AddListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen1(listingType: String = "Staycation"){
+fun AddListingScreen1(
+    listingType: String = "Staycation",
+    hostId: String = "",
+    onNavToNext: (String) -> Unit,
+    onNavToCancel: () -> Unit,
+    addListingViewModel: AddListingViewModel? = null,
+){
+
+    LaunchedEffect(hostId) {
+        addListingViewModel?.setHostId(hostId)
+    }
+
+    Log.d("HostId", "$hostId")
+    Log.d("listingType", "$listingType")
 
     val header = if (listingType == "Staycation") {
         "Tell us about your space"
@@ -66,7 +82,14 @@ fun AddListingScreen1(listingType: String = "Staycation"){
     ){
         Scaffold(
             bottomBar = {
-                AddListingBottomBookingBar()
+                AddListingBottomBookingBar(
+                    onNext = {
+                        onNavToNext("Staycation")
+                    },
+                    onCancel = {
+                        onNavToCancel()
+                    }
+                )
             },
             topBar = {
                 TopAppBar(
@@ -118,12 +141,25 @@ fun AddListingScreen1(listingType: String = "Staycation"){
 }
 
 @Composable
-fun AddListingBottomBookingBar(modifier: Modifier = Modifier){
-    Box(
+fun AddListingBottomBookingBar(
+    onCancel: (() -> Unit)? = null,
+    onNext: (() -> Unit)? = null,
+    leftButtonText: String = "Cancel",
+    modifier: Modifier = Modifier
+){
+//   {  Box(
+////        modifier = modifier
+////            .fillMaxWidth()
+////            .background(color = Color.White)
+////            .border(0.1.dp, Color.Black)
+////    )
+    Surface(
+        color = Color.White,
+        tonalElevation = 10.dp,
+        shadowElevation = 10.dp,
         modifier = modifier
+            .height(78.dp)
             .fillMaxWidth()
-            .background(color = Color.White)
-            .border(0.1.dp, Color.Black)
     ) {
         Row(
             modifier = Modifier
@@ -131,14 +167,18 @@ fun AddListingBottomBookingBar(modifier: Modifier = Modifier){
                 .padding(horizontal = 25.dp, vertical = 12.dp),
         ) {
             BookingOutlinedButton(
-                buttonText = "Cancel",
-                onClick = {},
+                buttonText = leftButtonText,
+                onClick = {
+                    onCancel?.invoke()
+                },
                 modifier = Modifier.width(120.dp)
             )
             Spacer(modifier = Modifier.weight(1f))
             BookingFilledButton(
                 buttonText = "Next",
-                onClick = {},
+                onClick = {
+                    onNext?.invoke()
+                },
                 modifier = Modifier.width(120.dp)
             )
         }
@@ -200,5 +240,5 @@ private fun AddListingPreview(){
 @Preview
 @Composable
 private fun AddListingScreen1Preview(){
-    AddListingScreen1()
+   // AddListingScreen1({})
 }

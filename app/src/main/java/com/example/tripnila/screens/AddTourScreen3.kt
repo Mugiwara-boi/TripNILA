@@ -94,7 +94,11 @@ fun AddTourScreen3(){
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
-                    LongBasicTextFieldWithCharacterLimit(maxCharacterLimit = 500)
+                    /*TODO*/
+//                    LongBasicTextFieldWithCharacterLimit(
+//                        inputText = ,
+//                        maxCharacterLimit = 500
+//                    )
                     Text(
                         text = "How long will the tour be?",
                         color = Color(0xff333333),

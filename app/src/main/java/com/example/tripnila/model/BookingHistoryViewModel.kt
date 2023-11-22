@@ -94,6 +94,7 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
         Log.d("Image", "${_selectedImageUris.value}")
     }
 
+
     fun setRating(rating: Int) {
         _userInputReview.value?.let {
             val updatedReview = it.copy(rating = rating)

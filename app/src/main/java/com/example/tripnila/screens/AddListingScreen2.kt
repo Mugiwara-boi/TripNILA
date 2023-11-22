@@ -40,12 +40,20 @@ import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.PropertyDescription
+import com.example.tripnila.model.AddListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen2(listingType: String = "Business"){
+fun AddListingScreen2(
+    listingType: String = "Staycation",
+    addListingViewModel: AddListingViewModel? = null,
+    onNavToNext: (String) -> Unit,
+    onNavToBack: () -> Unit,
+){
 
-    var selectedPropertyIndex by remember { mutableStateOf(-1) }
+    var selectedPropertyLabel by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationType) }
+
+   // var selectedPropertyIndex by remember { mutableStateOf(-1) }
     val header = if (listingType == "Staycation") {
         "Which of these best describe your space?"
     } else if (listingType == "Business"){
@@ -134,7 +142,15 @@ fun AddListingScreen2(listingType: String = "Business"){
     ){
         Scaffold(
             bottomBar = {
-                AddListingBottomBookingBar()
+                AddListingBottomBookingBar(
+                    leftButtonText = "Back",
+                    onNext = {
+                        onNavToNext(listingType)
+                    },
+                    onCancel = {
+                        onNavToBack()
+                    }
+                )
             },
             topBar = {
                 TopAppBar(
@@ -184,9 +200,19 @@ fun AddListingScreen2(listingType: String = "Business"){
                                 PropertyTypeCard(
                                     icon = type.icon,
                                     label = type.label,
-                                    selected = selectedPropertyIndex == types.indexOf(type),
+                                    selected = selectedPropertyLabel == type.label,
                                     onSelectedChange = { isSelected ->
-                                        selectedPropertyIndex = if (isSelected) types.indexOf(type) else -1
+                                        if (isSelected) {
+                                            selectedPropertyLabel = type.label
+                                            selectedPropertyLabel?.let { type ->
+                                                addListingViewModel?.setStaycationType(
+                                                    type
+                                                )
+                                            }
+                                        } else {
+                                            selectedPropertyLabel = null
+                                            addListingViewModel?.clearStaycationType()
+                                        }
                                     },
                                 )
                             }
@@ -282,5 +308,5 @@ private fun AddListing2Preview(){
 @Preview
 @Composable
 private fun AddListingScreen2Preview(){
-    AddListingScreen2()
+    //AddListingScreen2()
 }

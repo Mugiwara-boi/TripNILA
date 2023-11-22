@@ -69,6 +69,7 @@ fun ProfileScreen(
     onNavToPreference: (String) -> Unit,
     onNavToEditProfile: (String) -> Unit,
     onNavToVerifyAccount: (String) -> Unit,
+    onNavToHostDashboard: (String) -> Unit,
     onLogout: () -> Unit,
 ){
     Log.d("ID", "$touristId")
@@ -188,6 +189,9 @@ fun ProfileScreen(
                     OptionsRow(
                         icon = R.drawable.notification,
                         rowText = "Notification",
+                        onClick = {
+                            /*TODO*/
+                        },
                         modifier = Modifier
                             .padding(horizontal = horizontalPaddingValue)
                     )
@@ -196,6 +200,9 @@ fun ProfileScreen(
                     OptionsRow(
                         icon = R.drawable.payment,
                         rowText = "Payment and payouts",
+                        onClick = {
+                            /*TODO*/
+                        },
                         modifier = Modifier
                             .padding(horizontal = horizontalPaddingValue)
                     )
@@ -204,6 +211,9 @@ fun ProfileScreen(
                     OptionsRow(
                         icon = R.drawable.privacy,
                         rowText = "Privacy",
+                        onClick = {
+                            /*TODO*/
+                        },
                         modifier = Modifier
                             .padding(horizontal = horizontalPaddingValue)
                     )
@@ -223,6 +233,9 @@ fun ProfileScreen(
                     OptionsRow(
                         icon = R.drawable.resource_switch,
                         rowText = "Switch to hosting",
+                        onClick = {
+                           onNavToHostDashboard(touristId)
+                        },
                         modifier = Modifier
                                 .padding(horizontal = horizontalPaddingValue)
                     )
@@ -243,6 +256,9 @@ fun ProfileScreen(
                     OptionsRow(
                         icon = R.drawable.document,
                         rowText = "Terms of Service",
+                        onClick = {
+                            /*TODO*/
+                        },
                         modifier = Modifier
                             .padding(horizontal = horizontalPaddingValue)
                     )
@@ -251,6 +267,9 @@ fun ProfileScreen(
                     OptionsRow(
                         icon = R.drawable.document,
                         rowText = "Privacy Policy",
+                        onClick = {
+                            /*TODO*/
+                        },
                         modifier = Modifier
                             .padding(horizontal = horizontalPaddingValue)
                     )
@@ -405,10 +424,18 @@ fun UserProfileComposable(profileData : ProfileData, modifier: Modifier = Modifi
 }
 
 @Composable
-fun OptionsRow(icon: Int, rowText: String, modifier: Modifier = Modifier){
+fun OptionsRow(
+    icon: Int,
+    rowText: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+){
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .clickable {
+                onClick()
+            }
     ) {
         Row(
             modifier = Modifier

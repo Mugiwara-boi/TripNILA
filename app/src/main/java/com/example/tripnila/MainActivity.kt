@@ -56,9 +56,11 @@ import com.example.tripnila.data.BookingHistory
 import com.example.tripnila.data.Filter
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.data.StaycationBooking
+import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.BookingHistoryViewModel
 import com.example.tripnila.model.DetailViewModel
 import com.example.tripnila.model.HomeViewModel
+import com.example.tripnila.model.HostDashboardViewModel
 import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.Person
 import com.example.tripnila.model.PersonViewModel
@@ -101,6 +103,8 @@ class MainActivity : ComponentActivity() {
                 val detailViewModel = viewModel(modelClass = DetailViewModel::class.java)
                 val profileViewModel = viewModel(modelClass = ProfileViewModel::class.java)
                 val bookingHistoryViewModel = viewModel(modelClass = BookingHistoryViewModel::class.java)
+                val hostDashboardViewModel = viewModel(modelClass = HostDashboardViewModel::class.java)
+                val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
 
 
                 Navigation(
@@ -110,7 +114,9 @@ class MainActivity : ComponentActivity() {
                     homeViewModel = homeViewModel,
                     detailViewModel = detailViewModel,
                     profileViewModel = profileViewModel,
-                    bookingHistoryViewModel = bookingHistoryViewModel
+                    bookingHistoryViewModel = bookingHistoryViewModel,
+                    hostDashboardViewModel = hostDashboardViewModel,
+                    addListingViewModel = addListingViewModel
                 )
             }
 

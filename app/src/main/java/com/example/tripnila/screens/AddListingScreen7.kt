@@ -54,13 +54,21 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.PropertyDescription
+import com.example.tripnila.model.AddListingViewModel
+import com.google.common.collect.Iterators.addAll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddListingScreen7(listingType: String = "Tour"){
+fun AddListingScreen7(
+    listingType: String = "Staycation",
+    addListingViewModel: AddListingViewModel? = null,
+    onNavToNext: (String) -> Unit,
+    onNavToBack: () -> Unit,
+){
 
     val header = if (listingType == "Staycation") {
         "Tell us what your staycation has to offer"
@@ -71,76 +79,91 @@ fun AddListingScreen7(listingType: String = "Tour"){
         "Tell us about your tour has to offer"
     }
 
-    var selectedPropertyIndices by remember { mutableStateOf(listOf<Int>()) }
-    val offers = if (listingType == "Staycation") {
-                    listOf(
-                        PropertyDescription(
-                            icon = R.drawable.wifi,
-                            label = "Wifi"
-                        ),
-                        PropertyDescription(
-                            icon = R.drawable.tv,
-                            label = "TV"
-                        ),
-                        PropertyDescription(
-                            icon = R.drawable.kitchen,
-                            label = "Kitchen"
-                        ),
-                        PropertyDescription(
-                            icon = R.drawable.washing_machine,
-                            label = "Washing machine"
-                        ),
-                        PropertyDescription(
-                            icon = R.drawable.workspace,
-                            label = "Dedicated workspace"
-                        )
-                    )
-                }
-                else if (listingType == "Business") {
-                    listOf(
-                        PropertyDescription(
-                            icon = R.drawable.wifi,
-                            label = "Wifi"
-                        ),
-                        PropertyDescription(
-                            icon = R.drawable.tv,
-                            label = "Food"
-                        ),
-                        PropertyDescription(
-                            icon = R.drawable.kitchen,
-                            label = "Drinks"
-                        ),
-                        PropertyDescription(
-                            icon = R.drawable.washing_machine,
-                            label = "Nature trip"
-                        ),
-                        PropertyDescription(
-                            icon = R.drawable.workspace,
-                            label = "Dedicated workspace"
-                        )
-                    )
-                }
-                else {
-                    listOf(
-                        PropertyDescription(
-                            icon = R.drawable.house,
-                            label = "Food"
-                        ),
-                        PropertyDescription(
-                            icon = R.drawable.house,
-                            label = "Souvenir"
-                        ),
-                        PropertyDescription(
-                            icon = R.drawable.house,
-                            label = "Transportation"
-                        ),
-                        PropertyDescription(
-                            icon = R.drawable.house,
-                            label = "Drink"
-                        ),
-                    )
-                }
 
+
+    //var selectedItems by remember { mutableStateOf(mutableSetOf<String>()) }
+   // var selectedPropertyIndices by remember { mutableStateOf(listOf<Int>()) }
+//
+//    var selectedAmenities by remember {
+//        mutableStateOf(mutableSetOf<String>().apply {
+//            addListingViewModel?.staycation?.value?.amenities?.map { it.amenityName }?.let { addAll(it) }
+//        })
+//    }
+
+    var selectedAmenities by remember {
+        mutableStateOf(listOf<String>().apply {
+            addListingViewModel?.staycation?.value?.amenities?.map { it.amenityName }?.let { plus(it)  }
+        })
+    }
+
+    val offers = if (listingType == "Staycation") {
+        listOf(
+            PropertyDescription(
+                icon = R.drawable.wifi,
+                label = "Wifi"
+            ),
+            PropertyDescription(
+                icon = R.drawable.tv,
+                label = "TV"
+            ),
+            PropertyDescription(
+                icon = R.drawable.kitchen,
+                label = "Kitchen"
+            ),
+            PropertyDescription(
+                icon = R.drawable.washing_machine,
+                label = "Washing machine"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Dedicated workspace"
+            )
+        )
+    }
+    else if (listingType == "Business") {
+        listOf(
+            PropertyDescription(
+                icon = R.drawable.wifi,
+                label = "Wifi"
+            ),
+            PropertyDescription(
+                icon = R.drawable.tv,
+                label = "Food"
+            ),
+            PropertyDescription(
+                icon = R.drawable.kitchen,
+                label = "Drinks"
+            ),
+            PropertyDescription(
+                icon = R.drawable.washing_machine,
+                label = "Nature trip"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Dedicated workspace"
+            )
+        )
+    }
+    else {
+        listOf(
+            PropertyDescription(
+                icon = R.drawable.house,
+                label = "Food"
+            ),
+            PropertyDescription(
+                icon = R.drawable.house,
+                label = "Souvenir"
+            ),
+            PropertyDescription(
+                icon = R.drawable.house,
+                label = "Transportation"
+            ),
+            PropertyDescription(
+                icon = R.drawable.house,
+                label = "Drink"
+            ),
+        )
+    }
 
     val amenities = listOf(
         PropertyDescription(
@@ -156,6 +179,7 @@ fun AddListingScreen7(listingType: String = "Tour"){
             label = "Hot tub"
         ),
     )
+
 
     val views = listOf(
         PropertyDescription(
@@ -175,7 +199,15 @@ fun AddListingScreen7(listingType: String = "Tour"){
     ){
         Scaffold(
             bottomBar = {
-                AddListingBottomBookingBar()
+                AddListingBottomBookingBar(
+                    leftButtonText = "Back",
+                    onNext = {
+                        onNavToNext(listingType)
+                    },
+                    onCancel = {
+                        onNavToBack()
+                    }
+                )
             },
             topBar = {
                 TopAppBar(
@@ -218,6 +250,9 @@ fun AddListingScreen7(listingType: String = "Tour"){
                         )
                     }
 
+
+
+
                     if (listingType != "Tour") {
                         items(numOffersRows) { row ->
                             lastIndex = 0
@@ -233,15 +268,15 @@ fun AddListingScreen7(listingType: String = "Tour"){
                                     PropertyTypeCard(
                                         icon = offer.icon,
                                         label = offer.label,
-                                        selected = selectedPropertyIndices.contains(i),
+                                        selected = offer.label in selectedAmenities,
                                         onSelectedChange = { isSelected ->
                                             if (isSelected) {
-                                                selectedPropertyIndices =
-                                                    (selectedPropertyIndices + i).distinct()
+                                                selectedAmenities = selectedAmenities + offer.label
                                             } else {
-                                                selectedPropertyIndices =
-                                                    selectedPropertyIndices - i
+                                                selectedAmenities = selectedAmenities - offer.label
                                             }
+
+                                            addListingViewModel?.setStaycationAmenities(selectedAmenities)
                                         }
                                     )
                                     lastIndex = i
@@ -288,15 +323,16 @@ fun AddListingScreen7(listingType: String = "Tour"){
                                     PropertyTypeCard(
                                         icon = amenity.icon,
                                         label = amenity.label,
-                                        selected = selectedPropertyIndices.contains(i),
+                                        selected = amenity.label in selectedAmenities,
                                         onSelectedChange = { isSelected ->
                                             if (isSelected) {
-                                                selectedPropertyIndices =
-                                                    (selectedPropertyIndices + i).distinct()
+                                                selectedAmenities = selectedAmenities + amenity.label
+
                                             } else {
-                                                selectedPropertyIndices =
-                                                    selectedPropertyIndices - i
+                                                selectedAmenities = selectedAmenities - amenity.label
+
                                             }
+                                            addListingViewModel?.setStaycationAmenities(selectedAmenities.toList())
                                         }
                                     )
                                     lastIndex = i
@@ -342,15 +378,14 @@ fun AddListingScreen7(listingType: String = "Tour"){
                                     PropertyTypeCard(
                                         icon = view.icon,
                                         label = view.label,
-                                        selected = selectedPropertyIndices.contains(i),
+                                        selected = view.label in selectedAmenities,
                                         onSelectedChange = { isSelected ->
                                             if (isSelected) {
-                                                selectedPropertyIndices =
-                                                    (selectedPropertyIndices + i).distinct()
+                                                selectedAmenities = selectedAmenities + view.label
                                             } else {
-                                                selectedPropertyIndices =
-                                                    selectedPropertyIndices - i
+                                                selectedAmenities = selectedAmenities - view.label
                                             }
+                                            addListingViewModel?.setStaycationAmenities(selectedAmenities.toList())
                                         }
                                     )
                                     lastIndex = i
@@ -368,46 +403,48 @@ fun AddListingScreen7(listingType: String = "Tour"){
                         }
                     }
 
-                    if (listingType == "Tour") {
-                        items(numOffersRows) { row ->
-                            lastIndex = 0
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                val startIndex = row * 2
-                                val endIndex = minOf(startIndex + 2, offers.size)
 
-                                for (i in startIndex until endIndex) {
-                                    val offer = offers[i]
-                                    TourOfferCard(
-                                        icon = offer.icon,
-                                        label = offer.label,
-                                        selected = selectedPropertyIndices.contains(i),
-                                        onSelectedChange = { isSelected ->
-                                            if (isSelected) {
-                                                selectedPropertyIndices =
-                                                    (selectedPropertyIndices + i).distinct()
-                                            } else {
-                                                selectedPropertyIndices =
-                                                    selectedPropertyIndices - i
-                                            }
-                                        }
-                                    )
-                                    lastIndex = i
-                                }
-                                if (lastIndex == offers.size - 1 && !(offers.size % 2 == 0)) {
-                                    AddMoreAmenity(modifier = Modifier.height(100.dp))
-                                }
-                            }
-                        }
-
-                        if (offers.size % 2 == 0) {
-                            item {
-                                AddMoreAmenity(modifier = Modifier.height(100.dp))
-                            }
-                        }
-                    }
+                    //FOR TOURRRR
+//                    if (listingType == "Tour") {
+//                        items(numOffersRows) { row ->
+//                            lastIndex = 0
+//                            Row(
+//                                modifier = Modifier.fillMaxWidth(),
+//                                horizontalArrangement = Arrangement.SpaceBetween
+//                            ) {
+//                                val startIndex = row * 2
+//                                val endIndex = minOf(startIndex + 2, offers.size)
+//
+//                                for (i in startIndex until endIndex) {
+//                                    val offer = offers[i]
+//                                    TourOfferCard(
+//                                        icon = offer.icon,
+//                                        label = offer.label,
+//                                        selected = selectedPropertyIndices.contains(i),
+//                                        onSelectedChange = { isSelected ->
+//                                            if (isSelected) {
+//                                                selectedPropertyIndices =
+//                                                    (selectedPropertyIndices + i).distinct()
+//                                            } else {
+//                                                selectedPropertyIndices =
+//                                                    selectedPropertyIndices - i
+//                                            }
+//                                        }
+//                                    )
+//                                    lastIndex = i
+//                                }
+//                                if (lastIndex == offers.size - 1 && !(offers.size % 2 == 0)) {
+//                                    AddMoreAmenity(modifier = Modifier.height(100.dp))
+//                                }
+//                            }
+//                        }
+//
+//                        if (offers.size % 2 == 0) {
+//                            item {
+//                                AddMoreAmenity(modifier = Modifier.height(100.dp))
+//                            }
+//                        }
+//                    }
 
 
                 }
@@ -667,5 +704,11 @@ private fun AddListingPreview(){
 @Preview
 @Composable
 private fun AddListingScreen7Preview(){
-    AddListingScreen7()
+    val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
+
+    AddListingScreen7(
+        addListingViewModel = addListingViewModel,
+        onNavToBack = {},
+        onNavToNext = {}
+    )
 }
