@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -80,20 +81,15 @@ fun AddListingScreen7(
     }
 
 
-
-    //var selectedItems by remember { mutableStateOf(mutableSetOf<String>()) }
-   // var selectedPropertyIndices by remember { mutableStateOf(listOf<Int>()) }
-//
 //    var selectedAmenities by remember {
-//        mutableStateOf(mutableSetOf<String>().apply {
-//            addListingViewModel?.staycation?.value?.amenities?.map { it.amenityName }?.let { addAll(it) }
+//        mutableStateOf(listOf<String>().apply {
+//            addListingViewModel?.staycation?.value?.amenities?.map { it.amenityName }?.let { plus(it)  }
 //        })
 //    }
 
+
     var selectedAmenities by remember {
-        mutableStateOf(listOf<String>().apply {
-            addListingViewModel?.staycation?.value?.amenities?.map { it.amenityName }?.let { plus(it)  }
-        })
+        mutableStateOf(addListingViewModel?.staycation?.value?.amenities?.map { it.amenityName })
     }
 
     val offers = if (listingType == "Staycation") {
@@ -206,7 +202,8 @@ fun AddListingScreen7(
                     },
                     onCancel = {
                         onNavToBack()
-                    }
+                    },
+                    enableRightButton = addListingViewModel?.staycation?.collectAsState()?.value?.amenities?.isNotEmpty() == true
                 )
             },
             topBar = {
@@ -268,15 +265,17 @@ fun AddListingScreen7(
                                     PropertyTypeCard(
                                         icon = offer.icon,
                                         label = offer.label,
-                                        selected = offer.label in selectedAmenities,
+                                        selected = selectedAmenities?.contains(offer.label) == true  ,
                                         onSelectedChange = { isSelected ->
                                             if (isSelected) {
-                                                selectedAmenities = selectedAmenities + offer.label
+                                                selectedAmenities = selectedAmenities?.plus(offer.label)
+                                                addListingViewModel?.addStaycationAmenity(offer.label)
                                             } else {
-                                                selectedAmenities = selectedAmenities - offer.label
+                                                selectedAmenities = selectedAmenities?.minus(offer.label)
+                                                addListingViewModel?.removeStaycationAmenity(offer.label)
                                             }
 
-                                            addListingViewModel?.setStaycationAmenities(selectedAmenities)
+                                         //   addListingViewModel?.setStaycationAmenities(selectedAmenities)
                                         }
                                     )
                                     lastIndex = i
@@ -323,16 +322,18 @@ fun AddListingScreen7(
                                     PropertyTypeCard(
                                         icon = amenity.icon,
                                         label = amenity.label,
-                                        selected = amenity.label in selectedAmenities,
+                                        selected = selectedAmenities?.contains(amenity.label) == true,
                                         onSelectedChange = { isSelected ->
                                             if (isSelected) {
-                                                selectedAmenities = selectedAmenities + amenity.label
+                                                selectedAmenities = selectedAmenities?.plus(amenity.label)
+                                                addListingViewModel?.addStaycationAmenity(amenity.label)
 
                                             } else {
-                                                selectedAmenities = selectedAmenities - amenity.label
+                                                selectedAmenities = selectedAmenities?.minus(amenity.label)
+                                                addListingViewModel?.removeStaycationAmenity(amenity.label)
 
                                             }
-                                            addListingViewModel?.setStaycationAmenities(selectedAmenities.toList())
+                                         //   addListingViewModel?.setStaycationAmenities(selectedAmenities.toList())
                                         }
                                     )
                                     lastIndex = i
@@ -378,14 +379,16 @@ fun AddListingScreen7(
                                     PropertyTypeCard(
                                         icon = view.icon,
                                         label = view.label,
-                                        selected = view.label in selectedAmenities,
+                                        selected = selectedAmenities?.contains(view.label) == true,
                                         onSelectedChange = { isSelected ->
                                             if (isSelected) {
-                                                selectedAmenities = selectedAmenities + view.label
+                                                selectedAmenities = selectedAmenities?.plus(view.label)
+                                                addListingViewModel?.addStaycationAmenity(view.label)
                                             } else {
-                                                selectedAmenities = selectedAmenities - view.label
+                                                selectedAmenities = selectedAmenities?.minus(view.label)
+                                                addListingViewModel?.removeStaycationAmenity(view.label)
                                             }
-                                            addListingViewModel?.setStaycationAmenities(selectedAmenities.toList())
+                                           // addListingViewModel?.setStaycationAmenities(selectedAmenities.toList())
                                         }
                                     )
                                     lastIndex = i
@@ -618,87 +621,6 @@ fun BasicTextFieldWithUnderline(
         )
     }
 }
-
-@Preview
-@Composable
-private fun AddListingPreview(){
-
-    val localFocusManager = LocalFocusManager.current
-    var selectedPropertyIndices by remember { mutableStateOf(listOf<Int>()) }
-    val offers =
-        listOf(
-            PropertyDescription(
-                icon = R.drawable.house,
-                label = "Food"
-            ),
-            PropertyDescription(
-                icon = R.drawable.house,
-                label = "Souvenir"
-            ),
-            PropertyDescription(
-                icon = R.drawable.house,
-                label = "Transportation"
-            ),
-            PropertyDescription(
-                icon = R.drawable.house,
-                label = "Drink"
-            ),
-        )
-
-
-    val numOffersRows = (offers.size + 1) / 2
-    var lastIndex: Int
-//    TourOfferCard(
-//        icon = R.drawable.house,
-//        label = "Food",
-//        selected = false,
-//        onSelectedChange = {},
-//    )
-
-//    LazyColumn() {
-//        items(numOffersRows) { row ->
-//            lastIndex = 0
-//            Row(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalArrangement = Arrangement.SpaceBetween
-//            ) {
-//                val startIndex = row * 2
-//                val endIndex = minOf(startIndex + 2, views.size)
-//
-//                for (i in startIndex until endIndex) {
-//                    val offer = offers[i]
-//                    TourOfferCard(
-//                        icon = offer.icon,
-//                        label = offer.label,
-//                        selected = selectedPropertyIndices.contains(i),
-//                        onSelectedChange = { isSelected ->
-//                            if (isSelected) {
-//                                selectedPropertyIndices =
-//                                    (selectedPropertyIndices + i).distinct()
-//                            } else {
-//                                selectedPropertyIndices =
-//                                    selectedPropertyIndices - i
-//                            }
-//                        }
-//                    )
-//                    lastIndex = i
-//                }
-//                if (lastIndex == offers.size - 1 && !(offers.size % 2 == 0)) {
-//                    AddMoreAmenity(modifier = Modifier.height(100.dp))
-//                }
-//            }
-//        }
-//
-//        if (offers.size % 2 == 0) {
-//            item {
-//                AddMoreAmenity(modifier = Modifier.height(100.dp))
-//            }
-//        }
-//    }
-
-
-}
-
 
 
 @Preview

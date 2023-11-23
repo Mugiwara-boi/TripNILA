@@ -8,12 +8,14 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 
 
-data class Staycation(
-    val staycationId: String = "",
 //    val hostImage: String = "",  /*TODO*/
 //    val hostFirstName: String = "",
 //    val hostMiddleName: String = "",
 //    val hostLastName: String = "",
+
+data class Staycation(
+    val staycationId: String = "",
+
     val host: Host = Host(),
     val staycationTags: List<Tag> = emptyList(),
     val staycationTitle: String = "",
@@ -34,6 +36,7 @@ data class Staycation(
     val availableDates: List<StaycationAvailability> = emptyList(),
     val amenities: List<Amenity> = emptyList(),
     val staycationBookings: List<StaycationBooking> = emptyList(),
+    val nearbyAttractions: List<String> = emptyList()
   //  val averageReviewRating: Double = 0.0
 ) {
     val totalReviews: Int
@@ -48,6 +51,11 @@ data class Staycation(
             }
         }
 }
+
+data class StaycationAvailability(
+    val staycationAvailabilityId: String = "",
+    val availableDate: Timestamp? = null
+)
 
 data class Amenity(
     val amenityId: String = "",
@@ -140,10 +148,7 @@ data class Tag(
     val serviceId: String = "",
 )
 
-data class StaycationAvailability(
-    val staycationAvailabilityId: String = "",
-    val availableDate: Timestamp? = null
-)
+
 
 
 

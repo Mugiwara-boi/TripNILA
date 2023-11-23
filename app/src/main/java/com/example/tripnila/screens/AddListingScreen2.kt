@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.PropertyDescription
@@ -52,6 +54,8 @@ fun AddListingScreen2(
 ){
 
     var selectedPropertyLabel by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationType) }
+
+//    var selectedPropertyLabel = addListingViewModel?.staycation?.collectAsState()?.value?.staycationType
 
    // var selectedPropertyIndex by remember { mutableStateOf(-1) }
     val header = if (listingType == "Staycation") {
@@ -149,7 +153,8 @@ fun AddListingScreen2(
                     },
                     onCancel = {
                         onNavToBack()
-                    }
+                    },
+                    enableRightButton = addListingViewModel?.staycation?.collectAsState()?.value?.staycationType != ""
                 )
             },
             topBar = {
@@ -187,6 +192,9 @@ fun AddListingScreen2(
                                 .padding(bottom = 10.dp)
                         )
                     }
+
+               //     var selectedPropertyLabel = addListingViewModel?.staycation?.collectAsState()?.value?.staycationType
+
                     items(numRows) { row ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -308,5 +316,12 @@ private fun AddListing2Preview(){
 @Preview
 @Composable
 private fun AddListingScreen2Preview(){
+    val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
+
+    AddListingScreen2(
+        addListingViewModel = addListingViewModel,
+        onNavToBack = {},
+        onNavToNext = {}
+    )
     //AddListingScreen2()
 }

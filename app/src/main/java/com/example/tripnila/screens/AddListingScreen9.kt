@@ -24,6 +24,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -67,7 +68,9 @@ fun AddListingScreen9(
                     },
                     onCancel = {
                         onNavToBack()
-                    }
+                    },
+                    enableRightButton = addListingViewModel?.staycation?.collectAsState()?.value?.staycationTitle != ""
+                            && addListingViewModel?.staycation?.collectAsState()?.value?.staycationDescription != ""
                 )
             },
             topBar = {

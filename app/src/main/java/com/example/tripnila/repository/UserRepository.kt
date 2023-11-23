@@ -14,15 +14,20 @@ import com.example.tripnila.data.StaycationAvailability
 import com.example.tripnila.data.StaycationBooking
 import com.example.tripnila.data.Tag
 import com.example.tripnila.data.Tourist
+import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import java.security.MessageDigest
 import java.util.Calendar
 import java.util.Date
+import java.util.Locale
 import java.util.TimeZone
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -44,14 +49,20 @@ class UserRepository {
     private val servicePromotionCollection = db.collection("service_promotion")
     private val serviceTagCollection = db.collection("service_tag")
     private val servicePhotoCollection = db.collection("service_photo")
+    private val staycationNearbyAttractionCollection = db.collection("staycation_nearby_attraction")
     private val reviewCollection = db.collection("review")
     private val likeCollection = db.collection("like")
     private val commentCollection = db.collection("comment")
     private val paymentCollection = db.collection("payment")
     private val touristProfileCollection = db.collection("tourist_profile")
     private val reviewPhotoCollection = db.collection("review_photo")
+
     private val paymentHistoryCollection = db.collection("payment_history")
     private val staycationBookingHistoryCollection = db.collection("staycation_booking_history")
+    private val staycationHistoryCollection = db.collection("staycation_history")
+    private val serviceAmenityHistoryCollection = db.collection("service_amenity_history")
+    private val servicePhotoHistoryCollection = db.collection("service_photo_history")
+
     private val storageReference = FirebaseStorage.getInstance().reference
 
 
@@ -59,6 +70,440 @@ class UserRepository {
     private var staycationList: List<Staycation>? = null
 
 
+
+
+//        hasDangerousAnimal: Boolean,
+//        hasSecurityCamera: Boolean,
+//        hasWeapon: Boolean,
+//        hostId: String,
+//        noOfBathrooms: Int,
+//        noOfBedrooms: Int,
+//        noOfBeds: Int,
+//        noOfGuests: Int,
+//        staycationDescription: String,
+//        staycationLocation: String,
+//        staycationPrice: Int,
+//        staycationSpace: String,
+//        staycationTitle: String,
+//        staycationType: String,
+//        amenities: List<String>,
+//        photos: List<Photo>,
+//        availableDates: List<Timestamp>,
+//        promotions: List<Promotion>,
+//        nearbyAttractions: List<String>,          /*TODO*/
+//        staycationTags: List<String>               /*TODO*/
+
+    suspend fun forAddingRecordsFromCSV(
+        user: Tourist,
+        staycationDescription: String = "",
+        staycationLocation: String = "",
+        staycationPrice: Int = 0,
+        staycationTitle: String = "",
+        amenities: List<String> = emptyList(),
+        nearbyAttractions: List<String> = emptyList(),
+        staycationTags: List<String> = emptyList()
+    ): Boolean {
+        return try {
+            val hashedPassword = hashPassword(user.password)
+            val userData = hashMapOf(
+                "fullName" to mapOf(
+                    "firstName" to user.firstName,
+                    "middleName" to user.middleName,
+                    "lastName" to user.lastName
+                ),
+                "username" to user.username,
+                "password" to hashedPassword
+            )
+
+            val touristDocRef = touristCollection.add(userData).await()
+            val touristId = touristDocRef.id
+
+            val hostData = hashMapOf(
+                "touristId" to touristId
+            )
+            hostCollection.document("HOST-$touristId").set(hostData).await()
+
+            val isSuccess = addStaycation(
+                staycationTitle = staycationTitle,
+                staycationDescription = staycationDescription,
+                staycationTags = staycationTags,
+                hostId = "HOST-$touristId",
+                staycationPrice = staycationPrice.toDouble(),
+                amenities = amenities,
+                staycationLocation = staycationLocation,
+                nearbyAttractions = nearbyAttractions
+
+            )
+
+            Log.d("AddStaycation", "$isSuccess")
+
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+
+    }
+
+    suspend fun addStaycation(
+        hasDangerousAnimal: Boolean = false,
+        hasSecurityCamera: Boolean = false,
+        hasWeapon: Boolean = false,
+        hostId: String = "",
+        noOfBathrooms: Int = 1,
+        noOfBedrooms: Int = 1,
+        noOfBeds: Int = 1,
+        noOfGuests: Int = 1,
+        staycationDescription: String = "",
+        staycationLocation: String = "",
+        staycationPrice: Double = 0.0,
+        staycationSpace: String = "",
+        staycationTitle: String = "",
+        staycationType: String = "",
+        amenities: List<String> = emptyList(),
+        photos: List<Photo> = emptyList(),
+        availableDates: List<Timestamp> = emptyList(),
+        promotions: List<Promotion> = emptyList(),
+        nearbyAttractions: List<String> = emptyList(),
+        staycationTags: List<String> = emptyList()
+    ): Boolean {
+        try {
+            val querySnapshot = staycationHistoryCollection
+                .orderBy("staycationId", Query.Direction.DESCENDING)
+                .limit(1)
+                .get()
+                .await()
+
+            val lastDocument = querySnapshot.documents.firstOrNull()
+            val lastId = lastDocument?.getString("staycationId")
+            val newId = (lastId?.toInt() ?: 0) + 1
+
+            val staycation = hashMapOf(
+                "hasDangerousAnimal" to hasDangerousAnimal,
+                "hasSecurityCamera" to hasSecurityCamera,
+                "hasWeapon" to hasWeapon,
+                "hostId" to hostId,
+                "noOfBathrooms" to noOfBathrooms,
+                "noOfBedrooms" to noOfBedrooms,
+                "noOfBeds" to noOfBeds,
+                "noOfGuests" to noOfGuests,
+                "staycationDescription" to staycationDescription,
+                "staycationLocation" to staycationLocation,
+                "staycationPrice" to staycationPrice,
+                "staycationSpace" to staycationSpace,
+                "staycationTitle" to staycationTitle,
+                "staycationType" to staycationType
+            )
+
+            staycationCollection.document(newId.toString()).set(staycation).await()
+
+            addStaycationToHistory(newId.toString(), "add")
+
+            addServiceAmenities(newId.toString(), "Staycation", amenities)
+
+            addServicePhotos(newId.toString(), "Staycation", photos)
+
+            addStaycationAvailability(newId.toString(), availableDates)
+
+            addStaycationPromotions(newId.toString(), promotions)
+
+            addStaycationNearbyAttractions(newId.toString(), nearbyAttractions)
+
+            addServiceTags(newId.toString(), "Staycation", staycationTags)
+
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+
+//    suspend fun addStaycationNearbyAttractions(staycationId: String, attractions: List<String>) {
+//        try {
+//            // Query the staycationNearbyAttractionCollection for documents where the staycationId field is equal to the staycationId parameter
+//            val querySnapshot = staycationNearbyAttractionCollection
+//                .whereEqualTo("staycationId", staycationId)
+//                .get()
+//                .await()
+//
+//            // Get the ID of the first document in the query snapshot, or set documentId to null if the query snapshot is empty
+//            val documentId = if (querySnapshot.documents.isNotEmpty()) {
+//                querySnapshot.documents.first().id
+//            } else {
+//                null
+//            }
+//
+//            // Create a batch write
+//            val batch = Firebase.firestore.batch()
+//
+//            // Iterate over the attractions list and set the data for each attraction
+//            attractions.forEach { attraction ->
+//                val attractionData = hashMapOf(
+//                    "staycationId" to staycationId,
+//                    "attractionName" to attraction
+//                )
+//
+//                // If documentId is not null, update the existing document with the new data using the merge option
+//                if (documentId != null) {
+//                    val attractionRef = staycationNearbyAttractionCollection.document(documentId)
+//                    batch.set(attractionRef, attractionData, SetOptions.merge())
+//                } else {
+//                    // Otherwise, create a new document
+//                    batch.set(staycationNearbyAttractionCollection.document(), attractionData)
+//                }
+//            }
+//
+//            // Commit the batch write
+//            batch.commit().await()
+//
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
+//    }
+
+    suspend fun addServiceTags(serviceId: String, serviceType: String, tags: List<String>) {
+        try {
+            tags.forEach { tag ->
+                val tagData = hashMapOf(
+                    "serviceId" to serviceId,
+                    "serviceType" to serviceType,
+                    "tagName" to tag
+                )
+
+                serviceTagCollection.add(tagData).await()
+
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+    suspend fun addStaycationNearbyAttractions(staycationId: String, attractions: List<String>) {
+        try {
+
+            attractions.forEach { attraction ->
+                val attractionData = hashMapOf(
+                    "staycationId" to staycationId,
+                    "attractionName" to attraction
+                )
+
+                staycationNearbyAttractionCollection.add(attractionData).await()
+
+            }
+
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun addStaycationPromotions(staycationId: String, promotions: List<Promotion>) {
+        try {
+            if (promotions.isNotEmpty()) {
+                promotions.forEach { promotion ->
+                    val promotionData = hashMapOf(
+                        "staycationId" to staycationId,
+                        "promoId" to promotion.promoId
+                    )
+
+                    servicePromotionCollection.add(promotionData).await()
+                }
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun addStaycationAvailability(staycationId: String, availableDates: List<Timestamp>) {
+        try {
+            availableDates.forEach { date ->
+                val availabilityData = hashMapOf(
+                    "staycationId" to staycationId,
+                    "availableDate" to date
+                )
+
+                staycationAvailabilityCollection.add(availabilityData).await()
+
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+
+    suspend fun addServicePhotos(serviceId: String, serviceType: String, photos: List<Photo>) {
+        try {
+            photos.mapNotNull { it.photoUri }.forEach { uri ->
+                val fileName = UUID.randomUUID().toString()
+                val imageRef = storageReference.child("images/service_photos/${serviceType.lowercase(Locale.getDefault())}s/$fileName")
+                imageRef.putFile(uri).await()
+
+                val photoUrl = imageRef.downloadUrl.await().toString()
+
+                val photoType = photos.firstOrNull { it.photoUri == uri }?.photoType ?: "Others"
+
+                val photoData = hashMapOf(
+                    "serviceId" to serviceId,
+                    "serviceType" to serviceType,
+                    "photoUrl" to photoUrl,
+                    "photoType" to photoType
+                )
+
+                val documentReference = servicePhotoCollection.add(photoData).await()
+                val servicePhotoId = documentReference.id
+
+                addServicePhotosToHistory(servicePhotoId, photoData, "add")
+
+
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+    }
+
+    suspend fun addServicePhotosToHistory(servicePhotoId: String, photoData: HashMap<String, String>, transaction: String) {
+        try {
+            val historyData = hashMapOf(
+                "servicePhotoId" to servicePhotoId,
+                "transaction" to transaction,
+                "timestamp" to FieldValue.serverTimestamp() // timestamp of the operation
+            )
+
+            // Combine amenity data and history data
+            val combinedData = photoData + historyData
+
+            // Add to service_amenity_history collection
+            servicePhotoHistoryCollection.add(combinedData).await()
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+    }
+
+
+
+    suspend fun addServiceAmenities(serviceId: String, serviceType: String, amenities: List<String>) {
+        try {
+            amenities.forEach { amenity ->
+                val data = hashMapOf(
+                    "serviceId" to serviceId,
+                    "amenityName" to amenity,
+                    "serviceType" to serviceType
+                )
+
+                // Use add() to automatically generate a unique document ID
+                val documentReference = serviceAmenityCollection.add(data).await()
+
+                val documentId = documentReference.id
+
+                addServiceAmenityToHistory(documentId, data, "add")
+
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+    }
+
+    suspend fun addServiceAmenityToHistory(amenityId: String, amenityData: HashMap<String, String>, transaction: String) {
+        try {
+
+            val historyData = hashMapOf(
+                "amenityId" to amenityId,
+                "transaction" to transaction,
+                "timestamp" to FieldValue.serverTimestamp() // timestamp of the operation
+            )
+
+            // Combine amenity data and history data
+            val combinedData = amenityData + historyData
+
+            // Add to service_amenity_history collection
+            serviceAmenityHistoryCollection.add(combinedData).await()
+
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+    }
+
+
+    suspend fun addStaycationToHistory(staycationId: String, transaction: String) {
+        try {
+            val staycationDocument = staycationCollection.document(staycationId).get().await()
+
+            // Check if the document exists
+            if (staycationDocument.exists()) {
+                // Get the data from the document
+                val staycationData = staycationDocument.data
+
+                // Add additional fields
+                staycationData?.put("staycationId", staycationId)
+                staycationData?.put("transaction", transaction) // or "update" or "delete" based on your use case
+                staycationData?.put("transactionTimestamp", FieldValue.serverTimestamp())
+
+                // Add the fetched document to the payment_history collection
+                staycationHistoryCollection.add(staycationData!!).await()
+            } else {
+                Log.d("", "No document found with the provided paymentId")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+    }
+
+    suspend fun addStaycationReview(
+        bookingId: String,
+        reviewComment: String,
+        reviewRating: Int,
+        serviceType: String,
+        reviewPhotos: List<Uri?>
+    ): Boolean {
+        try {
+
+            val uniqueId = UUID.randomUUID().toString()
+
+            val reviewData = hashMapOf(
+                "bookingId" to bookingId,
+                "reviewComment" to reviewComment,
+                "reviewDate" to FieldValue.serverTimestamp(),
+                "reviewRating" to reviewRating,
+                "serviceType" to serviceType
+            )
+
+            // Add data to the 'review' collection
+            val reviewDocRef = reviewCollection.add(reviewData).await()
+            val reviewId = reviewDocRef.id
+
+            // Add data to the 'review_photo' collection for each non-null photo in the list
+            reviewPhotos.filterNotNull().forEach { uri ->
+                val fileName = UUID.randomUUID().toString()
+                val imageRef = storageReference.child("images/reviews/$fileName")
+                imageRef.putFile(uri).await()
+
+                val photoUrl = imageRef.downloadUrl.await().toString()
+
+                val reviewPhotoData = hashMapOf(
+                    "reviewId" to reviewId,
+                    "reviewPhotoUrl" to photoUrl
+                )
+
+                reviewPhotoCollection.add(reviewPhotoData).await()
+            }
+
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+            // Handle the error case as needed
+        }
+    }
 
 //    suspend fun getStaycationBookingsForTourist(touristId: String, startAt: Int, pageSize: Int): StaycationBooking {
 //        try {
@@ -155,80 +600,6 @@ class UserRepository {
     }
 
 
-    suspend fun addStaycationReview(
-        bookingId: String,
-        reviewComment: String,
-        reviewRating: Int,
-        serviceType: String,
-        reviewPhotos: List<Uri?>
-    ): Boolean {
-        try {
-
-            val uniqueId = UUID.randomUUID().toString()
-
-            val reviewData = hashMapOf(
-                "bookingId" to bookingId,
-                "reviewComment" to reviewComment,
-                "reviewDate" to FieldValue.serverTimestamp(),
-                "reviewRating" to reviewRating,
-                "serviceType" to serviceType
-            )
-
-            // Add data to the 'review' collection
-            val reviewDocRef = reviewCollection.add(reviewData).await()
-            val reviewId = reviewDocRef.id
-
-            // Add data to the 'review_photo' collection for each non-null photo in the list
-            reviewPhotos.filterNotNull().forEach { uri ->
-                val fileName = UUID.randomUUID().toString()
-                val imageRef = storageReference.child("images/reviews/$fileName")
-                imageRef.putFile(uri).await()
-
-                val photoUrl = imageRef.downloadUrl.await().toString()
-
-                val reviewPhotoData = hashMapOf(
-                    "reviewId" to reviewId,
-                    "reviewPhotoUrl" to photoUrl
-                )
-
-                reviewPhotoCollection.add(reviewPhotoData).await()
-            }
-
-            return true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return false
-            // Handle the error case as needed
-        }
-    }
-
-
-    suspend fun logCheckOutDatesForExpiredBookings() {
-        try {
-            val currentTimestamp = Timestamp.now()
-
-            val query = staycationBookingCollection
-                .whereLessThan("checkOutDate", currentTimestamp)
-                .whereEqualTo("bookingStatus", "Pending")
-
-            val result = query.get().await()
-
-            Log.d("BookingStatusUpdate", "Found ${result.size()} bookings to check")
-
-            for (document in result.documents) {
-
-                val checkOutTimestamp = document.getTimestamp("checkOutDate")
-
-                if (checkOutTimestamp  != null) {
-
-                    Log.d("BookingStatusUpdate", "BookingId: ${document.id}, CheckOutDate: $checkOutTimestamp")
-
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("BookingStatusUpdate", "An error occurred: $e")
-        }
-    }
 
     suspend fun updateBookingStatusToOngoingIfCheckInDatePassed() {
         try {
@@ -869,7 +1240,7 @@ class UserRepository {
         val staycationTags = getStaycationTags(staycationId)
         val promotions = getPromotions(staycationId)
         val availability = getStaycationAvailability(staycationId)
-        val amenities = getAmenities(staycationId)
+        val amenities = getAmenities(staycationId, "Staycation")
         val bookings = getStaycationBookings(staycationId)
         return Staycation(
             staycationId = staycationId,
@@ -936,14 +1307,11 @@ class UserRepository {
                 val staycationTags = getStaycationTags(staycationId)
                 val promotions = getPromotions(staycationId)
                 val availability = getStaycationAvailability(staycationId)
-                val amenities = getAmenities(staycationId)
+                val amenities = getAmenities(staycationId, "Staycation")
                 val bookings = getStaycationBookings(staycationId)
 
                 val staycation = Staycation(
                     staycationId = staycationId,
-//                    hostFirstName = touristInfo?.firstName ?: "",
-//                    hostMiddleName = touristInfo?.middleName ?: "",
-//                    hostLastName = touristInfo?.lastName ?: "",
                     host = Host(
                         profilePicture = touristInfo?.profilePicture ?: "",
                         firstName = touristInfo?.firstName ?: "",
@@ -1193,26 +1561,26 @@ class UserRepository {
         }
     }
 
-    suspend fun getAmenities(staycationId: String): List<Amenity> {
+    suspend fun getAmenities(staycationId: String, serviceType: String): List<Amenity> {
         return try {
             val result = serviceAmenityCollection
                 .whereEqualTo("serviceId", staycationId)
+                .whereEqualTo("serviceType", serviceType)
                 .get()
                 .await()
 
             val amenities = mutableListOf<Amenity>()
 
             for (document in result.documents) {
-                val amenityId = document.getString("amenityId") ?: ""
+                val amenityId = document.id
+                val amenityName = document.getString("amenityName") ?: ""
 
                 // Fetch amenity details from the amenity collection using amenityId
-                val amenityDetails = getAmenityDetails(amenityId)
+//                val amenityDetails = getAmenityDetails(amenityId)
 
-                // Construct Amenity object
                 val amenity = Amenity(
                     amenityId = amenityId,
-                    amenityName = amenityDetails?.amenityName ?: ""
-                    // Add other fields as needed
+                    amenityName = amenityName
                 )
 
                 amenities.add(amenity)
@@ -1226,23 +1594,23 @@ class UserRepository {
         }
     }
 
-    private suspend fun getAmenityDetails(amenityId: String): Amenity? {
-        return try {
-            val document = amenityCollection.document(amenityId).get().await()
-
-            if (document.exists()) {
-                val amenityName = document.getString("amenityName") ?: ""
-                // Add other fields as needed
-                Amenity(amenityId, amenityName)
-            } else {
-                null
-            }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null // Handle the error case as needed
-        }
-    }
+//    private suspend fun getAmenityDetails(amenityId: String): Amenity? {
+//        return try {
+//            val document = amenityCollection.document(amenityId).get().await()
+//
+//            if (document.exists()) {
+//                val amenityName = document.getString("amenityName") ?: ""
+//                // Add other fields as needed
+//                Amenity(amenityId, amenityName)
+//            } else {
+//                null
+//            }
+//
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            null // Handle the error case as needed
+//        }
+//    }
 
     suspend fun addTouristPreferences(touristId: String, preferences: List<String>): Boolean {
         return try {

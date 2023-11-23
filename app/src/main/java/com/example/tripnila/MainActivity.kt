@@ -34,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,8 +55,11 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import com.example.tripnila.data.BookingHistory
 import com.example.tripnila.data.Filter
+import com.example.tripnila.data.ForInsertUsingCSV
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.data.StaycationBooking
+import com.example.tripnila.data.Tag
+import com.example.tripnila.data.Tourist
 import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.BookingHistoryViewModel
 import com.example.tripnila.model.DetailViewModel
@@ -94,6 +98,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyApplicationTheme {
 
+                val coroutineScope = rememberCoroutineScope()
    //             PersonList()
 
                 val loginViewModel = viewModel(modelClass = LoginViewModel::class.java)
@@ -105,7 +110,6 @@ class MainActivity : ComponentActivity() {
                 val bookingHistoryViewModel = viewModel(modelClass = BookingHistoryViewModel::class.java)
                 val hostDashboardViewModel = viewModel(modelClass = HostDashboardViewModel::class.java)
                 val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
-
 
                 Navigation(
                     loginViewModel = loginViewModel,

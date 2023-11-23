@@ -41,6 +41,12 @@ import com.example.tripnila.model.ProfileViewModel
 import com.example.tripnila.model.SignupViewModel
 import com.example.tripnila.screens.AccountVerificationScreen
 import com.example.tripnila.screens.AddListingScreen1
+import com.example.tripnila.screens.AddListingScreen10
+import com.example.tripnila.screens.AddListingScreen11
+import com.example.tripnila.screens.AddListingScreen12
+import com.example.tripnila.screens.AddListingScreen13
+import com.example.tripnila.screens.AddListingScreen14
+import com.example.tripnila.screens.AddListingScreen15
 import com.example.tripnila.screens.AddListingScreen2
 import com.example.tripnila.screens.AddListingScreen3
 import com.example.tripnila.screens.AddListingScreen4
@@ -48,6 +54,7 @@ import com.example.tripnila.screens.AddListingScreen5
 import com.example.tripnila.screens.AddListingScreen6
 import com.example.tripnila.screens.AddListingScreen7
 import com.example.tripnila.screens.AddListingScreen8
+import com.example.tripnila.screens.AddListingScreen9
 import com.example.tripnila.screens.BookingHistoryScreen
 import com.example.tripnila.screens.HomeScreen
 import com.example.tripnila.screens.HostDashboardScreen
@@ -89,7 +96,14 @@ enum class HostRoutes {
     AddListing5,
     AddListing6,
     AddListing7,
-    AddListing8
+    AddListing8,
+    AddListing9,
+    AddListing10,
+    AddListing11,
+    AddListing12,
+    AddListing13,
+    AddListing14,
+    AddListing15
 
 }
 
@@ -290,6 +304,90 @@ fun NavGraphBuilder.hostGraph(
                 onNavToBack = { navController.popBackStack() }
             )
         }
+        composable(
+            route = HostRoutes.AddListing9.name + "/{listingType}",
+            arguments = listOf(navArgument("listingType") { type = NavType.StringType })
+        ) {entry ->
+            AddListingScreen9(
+                listingType = entry.arguments?.getString("listingType") ?: "",
+                addListingViewModel = addListingViewModel,
+                //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
+                onNavToNext = { listingType -> navigateToAddListingNext(navController, 10, listingType) },
+                onNavToBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = HostRoutes.AddListing10.name + "/{listingType}",
+            arguments = listOf(navArgument("listingType") { type = NavType.StringType })
+        ) {entry ->
+            AddListingScreen10(
+                listingType = entry.arguments?.getString("listingType") ?: "",
+                addListingViewModel = addListingViewModel,
+                //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
+                onNavToNext = { listingType -> navigateToAddListingNext(navController, 11, listingType) },
+                onNavToBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = HostRoutes.AddListing11.name + "/{listingType}",
+            arguments = listOf(navArgument("listingType") { type = NavType.StringType })
+        ) {entry ->
+            AddListingScreen11(
+                listingType = entry.arguments?.getString("listingType") ?: "",
+                addListingViewModel = addListingViewModel,
+                //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
+                onNavToNext = { listingType -> navigateToAddListingNext(navController, 12, listingType) },
+                onNavToBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = HostRoutes.AddListing12.name + "/{listingType}",
+            arguments = listOf(navArgument("listingType") { type = NavType.StringType })
+        ) {entry ->
+            AddListingScreen12(
+                listingType = entry.arguments?.getString("listingType") ?: "",
+                addListingViewModel = addListingViewModel,
+                //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
+                onNavToNext = { listingType -> navigateToAddListingNext(navController, 13, listingType) },
+                onNavToBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = HostRoutes.AddListing13.name + "/{listingType}",
+            arguments = listOf(navArgument("listingType") { type = NavType.StringType })
+        ) {entry ->
+            AddListingScreen13(
+                listingType = entry.arguments?.getString("listingType") ?: "",
+                addListingViewModel = addListingViewModel,
+                //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
+                onNavToNext = { listingType -> navigateToAddListingNext(navController, 14, listingType) },
+                onNavToBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = HostRoutes.AddListing14.name + "/{listingType}",
+            arguments = listOf(navArgument("listingType") { type = NavType.StringType })
+        ) {entry ->
+            AddListingScreen14(
+                listingType = entry.arguments?.getString("listingType") ?: "",
+                addListingViewModel = addListingViewModel,
+                onNavToNext = { listingType -> navigateToAddListingNext(navController, 15, listingType) },
+                onNavToBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = HostRoutes.AddListing15.name + "/{listingType}",
+            arguments = listOf(navArgument("listingType") { type = NavType.StringType })
+        ) {entry ->
+            AddListingScreen15(
+                listingType = entry.arguments?.getString("listingType") ?: "",
+                addListingViewModel = addListingViewModel,
+                onNavToDashboard = { touristId -> navigateToHost(navController, touristId) },
+                //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
+              //  onNavToNext = { listingType -> navigateToAddListingNext(navController, 15, listingType) },
+                onNavToBack = { navController.popBackStack() }
+            )
+        }
     }
 }
 
@@ -442,48 +540,6 @@ private fun navigateToAddListing1(navController: NavHostController, hostId: Stri
 
 private fun navigateToAddListingNext(navController: NavHostController, page: Int, listingType: String) {
     navController.navigate("${HostRoutes.AddListing.name}$page/$listingType") {
-        launchSingleTop = true
-    }
-}
-
-private fun navigateToAddListing3(navController: NavHostController, listingType: String) {
-    navController.navigate("${HostRoutes.AddListing3.name}/$listingType") {
-        launchSingleTop = true
-    }
-}
-
-private fun navigateToAddListing4(navController: NavHostController, listingType: String) {
-    navController.navigate("${HostRoutes.AddListing4.name}/$listingType") {
-        launchSingleTop = true
-    }
-}
-
-private fun navigateToAddListing5(navController: NavHostController, listingType: String) {
-    navController.navigate("${HostRoutes.AddListing5.name}/$listingType") {
-        launchSingleTop = true
-    }
-}
-
-private fun navigateToAddListing6(navController: NavHostController, listingType: String) {
-    navController.navigate("${HostRoutes.AddListing6.name}/$listingType") {
-        launchSingleTop = true
-    }
-}
-
-private fun navigateToAddListing7(navController: NavHostController, listingType: String) {
-    navController.navigate("${HostRoutes.AddListing7.name}/$listingType") {
-        launchSingleTop = true
-    }
-}
-
-private fun navigateToAddListing8(navController: NavHostController, listingType: String) {
-    navController.navigate("${HostRoutes.AddListing7.name}/$listingType") {
-        launchSingleTop = true
-    }
-}
-
-private fun navigateToAddListing9(navController: NavHostController, listingType: String) {
-    navController.navigate("${HostRoutes.AddListing7.name}/$listingType") {
         launchSingleTop = true
     }
 }

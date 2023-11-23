@@ -122,10 +122,6 @@ fun AddListingScreen8(
                                 )
                             }
 
-
-   // val numRows = (photos.size + 1) / 2
-    var lastIndex = 0
-
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -139,7 +135,8 @@ fun AddListingScreen8(
                     },
                     onCancel = {
                         onNavToBack()
-                    }
+                    },
+                    enableRightButton = addListingViewModel?.staycation?.collectAsState()?.value?.staycationImages?.any { it.photoType == "Cover" } == true && addListingViewModel?.staycation?.collectAsState()?.value?.staycationImages?.any { it.photoType == "Others" } == true
                 )
             },
             topBar = {
@@ -193,7 +190,10 @@ fun AddListingScreen8(
                                 .fillMaxWidth()
                                 .height(170.dp)
                                 .drawBehind {
-                                    drawRoundRect(color = if (selectedImageUri.value != null) Color.Transparent else Orange, style = stroke)
+                                    drawRoundRect(
+                                        color = if (selectedImageUri.value != null) Color.Transparent else Orange,
+                                        style = stroke
+                                    )
                                 }
                         ){
 
@@ -235,7 +235,6 @@ fun AddListingScreen8(
                     val numRows = (selectedImageUris.value?.size?.plus(1))?.div(2)
                     if (numRows != null) {
                         items(numRows) { row ->
-                            lastIndex = 0
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 //horizontalArrangement = Arrangement.spacedBy(15.dp)
@@ -265,14 +264,13 @@ fun AddListingScreen8(
                                                 selectedImageUris.value = selectedImageUris.value?.filter { it != uri }
                                                 addListingViewModel?.setSelectedImageUris(selectedImageUris.value as List<@JvmSuppressWildcards Uri>)
                                             },
-                                            modifier = Modifier.align(Alignment.TopEnd).offset(x = 8.dp, y = (-5).dp)
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .offset(x = 8.dp, y = (-5).dp)
                                         ) {
                                             Icon(Icons.Sharp.Clear, contentDescription = "Delete", modifier = Modifier.size(16.dp), tint = Color(0xFF999999))
                                         }
                                     }
-                                    lastIndex = i
-
-
                                 }
                                 if (endIndex - startIndex == 1) {
                                     AddMorePhoto(

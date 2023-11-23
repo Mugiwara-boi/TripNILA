@@ -1,5 +1,7 @@
 package com.example.tripnila.screens
 
+import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,10 +24,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +44,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tripnila.common.Orange
 import com.example.tripnila.model.AddListingViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,12 +58,31 @@ fun AddListingScreen14(
     onNavToBack: () -> Unit,
 ){
 
-    val checkboxLabels = listOf(
-        "Security camera(s)",
-        "Weapons",
-        "Dangerous animals"
-    )
-    val selectedCheckboxIndices = remember { mutableStateListOf<Int>() }
+
+    var ppHasError = remember { mutableStateOf(false) }
+    var npHasError = remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    val hasSecurityCamera = addListingViewModel?.staycation?.collectAsState()?.value?.hasSecurityCamera
+    val hasWeapon = addListingViewModel?.staycation?.collectAsState()?.value?.hasWeapon
+    val hasDangerousAnimal = addListingViewModel?.staycation?.collectAsState()?.value?.hasDangerousAnimal
+
+    val staycation = addListingViewModel?.staycation?.collectAsState()?.value
+
+    val alreadySubmitted = addListingViewModel?.isSuccessAddListing?.collectAsState()?.value
+
+    val isLoading = addListingViewModel?.isLoadingAddListing?.collectAsState()?.value
+
+    LaunchedEffect(isLoading){
+        if (isLoading != null) {
+            if (isLoading == false && alreadySubmitted == true) {
+                onNavToNext(listingType)
+            }
+        }
+    }
+
+  //  val selectedCheckboxIndices = remember { mutableStateListOf<Int>() }
 
     Surface(
         modifier = Modifier
@@ -66,11 +93,27 @@ fun AddListingScreen14(
                 AddListingBottomBookingBar(
                     leftButtonText = "Back",
                     onNext = {
-                        onNavToNext(listingType)
+                        if (addListingViewModel?.validatePP() != true) {
+                            ppHasError.value = true
+                        } else if (addListingViewModel?.validateNP() != true) {
+                            npHasError.value = true
+                        } else if (alreadySubmitted == true) {
+                            onNavToNext(listingType)
+                        } else {
+                            coroutineScope.launch {
+                                addListingViewModel.addNewListing()
+//                                if (alreadySubmitted == true) {
+//
+//                                }
+
+                            }
+                        }
                     },
                     onCancel = {
                         onNavToBack()
-                    }
+                    },
+                    isRightButtonLoading = addListingViewModel?.isLoadingAddListing?.collectAsState()?.value == true,
+                    enableRightButton = addListingViewModel?.isAgreeToPrivacyPolicy?.collectAsState()?.value == true && addListingViewModel?.isAgreeToNonDiscrimination?.collectAsState()?.value == true
                 )
             },
             topBar = {
@@ -117,19 +160,64 @@ fun AddListingScreen14(
                             fontSize = 12.sp
                         )
                     }
-                    items(checkboxLabels) { label ->
-                        CheckboxRow(
-                            rowLabel = label,
-                            selected = checkboxLabels.indexOf(label) in selectedCheckboxIndices,
-                            onSelectedChange = { isSelected ->
-                                if (isSelected) {
-                                    selectedCheckboxIndices.add(checkboxLabels.indexOf(label))
-                                } else {
-                                    selectedCheckboxIndices.remove(checkboxLabels.indexOf(label))
+                    item {
+                        if (hasSecurityCamera != null) {
+                            CheckboxRow(
+                                rowLabel = "Security camera(s)",
+                                selected = hasSecurityCamera,
+                                onSelectedChange = { isSelected ->
+                                    if (isSelected) {
+                                        addListingViewModel.setHasSecurityCamera(true)
+                                    } else {
+                                        addListingViewModel.setHasSecurityCamera(false)
+                                    }
                                 }
-                            },
-                        )
+                            )
+                        }
                     }
+                    item {
+                        if (hasWeapon != null) {
+                            CheckboxRow(
+                                rowLabel = "Weapons",
+                                selected = hasWeapon,
+                                onSelectedChange = { isSelected ->
+                                    if (isSelected) {
+                                        addListingViewModel.setHasWeapon(true)
+                                    } else {
+                                        addListingViewModel.setHasWeapon(false)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    item {
+                        if (hasDangerousAnimal != null) {
+                            CheckboxRow(
+                                rowLabel = "Dangerous animals",
+                                selected = hasDangerousAnimal,
+                                onSelectedChange = { isSelected ->
+                                    if (isSelected) {
+                                        addListingViewModel.setHasDangerousAnimal(true)
+                                    } else {
+                                        addListingViewModel.setHasDangerousAnimal(false)
+                                    }
+                                }
+                            )
+                        }
+                    }
+//                    items(checkboxLabels) { label ->
+//                        CheckboxRow(
+//                            rowLabel = label,
+//                            selected = checkboxLabels.indexOf(label) in selectedCheckboxIndices,
+//                            onSelectedChange = { isSelected ->
+//                                if (isSelected) {
+//                                    selectedCheckboxIndices.add(checkboxLabels.indexOf(label))
+//                                } else {
+//                                    selectedCheckboxIndices.remove(checkboxLabels.indexOf(label))
+//                                }
+//                            },
+//                        )
+//                    }
                     item {
                         Divider(
                             color = Color(0xFFDEDEDE),
@@ -137,16 +225,30 @@ fun AddListingScreen14(
                         )
                     }
                     item {
-                        AddListingAgreement(
-                            clickableText1 = "privacy policy",
-                            clickableText2 = "rebooking and cancellation policy",
-                        )
+                        addListingViewModel?.isAgreeToPrivacyPolicy?.collectAsState()?.value?.let { isSelected ->
+                            AddListingAgreement(
+                                clickableText1 = "privacy policy",
+                                clickableText2 = "rebooking and cancellation policy",
+                                isSelected = isSelected,
+                                onCheckedChange = {
+                                    addListingViewModel?.onAgreeToPP(it)
+                                },
+                                hasError = ppHasError.value
+                            )
+                        }
                     }
                     item {
-                        AddListingAgreement(
-                            clickableText1 = "nondiscrimination policy",
-                            clickableText2 = "guest and host fees",
-                        )
+                        addListingViewModel?.isAgreeToNonDiscrimination?.collectAsState()?.value?.let { isSelected ->
+                            AddListingAgreement(
+                                clickableText1 = "nondiscrimination policy",
+                                clickableText2 = "guest and host fees",
+                                isSelected = isSelected,
+                                onCheckedChange = {
+                                    addListingViewModel?.onAgreeToNP(it)
+                                }
+                                ,hasError = npHasError.value
+                            )
+                        }
                     }
 
 
@@ -182,23 +284,23 @@ fun CheckboxRow(
             checked = selected,
             onCheckedChange = { onSelectedChange(it) },
             colors = CheckboxDefaults.colors(
-                checkedColor = Color(0xFF333333)
+                checkedColor = Orange
             ),
             modifier = Modifier.offset(x = 13.dp)
         )
     }
 }
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun AddListingAgreement(
     clickableText1: String,
     clickableText2: String,
+    isSelected: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    hasError: Boolean,
     modifier: Modifier = Modifier
 ){
-
-    var isSelected by remember {
-        mutableStateOf(false)
-    }
 
     Row(
         modifier = modifier
@@ -208,9 +310,10 @@ fun AddListingAgreement(
     ) {
         Checkbox(
             checked = isSelected,
-            onCheckedChange = { isSelected = it},
+            onCheckedChange = onCheckedChange,
             colors = CheckboxDefaults.colors(
-                checkedColor = Color(0xFF333333)
+                checkedColor = Orange,
+                uncheckedColor = if (hasError) Color.Red else Color(0xFF666666)
             ),
             modifier = Modifier.offset(x = (-13).dp)
         )
@@ -249,10 +352,10 @@ fun AddListingAgreement(
 @Preview
 @Composable
 private fun AddListingPreview(){
-    AddListingAgreement(
-        clickableText1 = "privacy policy",
-        clickableText2 = "rebooking and cancellation policy",
-    )
+//    AddListingAgreement(
+//        clickableText1 = "privacy policy",
+//        clickableText2 = "rebooking and cancellation policy",
+//    )
 
 
 }

@@ -24,8 +24,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.Discount
+import com.example.tripnila.data.Promotion
 import com.example.tripnila.model.AddListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,24 +53,28 @@ fun AddListingScreen12(
     onNavToBack: () -> Unit,
 ){
 
-    val discounts = listOf(
-        Discount(
-            discountPercentage = 20,
-            label = "New listing promotion",
+    val promotions = listOf(
+        Promotion(
+            promoId = "kIx5o7g5J5yMYOU8XO1V",
+            discount = 0.2,
+            promoName = "New listing promotion",
             description = "Offer 20% off for first 3 bookings",
         ),
-        Discount(
-            discountPercentage = 10,
-            label = "Weekly discount",
+        Promotion(
+            promoId = "bG4mUuwlVooIcUM6dxIS",
+            discount = 0.10,
+            promoName = "Weekly discount",
             description = "for stays of 7 nights or more",
         ),
-        Discount(
-            discountPercentage = 15,
-            label = "Monthly discount",
+        Promotion(
+            promoId = "VbMFPAsRK1Wl9RYstMrn",
+            discount = 0.15,
+            promoName = "Monthly discount",
             description = "for stays of 28 nights or more",
-        ),
+        )
     )
-    val selectedDiscountIndices = remember { mutableStateListOf<Int>() }
+
+    val selectedPromotions = addListingViewModel?.staycation?.collectAsState()?.value?.promotions
 
     Surface(
         modifier = Modifier
@@ -120,19 +129,42 @@ fun AddListingScreen12(
                                 .padding(bottom = 10.dp)
                         )
                     }
-                    items(discounts) { discount ->
-                        DiscountCard(
-                            discount = discount,
-                            selected = discounts.indexOf(discount) in selectedDiscountIndices,
-                            onSelectedChange = { isSelected ->
-                                if (isSelected) {
-                                    selectedDiscountIndices.add(discounts.indexOf(discount))
-                                } else {
-                                    selectedDiscountIndices.remove(discounts.indexOf(discount))
+
+                    items(promotions) {promotion ->
+                        selectedPromotions?.contains(promotion)?.let { isSelected ->
+                            DiscountCard(
+                                discount = promotion,
+                                selected = isSelected,
+                                onSelectedChange = {isSelected ->
+                                    if (isSelected) {
+                                        addListingViewModel.addStaycationPromotion(promotion)
+                                    } else {
+                                        addListingViewModel.removeStaycationPromotion(promotion)
+                                    }
+
                                 }
-                            },
-                        )
+                            )
+                        }
                     }
+
+
+//                    items(promotions) { promotion ->
+//                        val isSelected = addListingViewModel?.isPromotionSelected(promotion)
+//                        if (isSelected != null) {
+//                            DiscountCard(
+//                                discount = promotion,
+//                                selected = isSelected,
+//                                onSelectedChange = { isSelected ->
+//                                    if (isSelected) {
+//                                        addListingViewModel.addStaycationPromotion(promotion)
+//                                    } else {
+//                                        addListingViewModel.removeStaycationPromotion(promotion)
+//                                    }
+//                                },
+//                            )
+//                        }
+//                    }
+
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 AddListingStepIndicator(modifier = Modifier, currentPage = 2, pageCount = 4)
@@ -143,7 +175,7 @@ fun AddListingScreen12(
 
 @Composable
 fun DiscountCard(
-    discount: Discount,
+    discount: Promotion,
     selected: Boolean,
     onSelectedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
@@ -165,11 +197,11 @@ fun DiscountCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 10.dp, end = 10.dp, top = 15.dp, bottom = 15.dp),
+                .padding(start = 25.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "${discount.discountPercentage} %",
+                text = "${discount.discount.times(100).toInt()} %",
                 color = Color(0xff333333),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
@@ -177,7 +209,7 @@ fun DiscountCard(
             Spacer(modifier = Modifier.weight(0.5f))
             Column {
                 Text(
-                    text = discount.label,
+                    text = discount.promoName,
                     color = Color(0xff333333),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
@@ -194,7 +226,7 @@ fun DiscountCard(
                 checked = selected,
                 onCheckedChange = { onSelectedChange(it) },
                 colors = CheckboxDefaults.colors(
-                    checkedColor = Color(0xFF333333)
+                    checkedColor = Orange //Color(0xFF333333)
                 )
             )
         }

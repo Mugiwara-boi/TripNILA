@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,7 +55,8 @@ fun AddListingScreen3(
     onNavToBack: () -> Unit,
 ){
 
-    var selectedPropertyLabel by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationType) }
+    var selectedPropertyLabel by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationSpace) }
+
    // var selectedPropertyIndex by remember { mutableStateOf(-1) }
     val types = listOf(
         PropertyDescription(
@@ -80,7 +82,8 @@ fun AddListingScreen3(
                     },
                     onCancel = {
                         onNavToBack()
-                    }
+                    },
+                    enableRightButton = addListingViewModel?.staycation?.collectAsState()?.value?.staycationSpace != ""
                 )
             },
             topBar = {
@@ -172,7 +175,7 @@ fun PropertySpaceCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-          //  .height(height = 86.dp)
+            //  .height(height = 86.dp)
             .clip(shape = RoundedCornerShape(10.dp))
             .border(
                 border = BorderStroke(1.dp, borderColor),

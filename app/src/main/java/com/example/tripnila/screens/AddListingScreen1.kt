@@ -145,6 +145,10 @@ fun AddListingBottomBookingBar(
     onCancel: (() -> Unit)? = null,
     onNext: (() -> Unit)? = null,
     leftButtonText: String = "Cancel",
+    rightButtonText: String = "Next",
+    enableLeftButton: Boolean = true,
+    enableRightButton: Boolean = true,
+    isRightButtonLoading: Boolean = false,
     modifier: Modifier = Modifier
 ){
 //   {  Box(
@@ -167,6 +171,7 @@ fun AddListingBottomBookingBar(
                 .padding(horizontal = 25.dp, vertical = 12.dp),
         ) {
             BookingOutlinedButton(
+                enableButton = enableLeftButton,
                 buttonText = leftButtonText,
                 onClick = {
                     onCancel?.invoke()
@@ -175,10 +180,12 @@ fun AddListingBottomBookingBar(
             )
             Spacer(modifier = Modifier.weight(1f))
             BookingFilledButton(
-                buttonText = "Next",
+                enabled = enableRightButton,
+                buttonText = rightButtonText,
                 onClick = {
                     onNext?.invoke()
                 },
+                isLoading = isRightButtonLoading,
                 modifier = Modifier.width(120.dp)
             )
         }

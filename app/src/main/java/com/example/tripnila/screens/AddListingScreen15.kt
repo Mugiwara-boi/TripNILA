@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -28,9 +30,11 @@ import com.example.tripnila.model.AddListingViewModel
 fun AddListingScreen15(
     listingType: String = "Staycation",
     addListingViewModel: AddListingViewModel? = null,
-    onNavToNext: (String) -> Unit,
+    onNavToDashboard: (String) -> Unit,
     onNavToBack: () -> Unit,
 ){
+
+    val staycation = addListingViewModel?.staycation?.collectAsState()?.value
 
     val header = if (listingType == "Staycation") {
         "Your listing has been published"
@@ -58,8 +62,14 @@ fun AddListingScreen15(
             bottomBar = {
                 AddListingBottomBookingBar(
                     leftButtonText = "Back",
+                    rightButtonText = "Confirm",
                     onNext = {
-                        onNavToNext(listingType)
+                       Log.d("Staycation", "$staycation")
+                        addListingViewModel?.staycation?.value?.host?.hostId?.substring(5)?.let { touristId ->
+                            onNavToDashboard(touristId)
+
+                        }
+
                     },
                     onCancel = {
                         onNavToBack()
@@ -116,10 +126,10 @@ fun AddListingScreen15(
 @Composable
 private fun AddListingScreen15Preview() {
     val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
-
-    AddListingScreen15(
-        addListingViewModel = addListingViewModel,
-        onNavToBack = {},
-        onNavToNext = {}
-    )
+//
+//    AddListingScreen15(
+//        addListingViewModel = addListingViewModel,
+//        onNavToBack = {},
+//        onNavToNext = {}
+//    )
 }
