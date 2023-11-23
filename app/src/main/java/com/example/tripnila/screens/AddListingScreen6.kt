@@ -21,13 +21,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
+import com.example.tripnila.model.HostTourViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddListingScreen6(
     listingType: String = "Staycation",
     addListingViewModel: AddListingViewModel? = null,
+    hostTourViewModel: HostTourViewModel? = null,
+    addBusinessViewModel: AddBusinessViewModel? = null,
     onNavToNext: (String) -> Unit,
     onNavToBack: () -> Unit,
 ){

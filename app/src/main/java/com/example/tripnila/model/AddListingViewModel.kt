@@ -35,66 +35,6 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
     val isSuccessAddListing: StateFlow<Boolean> = _isSuccessAddListing
 
 
-    suspend fun addNewListing() {
-        viewModelScope.launch {
-            try {
-                _isLoadingAddListing.value = true
-
-                // Call addStaycationReview with the assigned values
-                val success = repository.addStaycation(
-                    hasDangerousAnimal = _staycation.value.hasDangerousAnimal,
-                    hasSecurityCamera = _staycation.value.hasSecurityCamera,
-                    hasWeapon = _staycation.value.hasWeapon,
-                    hostId = _staycation.value.host.hostId,
-                    noOfBathrooms = _staycation.value.noOfBathrooms,
-                    noOfBedrooms = _staycation.value.noOfBedrooms,
-                    noOfBeds = _staycation.value.noOfBeds,
-                    noOfGuests = _staycation.value.noOfGuests,
-                    staycationDescription = _staycation.value.staycationDescription,
-                    staycationLocation = _staycation.value.staycationLocation,
-                    staycationPrice = _staycation.value.staycationPrice,
-                    staycationSpace = _staycation.value.staycationSpace,
-                    staycationTitle = _staycation.value.staycationTitle,
-                    staycationType = _staycation.value.staycationType,
-                    amenities = _staycation.value.amenities.map { it.amenityName },
-                    photos = _staycation.value.staycationImages,
-                    availableDates = _staycation.value.availableDates.map { it.availableDate!! },
-                    promotions = _staycation.value.promotions,
-                    nearbyAttractions = _staycation.value.nearbyAttractions,
-                    staycationTags = _staycation.value.staycationTags.map { it.tagName }
-                )
-
-                _isSuccessAddListing.value = success == true
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _isSuccessAddListing.value = false
-            } finally {
-                _isLoadingAddListing.value = false
-        }
-    }
-}
-
-
-
-    fun onAgreeToPP(checked: Boolean) {
-        _isAgreeToPrivacyPolicy.value = checked
-        Log.d("Staycation", "${_isAgreeToPrivacyPolicy.value}")
-    }
-
-    fun onAgreeToNP(checked: Boolean) {
-        _isAgreeToNonDiscrimination.value = checked
-        Log.d("Staycation", "${_isAgreeToNonDiscrimination.value}")
-    }
-
-    fun validatePP(): Boolean {
-        return _isAgreeToPrivacyPolicy.value
-    }
-
-    fun validateNP(): Boolean {
-        return _isAgreeToNonDiscrimination.value
-    }
-
     fun setHostId(hostId: String) {
         _staycation.value = _staycation.value.copy(host = Host(hostId = hostId))
         Log.d("Staycation", "${_staycation.value.staycationType}")
@@ -104,14 +44,16 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
         Log.d("Staycation", "${_staycation.value.staycationType}")
     }
 
-    fun setAvailableDates(availability: List<StaycationAvailability>) {
-        _staycation.value = _staycation.value.copy(availableDates = availability)
-    }
-
     fun clearStaycationType() {
         _staycation.value = _staycation.value.copy(staycationType = "")
         Log.d("Staycation", "${_staycation.value.staycationType}")
     }
+
+    fun setAvailableDates(availability: List<StaycationAvailability>) {
+        _staycation.value = _staycation.value.copy(availableDates = availability)
+    }
+
+
     fun setStaycationTitle(title: String) {
         _staycation.value = _staycation.value.copy(staycationTitle = title)
         Log.d("Staycation", "${_staycation.value.staycationTitle}")
@@ -137,18 +79,6 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
         _staycation.value = _staycation.value.copy(amenities = _staycation.value.amenities - newAmenity)
         Log.d("Staycation", "${_staycation.value.amenities.map { it.amenityName }}")
     }
-
-//    fun isPromotionSelected(promotion: Promotion): Boolean {
-//        // Check if the promotion is in the current staycation's promotions
-//        return _staycation.value.promotions.contains(promotion)
-//    }
-//
-//
-//    fun setStaycationPromotions(promotion: List<Promotion>) {
-//        //val amenities = amenity.map { Promotion(amenityName = it) }
-//        _staycation.value = _staycation.value.copy(promotions = promotion)
-//        Log.d("Staycation", "${_staycation.value.promotions.map { it.promoName }}")
-//    }
 
     fun addStaycationPromotion(promotion: Promotion) {
         //val amenities = amenity.map { Promotion(amenityName = it) }
@@ -226,6 +156,65 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
     fun setNoOfGuests(count: Int) {
         _staycation.value = _staycation.value.copy(noOfGuests = count)
         Log.d("Guests", "${_staycation.value.noOfGuests}")
+    }
+
+    fun onAgreeToPP(checked: Boolean) {
+        _isAgreeToPrivacyPolicy.value = checked
+        Log.d("Staycation", "${_isAgreeToPrivacyPolicy.value}")
+    }
+
+    fun onAgreeToNP(checked: Boolean) {
+        _isAgreeToNonDiscrimination.value = checked
+        Log.d("Staycation", "${_isAgreeToNonDiscrimination.value}")
+    }
+
+    fun validatePP(): Boolean {
+        return _isAgreeToPrivacyPolicy.value
+    }
+
+    fun validateNP(): Boolean {
+        return _isAgreeToNonDiscrimination.value
+    }
+
+
+    suspend fun addNewListing() {
+        viewModelScope.launch {
+            try {
+                _isLoadingAddListing.value = true
+
+                // Call addStaycationReview with the assigned values
+                val success = repository.addStaycation(
+                    hasDangerousAnimal = _staycation.value.hasDangerousAnimal,
+                    hasSecurityCamera = _staycation.value.hasSecurityCamera,
+                    hasWeapon = _staycation.value.hasWeapon,
+                    hostId = _staycation.value.host.hostId,
+                    noOfBathrooms = _staycation.value.noOfBathrooms,
+                    noOfBedrooms = _staycation.value.noOfBedrooms,
+                    noOfBeds = _staycation.value.noOfBeds,
+                    noOfGuests = _staycation.value.noOfGuests,
+                    staycationDescription = _staycation.value.staycationDescription,
+                    staycationLocation = _staycation.value.staycationLocation,
+                    staycationPrice = _staycation.value.staycationPrice,
+                    staycationSpace = _staycation.value.staycationSpace,
+                    staycationTitle = _staycation.value.staycationTitle,
+                    staycationType = _staycation.value.staycationType,
+                    amenities = _staycation.value.amenities.map { it.amenityName },
+                    photos = _staycation.value.staycationImages,
+                    availableDates = _staycation.value.availableDates.map { it.availableDate!! },
+                    promotions = _staycation.value.promotions,
+                    nearbyAttractions = _staycation.value.nearbyAttractions,
+                    staycationTags = _staycation.value.staycationTags.map { it.tagName }
+                )
+
+                _isSuccessAddListing.value = success == true
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _isSuccessAddListing.value = false
+            } finally {
+                _isLoadingAddListing.value = false
+            }
+        }
     }
 
 }

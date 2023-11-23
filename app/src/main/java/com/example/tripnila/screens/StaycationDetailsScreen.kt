@@ -456,7 +456,7 @@ fun StaycationDetailsScreen(
                                     it.availableDate?.toDate()?.time?.plus(28800000) ?: 0
                                 } ?: emptyList()
 
-                                val threshold = 60000
+                                val threshold = 86400000
                                 adjustedDates.any { Math.abs(date - it) <= threshold }
                             },
                         )

@@ -60,11 +60,13 @@ import com.example.tripnila.data.Staycation
 import com.example.tripnila.data.StaycationBooking
 import com.example.tripnila.data.Tag
 import com.example.tripnila.data.Tourist
+import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.BookingHistoryViewModel
 import com.example.tripnila.model.DetailViewModel
 import com.example.tripnila.model.HomeViewModel
 import com.example.tripnila.model.HostDashboardViewModel
+import com.example.tripnila.model.HostTourViewModel
 import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.Person
 import com.example.tripnila.model.PersonViewModel
@@ -110,6 +112,8 @@ class MainActivity : ComponentActivity() {
                 val bookingHistoryViewModel = viewModel(modelClass = BookingHistoryViewModel::class.java)
                 val hostDashboardViewModel = viewModel(modelClass = HostDashboardViewModel::class.java)
                 val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
+                val hostTourViewModel = viewModel(modelClass = HostTourViewModel::class.java)
+                val addBusinessViewModel = viewModel(modelClass = AddBusinessViewModel::class.java)
 
                 Navigation(
                     loginViewModel = loginViewModel,
@@ -120,7 +124,9 @@ class MainActivity : ComponentActivity() {
                     profileViewModel = profileViewModel,
                     bookingHistoryViewModel = bookingHistoryViewModel,
                     hostDashboardViewModel = hostDashboardViewModel,
-                    addListingViewModel = addListingViewModel
+                    addListingViewModel = addListingViewModel,
+                    hostTourViewModel = hostTourViewModel,
+                    addBusinessViewModel = addBusinessViewModel
                 )
             }
 

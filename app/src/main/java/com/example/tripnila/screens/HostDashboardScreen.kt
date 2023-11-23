@@ -65,7 +65,9 @@ import com.example.tripnila.model.HostDashboardViewModel
 fun HostDashboardScreen(
     touristId: String,
     hostDashboardViewModel: HostDashboardViewModel? = null,
-    onNavToAddListing: (String, String) -> Unit
+    onNavToAddListing: (String, String) -> Unit,
+    onNavToHostTour: (String, String) -> Unit,
+    onNavToAddBusiness: (String, String) -> Unit,
 ){
 
     Log.d("TouristId", "$touristId")
@@ -169,12 +171,16 @@ fun HostDashboardScreen(
                         HostOptionButton(
                             buttonIcon = R.drawable.host_tour,
                             buttonLabel = "Host a tour",
-                            onClick = {}
+                            onClick = {
+                                host?.hostId?.let { hostId -> onNavToHostTour(hostId, "Tour") }
+                            }
                         )
                         HostOptionButton(
                             buttonIcon = R.drawable.add_business,
                             buttonLabel = "Add business",
-                            onClick = {}
+                            onClick = {
+                                host?.hostId?.let { hostId -> onNavToHostTour(hostId, "Business") }
+                            }
                         )
                         HostOptionButton(
                             buttonIcon = R.drawable.insights,

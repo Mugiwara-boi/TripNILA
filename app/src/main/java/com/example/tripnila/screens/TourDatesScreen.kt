@@ -47,7 +47,9 @@ import com.example.tripnila.common.Orange
 import com.example.tripnila.data.TourAvailableDates
 
 @Composable
-fun TourDatesScreen(){
+fun TourDatesScreen(
+
+){
 
     val availableDates = listOf(
         TourAvailableDates(

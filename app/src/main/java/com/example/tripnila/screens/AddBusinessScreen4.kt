@@ -24,6 +24,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,12 +47,35 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
+import com.example.tripnila.model.AddBusinessViewModel
+import com.example.tripnila.model.AddListingViewModel
+import com.example.tripnila.model.HostTourViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddBusinessScreen4(){
+fun AddBusinessScreen4(
+    listingType: String = "",
+    addBusinessViewModel: AddBusinessViewModel? = null,
+    onNavToNext: (String) -> Unit,
+    onNavToBack: () -> Unit,
+){
 
     val localFocusManager = LocalFocusManager.current
+
+    var mutableTitle = remember {
+        mutableStateOf( addBusinessViewModel?.business?.value?.businessTitle)
+    }
+
+    var mutableDescription = remember { mutableStateOf( addBusinessViewModel?.business?.value?.businessDescription) }
+    var mutableContact = remember { mutableStateOf( addBusinessViewModel?.business?.value?.businessContact) }
+    var mutableEmail = remember { mutableStateOf( addBusinessViewModel?.business?.value?.businessEmail) }
+    var mutableUrl = remember { mutableStateOf( addBusinessViewModel?.business?.value?.businessURL) }
+
+    val title = addBusinessViewModel?.business?.collectAsState()?.value?.businessTitle
+    val description = addBusinessViewModel?.business?.collectAsState()?.value?.businessDescription
+    val contactNumber = addBusinessViewModel?.business?.collectAsState()?.value?.businessContact
+    val email = addBusinessViewModel?.business?.collectAsState()?.value?.businessEmail
+    val url = addBusinessViewModel?.business?.collectAsState()?.value?.businessURL
 
     Surface(
         modifier = Modifier
@@ -58,7 +83,17 @@ fun AddBusinessScreen4(){
     ){
         Scaffold(
             bottomBar = {
-                AddListingBottomBookingBar()
+                AddListingBottomBookingBar(
+                    leftButtonText = "Back",
+                    onNext = {
+                        onNavToNext(listingType)
+                    },
+                    onCancel = {
+                        onNavToBack()
+                    },
+                    enableRightButton = title != "" && description != "" && contactNumber != ""
+
+                )
             },
             topBar = {
                 TopAppBar(
@@ -101,10 +136,16 @@ fun AddBusinessScreen4(){
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
-                    ShortBasicTextFieldWithLimit(
-                        maxCharacterLimit = 50,
-                        modifier = Modifier
-                    )
+                    mutableTitle?.let { title ->
+                        ShortBasicTextFieldWithLimit(
+                            inputText = mutableTitle,
+                            maxCharacterLimit = 50,
+                            onValueChange = { newText ->
+                                addBusinessViewModel?.setTitle(newText)
+                            },
+                            modifier = Modifier
+                        )
+                    }
                     Text(
                         text = "Now, give us some description",
                         color = Color(0xff333333),
@@ -112,10 +153,13 @@ fun AddBusinessScreen4(){
                         fontWeight = FontWeight.Medium
                     )
                     /*TODO*/
-//                    LongBasicTextFieldWithCharacterLimit(
-//                        inputText = ,
-//                        maxCharacterLimit = 500
-//                    )
+                    LongBasicTextFieldWithCharacterLimit(
+                        inputText = mutableDescription,
+                        maxCharacterLimit = 500,
+                        onTextChanged = { newText ->
+                            addBusinessViewModel?.setDescription(newText)
+                        }
+                    )
                     Text(
                         text = "Provide some contact information",
                         color = Color(0xff333333),
@@ -123,21 +167,31 @@ fun AddBusinessScreen4(){
                         fontWeight = FontWeight.Medium
                     )
                     Column {
-                        BasicTextFieldWithLeadingIcon(
-                            icon = R.drawable.telephone,
-                            placeholder = "09********",
-                            KeyboardOptions(
-                                imeAction = ImeAction.Next
-                            ),
-                            keyboardActions = KeyboardActions {
-                                localFocusManager.moveFocus(FocusDirection.Down)
-                            },
-                        )
+                        mutableContact?.let { contact ->
+                            BasicTextFieldWithLeadingIcon(
+                                inputText = contact,
+                                onTextChange = { newText ->
+                                    addBusinessViewModel?.setContact(newText)
+                                },
+                                icon = R.drawable.telephone,
+                                placeholder = "09********",
+                                keyboardOptions = KeyboardOptions(
+                                    imeAction = ImeAction.Next
+                                ),
+                                keyboardActions = KeyboardActions {
+                                    localFocusManager.moveFocus(FocusDirection.Down)
+                                },
+                            )
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         BasicTextFieldWithLeadingIcon(
+                            inputText = mutableEmail,
+                            onTextChange = { newText ->
+                                addBusinessViewModel?.setEmail(newText)
+                            },
                             icon = R.drawable.email,
                             placeholder = "abc@lbgrill.com",
-                            KeyboardOptions(
+                            keyboardOptions = KeyboardOptions(
                                 imeAction = ImeAction.Next
                             ),
                             keyboardActions = KeyboardActions {
@@ -146,9 +200,13 @@ fun AddBusinessScreen4(){
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         BasicTextFieldWithLeadingIcon(
+                            inputText = mutableUrl,
+                            onTextChange = { newText ->
+                                addBusinessViewModel?.setUrl(newText)
+                            },
                             icon = R.drawable.web,
                             placeholder = "lbgrill.com",
-                            KeyboardOptions(
+                            keyboardOptions = KeyboardOptions(
                                 imeAction = ImeAction.Done
                             ),
                             keyboardActions = KeyboardActions {
@@ -169,20 +227,20 @@ fun AddBusinessScreen4(){
 
 @Composable
 fun BasicTextFieldWithLeadingIcon(
+    inputText: MutableState<String?>,
     icon: Int,
     placeholder: String,
     keyboardOptions: KeyboardOptions,
     keyboardActions: KeyboardActions,
+    onTextChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ){
-    var inputText by remember {
-        mutableStateOf("")
-    }
 
     BasicTextField(
-        value = inputText,
+        value = inputText.value ?: "",
         onValueChange = {
-            inputText = it
+            inputText.value = it
+            onTextChange(it)
         },
         textStyle = TextStyle(fontSize = 12.sp, color = Color(0xFF6B6B6B)),
         keyboardOptions = keyboardOptions,
@@ -201,7 +259,7 @@ fun BasicTextFieldWithLeadingIcon(
                         tint = Color(0xFF6B6B6B)
                     )
                     Spacer(modifier = Modifier.width(15.dp))
-                    if (inputText.isEmpty()) {
+                    if (inputText.value?.isEmpty() == true) {
                         Text(
                             text = placeholder,
                             fontSize = 12.sp,
@@ -225,19 +283,23 @@ fun BasicTextFieldWithLeadingIcon(
 }
 
 @Composable
-fun ShortBasicTextFieldWithLimit(maxCharacterLimit: Int, modifier: Modifier = Modifier){
-    var inputText by remember {
-        mutableStateOf("")
-    }
+fun ShortBasicTextFieldWithLimit(
+    inputText: MutableState<String?>,
+    maxCharacterLimit: Int,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+){
+
     val localFocusManager = LocalFocusManager.current
-    val remainingCharacters = maxCharacterLimit - inputText.length
+    val remainingCharacters = maxCharacterLimit - inputText.value?.length!!
 
     Column {
         BasicTextField(
-            value = inputText,
+            value = inputText.value ?: "",
             onValueChange = {
                 if (it.length <= maxCharacterLimit) {
-                    inputText = it
+                    inputText.value = it
+                    onValueChange(it)
                 }
             },
             textStyle = TextStyle(fontSize = 12.sp, color = Color(0xFF6B6B6B)),
@@ -256,7 +318,7 @@ fun ShortBasicTextFieldWithLimit(maxCharacterLimit: Int, modifier: Modifier = Mo
                     contentAlignment = Alignment.CenterStart
                 ) {
                     Row {
-                        if (inputText.isEmpty()) {
+                        if (inputText.value?.isEmpty() == true) {
                             Text(
                                 text = "Write something here...",
                                 fontSize = 12.sp,
@@ -302,5 +364,5 @@ private fun AddBusinessPreview(){
 @Preview
 @Composable
 private fun AddBusinessScreen4Preview(){
-    AddBusinessScreen4()
+   // AddBusinessScreen4()
 }

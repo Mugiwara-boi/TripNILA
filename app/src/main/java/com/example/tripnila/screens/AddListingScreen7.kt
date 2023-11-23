@@ -59,7 +59,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.PropertyDescription
+import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
+import com.example.tripnila.model.HostTourViewModel
 import com.google.common.collect.Iterators.addAll
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,6 +69,8 @@ import com.google.common.collect.Iterators.addAll
 fun AddListingScreen7(
     listingType: String = "Staycation",
     addListingViewModel: AddListingViewModel? = null,
+    hostTourViewModel: HostTourViewModel? = null,
+    addBusinessViewModel: AddBusinessViewModel? = null,
     onNavToNext: (String) -> Unit,
     onNavToBack: () -> Unit,
 ){
@@ -80,17 +84,16 @@ fun AddListingScreen7(
         "Tell us about your tour has to offer"
     }
 
+    var selectedAmenities by when (listingType) {
+        "Staycation" -> remember { mutableStateOf(addListingViewModel?.staycation?.value?.amenities?.map { it.amenityName }) }
+        "Tour" -> remember { mutableStateOf(hostTourViewModel?.tour?.value?.amenities?.map { it.amenityName }) }
+        "Business" -> remember { mutableStateOf(addBusinessViewModel?.business?.value?.amenities?.map { it.amenityName }) }
+        else -> throw IllegalStateException("Unknown")
+    }
 
 //    var selectedAmenities by remember {
-//        mutableStateOf(listOf<String>().apply {
-//            addListingViewModel?.staycation?.value?.amenities?.map { it.amenityName }?.let { plus(it)  }
-//        })
+//        mutableStateOf(addListingViewModel?.staycation?.value?.amenities?.map { it.amenityName })
 //    }
-
-
-    var selectedAmenities by remember {
-        mutableStateOf(addListingViewModel?.staycation?.value?.amenities?.map { it.amenityName })
-    }
 
     val offers = if (listingType == "Staycation") {
         listOf(
@@ -203,7 +206,13 @@ fun AddListingScreen7(
                     onCancel = {
                         onNavToBack()
                     },
-                    enableRightButton = addListingViewModel?.staycation?.collectAsState()?.value?.amenities?.isNotEmpty() == true
+                    enableRightButton =  when (listingType) {
+                        "Staycation" -> addListingViewModel?.staycation?.collectAsState()?.value?.amenities?.isNotEmpty() == true
+                        "Tour" -> hostTourViewModel?.tour?.collectAsState()?.value?.amenities?.isNotEmpty() == true
+                        "Business" -> addBusinessViewModel?.business?.collectAsState()?.value?.amenities?.isNotEmpty() == true
+                        else -> throw IllegalStateException("Unknown")
+                    }
+
                 )
             },
             topBar = {
@@ -269,13 +278,25 @@ fun AddListingScreen7(
                                         onSelectedChange = { isSelected ->
                                             if (isSelected) {
                                                 selectedAmenities = selectedAmenities?.plus(offer.label)
-                                                addListingViewModel?.addStaycationAmenity(offer.label)
+
+                                                when (listingType) {
+                                                    "Staycation" -> addListingViewModel?.addStaycationAmenity(offer.label)
+                                                    "Tour" -> hostTourViewModel?.addAmenity(offer.label)
+                                                    "Business" -> addBusinessViewModel?.addBusinessAmenity(offer.label)
+                                                    else -> throw IllegalStateException("Unknown")
+                                                }
+
                                             } else {
                                                 selectedAmenities = selectedAmenities?.minus(offer.label)
-                                                addListingViewModel?.removeStaycationAmenity(offer.label)
+
+                                                when (listingType) {
+                                                    "Staycation" -> addListingViewModel?.removeStaycationAmenity(offer.label)
+                                                    "Tour" -> hostTourViewModel?.removeAmenity(offer.label)
+                                                    "Business" -> addBusinessViewModel?.removeBusinessAmenity(offer.label)
+                                                    else -> throw IllegalStateException("Unknown")
+                                                }
                                             }
 
-                                         //   addListingViewModel?.setStaycationAmenities(selectedAmenities)
                                         }
                                     )
                                     lastIndex = i
@@ -326,11 +347,23 @@ fun AddListingScreen7(
                                         onSelectedChange = { isSelected ->
                                             if (isSelected) {
                                                 selectedAmenities = selectedAmenities?.plus(amenity.label)
-                                                addListingViewModel?.addStaycationAmenity(amenity.label)
+
+                                                when (listingType) {
+                                                    "Staycation" -> addListingViewModel?.addStaycationAmenity(amenity.label)
+                                                    "Tour" -> hostTourViewModel?.addAmenity(amenity.label)
+                                                    "Business" -> addBusinessViewModel?.addBusinessAmenity(amenity.label)
+                                                    else -> throw IllegalStateException("Unknown")
+                                                }
 
                                             } else {
                                                 selectedAmenities = selectedAmenities?.minus(amenity.label)
-                                                addListingViewModel?.removeStaycationAmenity(amenity.label)
+
+                                                when (listingType) {
+                                                    "Staycation" -> addListingViewModel?.removeStaycationAmenity(amenity.label)
+                                                    "Tour" -> hostTourViewModel?.removeAmenity(amenity.label)
+                                                    "Business" -> addBusinessViewModel?.removeBusinessAmenity(amenity.label)
+                                                    else -> throw IllegalStateException("Unknown")
+                                                }
 
                                             }
                                          //   addListingViewModel?.setStaycationAmenities(selectedAmenities.toList())
@@ -383,10 +416,22 @@ fun AddListingScreen7(
                                         onSelectedChange = { isSelected ->
                                             if (isSelected) {
                                                 selectedAmenities = selectedAmenities?.plus(view.label)
-                                                addListingViewModel?.addStaycationAmenity(view.label)
+
+                                                when (listingType) {
+                                                    "Staycation" -> addListingViewModel?.addStaycationAmenity(view.label)
+                                                    "Tour" -> hostTourViewModel?.addAmenity(view.label)
+                                                    "Business" -> addBusinessViewModel?.addBusinessAmenity(view.label)
+                                                    else -> throw IllegalStateException("Unknown")
+                                                }
                                             } else {
                                                 selectedAmenities = selectedAmenities?.minus(view.label)
-                                                addListingViewModel?.removeStaycationAmenity(view.label)
+
+                                                when (listingType) {
+                                                    "Staycation" -> addListingViewModel?.removeStaycationAmenity(view.label)
+                                                    "Tour" -> hostTourViewModel?.removeAmenity(view.label)
+                                                    "Business" -> addBusinessViewModel?.removeBusinessAmenity(view.label)
+                                                    else -> throw IllegalStateException("Unknown")
+                                                }
                                             }
                                            // addListingViewModel?.setStaycationAmenities(selectedAmenities.toList())
                                         }
@@ -406,48 +451,58 @@ fun AddListingScreen7(
                         }
                     }
 
+                    if (listingType == "Tour") {
+                        items(numOffersRows) { row ->
+                            lastIndex = 0
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                val startIndex = row * 2
+                                val endIndex = minOf(startIndex + 2, offers.size)
 
-                    //FOR TOURRRR
-//                    if (listingType == "Tour") {
-//                        items(numOffersRows) { row ->
-//                            lastIndex = 0
-//                            Row(
-//                                modifier = Modifier.fillMaxWidth(),
-//                                horizontalArrangement = Arrangement.SpaceBetween
-//                            ) {
-//                                val startIndex = row * 2
-//                                val endIndex = minOf(startIndex + 2, offers.size)
-//
-//                                for (i in startIndex until endIndex) {
-//                                    val offer = offers[i]
-//                                    TourOfferCard(
-//                                        icon = offer.icon,
-//                                        label = offer.label,
-//                                        selected = selectedPropertyIndices.contains(i),
-//                                        onSelectedChange = { isSelected ->
-//                                            if (isSelected) {
-//                                                selectedPropertyIndices =
-//                                                    (selectedPropertyIndices + i).distinct()
-//                                            } else {
-//                                                selectedPropertyIndices =
-//                                                    selectedPropertyIndices - i
-//                                            }
-//                                        }
-//                                    )
-//                                    lastIndex = i
-//                                }
-//                                if (lastIndex == offers.size - 1 && !(offers.size % 2 == 0)) {
-//                                    AddMoreAmenity(modifier = Modifier.height(100.dp))
-//                                }
-//                            }
-//                        }
-//
-//                        if (offers.size % 2 == 0) {
-//                            item {
-//                                AddMoreAmenity(modifier = Modifier.height(100.dp))
-//                            }
-//                        }
-//                    }
+                                for (i in startIndex until endIndex) {
+                                    val offer = offers[i]
+                                    TourOfferCard(
+                                        icon = offer.icon,
+                                        label = offer.label,
+                                        selected = selectedAmenities?.contains(offer.label) == true,
+                                        onSelectedChange = { isSelected ->
+                                            if (isSelected) {
+                                                selectedAmenities = selectedAmenities?.plus(offer.label)
+
+                                                when (listingType) {
+                                                    "Staycation" -> addListingViewModel?.addStaycationAmenity(offer.label)
+                                                    "Tour" -> hostTourViewModel?.addAmenity(offer.label)
+                                                    "Business" -> addBusinessViewModel?.addBusinessAmenity(offer.label)
+                                                    else -> throw IllegalStateException("Unknown")
+                                                }
+                                            } else {
+                                                selectedAmenities = selectedAmenities?.minus(offer.label)
+
+                                                when (listingType) {
+                                                    "Staycation" -> addListingViewModel?.removeStaycationAmenity(offer.label)
+                                                    "Tour" -> hostTourViewModel?.removeAmenity(offer.label)
+                                                    "Business" -> addBusinessViewModel?.removeBusinessAmenity(offer.label)
+                                                    else -> throw IllegalStateException("Unknown")
+                                                }
+                                            }
+                                        }
+                                    )
+                                    lastIndex = i
+                                }
+                                if (lastIndex == offers.size - 1 && !(offers.size % 2 == 0)) {
+                                    AddMoreAmenity(modifier = Modifier.height(100.dp))
+                                }
+                            }
+                        }
+
+                        if (offers.size % 2 == 0) {
+                            item {
+                                AddMoreAmenity(modifier = Modifier.height(100.dp))
+                            }
+                        }
+                    }
 
 
                 }

@@ -36,20 +36,30 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.common.Orange
+import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
+import com.example.tripnila.model.HostTourViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddListingScreen1(
-    listingType: String = "Staycation",
+    listingType: String = "",
     hostId: String = "",
     onNavToNext: (String) -> Unit,
-    onNavToCancel: () -> Unit,
+    onNavToCancel: (String) -> Unit,
     addListingViewModel: AddListingViewModel? = null,
+    hostTourViewModel: HostTourViewModel? = null,
+    addBusinessViewModel: AddBusinessViewModel? = null,
 ){
 
     LaunchedEffect(hostId) {
-        addListingViewModel?.setHostId(hostId)
+        when (listingType) {
+            "Staycation" -> addListingViewModel?.setHostId(hostId)
+            "Tour" -> hostTourViewModel?.setHostId(hostId)
+            "Business" -> addBusinessViewModel?.setHostId(hostId)
+            else -> throw IllegalStateException("Unknown")
+        }
+
     }
 
     Log.d("HostId", "$hostId")
@@ -84,10 +94,10 @@ fun AddListingScreen1(
             bottomBar = {
                 AddListingBottomBookingBar(
                     onNext = {
-                        onNavToNext("Staycation")
+                        onNavToNext(listingType)
                     },
                     onCancel = {
-                        onNavToCancel()
+                        onNavToCancel(hostId.substring(5))
                     }
                 )
             },

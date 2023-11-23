@@ -15,7 +15,6 @@ import kotlin.math.abs
 
 data class Staycation(
     val staycationId: String = "",
-
     val host: Host = Host(),
     val staycationTags: List<Tag> = emptyList(),
     val staycationTitle: String = "",

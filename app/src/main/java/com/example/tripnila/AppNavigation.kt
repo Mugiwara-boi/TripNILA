@@ -30,16 +30,21 @@ import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.BottomNavigationItem
+import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.BookingHistoryViewModel
 import com.example.tripnila.model.DetailViewModel
 import com.example.tripnila.model.HomeViewModel
 import com.example.tripnila.model.HostDashboardViewModel
+import com.example.tripnila.model.HostTourViewModel
 import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.PreferenceViewModel
 import com.example.tripnila.model.ProfileViewModel
 import com.example.tripnila.model.SignupViewModel
 import com.example.tripnila.screens.AccountVerificationScreen
+import com.example.tripnila.screens.AddBusinessScreen10
+import com.example.tripnila.screens.AddBusinessScreen4
+import com.example.tripnila.screens.AddBusinessScreen8
 import com.example.tripnila.screens.AddListingScreen1
 import com.example.tripnila.screens.AddListingScreen10
 import com.example.tripnila.screens.AddListingScreen11
@@ -55,6 +60,7 @@ import com.example.tripnila.screens.AddListingScreen6
 import com.example.tripnila.screens.AddListingScreen7
 import com.example.tripnila.screens.AddListingScreen8
 import com.example.tripnila.screens.AddListingScreen9
+import com.example.tripnila.screens.AddTourScreen3
 import com.example.tripnila.screens.BookingHistoryScreen
 import com.example.tripnila.screens.HomeScreen
 import com.example.tripnila.screens.HostDashboardScreen
@@ -66,6 +72,7 @@ import com.example.tripnila.screens.ProfileScreen
 import com.example.tripnila.screens.SignupScreen
 import com.example.tripnila.screens.StaycationBookingScreen
 import com.example.tripnila.screens.StaycationDetailsScreen
+import com.example.tripnila.screens.TourDatesScreen
 
 enum class LoginRoutes {
     Signup,
@@ -92,18 +99,22 @@ enum class HostRoutes {
     AddListing1,
     AddListing2,
     AddListing3,
+    AddTour3,
     AddListing4,
+    AddBusiness4,
     AddListing5,
     AddListing6,
     AddListing7,
     AddListing8,
+    AddBusiness8,
     AddListing9,
     AddListing10,
+    AddBusiness10,
     AddListing11,
     AddListing12,
     AddListing13,
     AddListing14,
-    AddListing15
+    AddListing15,
 
 }
 
@@ -126,6 +137,8 @@ fun Navigation(
     bookingHistoryViewModel: BookingHistoryViewModel,
     hostDashboardViewModel: HostDashboardViewModel,
     addListingViewModel: AddListingViewModel,
+    hostTourViewModel: HostTourViewModel,
+    addBusinessViewModel: AddBusinessViewModel,
 ) {
 
     NavHost(
@@ -137,7 +150,7 @@ fun Navigation(
             navController = navController, homeViewModel = homeViewModel, detailViewModel = detailViewModel,
             profileViewModel = profileViewModel, loginViewModel = loginViewModel, bookingHistoryViewModel = bookingHistoryViewModel
         )
-        hostGraph(navController = navController, hostDashboardViewModel = hostDashboardViewModel, addListingViewModel = addListingViewModel)
+        hostGraph(navController = navController, hostDashboardViewModel = hostDashboardViewModel, addListingViewModel = addListingViewModel, hostTourViewModel = hostTourViewModel, addBusinessViewModel = addBusinessViewModel)
     }
 }
 
@@ -187,6 +200,8 @@ fun NavGraphBuilder.hostGraph(
     navController: NavHostController,
     hostDashboardViewModel: HostDashboardViewModel,
     addListingViewModel: AddListingViewModel,
+    hostTourViewModel: HostTourViewModel,
+    addBusinessViewModel: AddBusinessViewModel,
 ) {
     navigation(startDestination = HostRoutes.Dashboard.name, route = NestedRoutes.Host.name) {
         composable(
@@ -199,6 +214,12 @@ fun NavGraphBuilder.hostGraph(
             HostDashboardScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
                 onNavToAddListing = { hostId,listingType ->
+                    navigateToAddListing1(navController, hostId, listingType)
+                },
+                onNavToHostTour = { hostId,listingType ->
+                    navigateToAddListing1(navController, hostId, listingType)
+                },
+                onNavToAddBusiness = { hostId,listingType ->
                     navigateToAddListing1(navController, hostId, listingType)
                 },
                 hostDashboardViewModel = hostDashboardViewModel,
@@ -215,8 +236,9 @@ fun NavGraphBuilder.hostGraph(
                 hostId = entry.arguments?.getString("hostId") ?: "",
                 listingType = entry.arguments?.getString("listingType") ?: "",
                 addListingViewModel = addListingViewModel,
-                onNavToCancel = { /*TODO*/},
-              //  onNavToNext = { listingType -> navigateToAddListing2(navController, listingType) }
+                hostTourViewModel = hostTourViewModel,
+                addBusinessViewModel = addBusinessViewModel,
+                onNavToCancel = { touristId -> navigateToHost(navController, touristId) },
                 onNavToNext = { listingType -> navigateToAddListingNext(navController, 2, listingType) }
             )
         }
@@ -227,8 +249,16 @@ fun NavGraphBuilder.hostGraph(
             AddListingScreen2(
                 listingType = entry.arguments?.getString("listingType") ?: "",
                 addListingViewModel = addListingViewModel,
+                hostTourViewModel = hostTourViewModel,
+                addBusinessViewModel = addBusinessViewModel,
                // onNavToNext = { listingType -> navigateToAddListing3(navController, listingType) },
-                onNavToNext = { listingType -> navigateToAddListingNext(navController, 3, listingType) },
+                onNavToNext = { listingType ->
+                    when(listingType) {
+                        "Staycation" -> navigateToAddListingNext(navController, 3, listingType)
+                        "Tour" -> navigateToAddTour3(navController, listingType)
+                        "Business" -> navigateToAddListingNext(navController, 4, listingType)
+                    }
+                },
                 onNavToBack = { navController.popBackStack() }
             )
         }
@@ -251,8 +281,17 @@ fun NavGraphBuilder.hostGraph(
             AddListingScreen4(
                 listingType = entry.arguments?.getString("listingType") ?: "",
                 addListingViewModel = addListingViewModel,
+                hostTourViewModel = hostTourViewModel,
+                addBusinessViewModel = addBusinessViewModel,
             //    onNavToNext = { listingType -> navigateToAddListing5(navController, listingType) },
-                onNavToNext = { listingType -> navigateToAddListingNext(navController, 5, listingType) },
+                onNavToNext = { listingType ->
+                    when(listingType) {
+                        "Staycation" -> navigateToAddListingNext(navController, 5, listingType)
+                        "Tour" -> navigateToAddListingNext(navController, 6, listingType)
+                        "Business" -> navigateToAddBusiness4(navController, listingType)
+
+                    }
+                },
                 onNavToBack = { navController.popBackStack() }
             )
         }
@@ -275,6 +314,8 @@ fun NavGraphBuilder.hostGraph(
             AddListingScreen6(
                 listingType = entry.arguments?.getString("listingType") ?: "",
                 addListingViewModel = addListingViewModel,
+                hostTourViewModel = hostTourViewModel,
+                addBusinessViewModel = addBusinessViewModel,
             //    onNavToNext = { listingType -> navigateToAddListing7(navController, listingType) },
                 onNavToNext = { listingType -> navigateToAddListingNext(navController, 7, listingType) },
                 onNavToBack = { navController.popBackStack() }
@@ -287,6 +328,8 @@ fun NavGraphBuilder.hostGraph(
             AddListingScreen7(
                 listingType = entry.arguments?.getString("listingType") ?: "",
                 addListingViewModel = addListingViewModel,
+                hostTourViewModel = hostTourViewModel,
+                addBusinessViewModel = addBusinessViewModel,
             //    onNavToNext = { listingType -> navigateToAddListing8(navController, listingType) },
                 onNavToNext = { listingType -> navigateToAddListingNext(navController, 8, listingType) },
                 onNavToBack = { navController.popBackStack() }
@@ -299,9 +342,18 @@ fun NavGraphBuilder.hostGraph(
             AddListingScreen8(
                 listingType = entry.arguments?.getString("listingType") ?: "",
                 addListingViewModel = addListingViewModel,
+                hostTourViewModel = hostTourViewModel,
+                addBusinessViewModel = addBusinessViewModel,
              //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
-                onNavToNext = { listingType -> navigateToAddListingNext(navController, 9, listingType) },
-                onNavToBack = { navController.popBackStack() }
+                onNavToNext = { listingType ->
+                    when (listingType) {
+                        "Staycation" -> navigateToAddListingNext(navController, 9, listingType)
+                        "Tour" -> navigateToAddListingNext(navController, 10, listingType)
+                        "Business" -> navigateToAddBusiness8(navController, listingType)
+                    }
+                },
+                onNavToBack = { navController.popBackStack()
+                }
             )
         }
         composable(
@@ -323,8 +375,17 @@ fun NavGraphBuilder.hostGraph(
             AddListingScreen10(
                 listingType = entry.arguments?.getString("listingType") ?: "",
                 addListingViewModel = addListingViewModel,
+                hostTourViewModel = hostTourViewModel,
+                addBusinessViewModel = addBusinessViewModel,
                 //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
-                onNavToNext = { listingType -> navigateToAddListingNext(navController, 11, listingType) },
+                onNavToNext = { listingType ->
+                    when (listingType) {
+                        "Staycation" ->  navigateToAddListingNext(navController, 11, listingType)
+                        //"Tour" ->  navigateToTourDates(navController, listingType)
+                        "Business" -> navigateToAddBusiness10(navController, listingType)
+
+                    }
+                },
                 onNavToBack = { navController.popBackStack() }
             )
         }
@@ -382,12 +443,72 @@ fun NavGraphBuilder.hostGraph(
             AddListingScreen15(
                 listingType = entry.arguments?.getString("listingType") ?: "",
                 addListingViewModel = addListingViewModel,
+                hostTourViewModel = hostTourViewModel,
+                addBusinessViewModel = addBusinessViewModel,
                 onNavToDashboard = { touristId -> navigateToHost(navController, touristId) },
                 //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
               //  onNavToNext = { listingType -> navigateToAddListingNext(navController, 15, listingType) },
                 onNavToBack = { navController.popBackStack() }
             )
         }
+        composable(
+            route = HostRoutes.AddTour3.name + "/{listingType}",
+            arguments = listOf(navArgument("listingType") { type = NavType.StringType })
+        ) {entry ->
+            AddTourScreen3(
+                listingType = entry.arguments?.getString("listingType") ?: "",
+                hostTourViewModel = hostTourViewModel,
+                // onNavToNext = { listingType -> navigateToAddListing3(navController, listingType) },
+                onNavToNext = { listingType ->
+                    navigateToAddListingNext(navController, 4, listingType)
+
+                },
+                onNavToBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = HostRoutes.AddBusiness4.name + "/{listingType}",
+            arguments = listOf(navArgument("listingType") { type = NavType.StringType })
+        ) {entry ->
+            AddBusinessScreen4(
+                listingType = entry.arguments?.getString("listingType") ?: "",
+                addBusinessViewModel = addBusinessViewModel,
+                //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
+                onNavToNext = { listingType ->
+                    navigateToAddListingNext(navController, 6, listingType)
+                },
+                onNavToBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = HostRoutes.AddBusiness8.name + "/{listingType}",
+            arguments = listOf(navArgument("listingType") { type = NavType.StringType })
+        ) {entry ->
+            AddBusinessScreen8(
+                listingType = entry.arguments?.getString("listingType") ?: "",
+                addBusinessViewModel = addBusinessViewModel,
+                //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
+                onNavToNext = { listingType ->
+                    navigateToAddListingNext(navController, 10, listingType)
+                },
+                onNavToBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = HostRoutes.AddBusiness10.name + "/{listingType}",
+            arguments = listOf(navArgument("listingType") { type = NavType.StringType })
+        ) {entry ->
+            AddBusinessScreen10(
+                listingType = entry.arguments?.getString("listingType") ?: "",
+                addBusinessViewModel = addBusinessViewModel,
+                //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
+                onNavToNext = { listingType ->
+                    navigateToAddListingNext(navController, 15, listingType)
+                },
+                onNavToBack = { navController.popBackStack() }
+            )
+        }
+
     }
 }
 
@@ -540,6 +661,31 @@ private fun navigateToAddListing1(navController: NavHostController, hostId: Stri
 
 private fun navigateToAddListingNext(navController: NavHostController, page: Int, listingType: String) {
     navController.navigate("${HostRoutes.AddListing.name}$page/$listingType") {
+        launchSingleTop = true
+    }
+}
+
+
+private fun navigateToAddBusiness4(navController: NavHostController, listingType: String) {
+    navController.navigate("${HostRoutes.AddBusiness4.name}/$listingType") {
+        launchSingleTop = true
+    }
+}
+private fun navigateToAddBusiness8(navController: NavHostController, listingType: String) {
+    navController.navigate("${HostRoutes.AddBusiness8.name}/$listingType") {
+        launchSingleTop = true
+    }
+}
+
+private fun navigateToAddBusiness10(navController: NavHostController, listingType: String) {
+    navController.navigate("${HostRoutes.AddBusiness10.name}/$listingType") {
+        launchSingleTop = true
+    }
+}
+
+
+private fun navigateToAddTour3(navController: NavHostController, listingType: String) {
+    navController.navigate("${HostRoutes.AddTour3.name}/$listingType") {
         launchSingleTop = true
     }
 }

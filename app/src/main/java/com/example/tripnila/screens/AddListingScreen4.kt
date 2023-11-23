@@ -28,16 +28,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
 import com.example.tripnila.data.PropertyDescription
+import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
+import com.example.tripnila.model.HostTourViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddListingScreen4(
-    listingType: String = "Staycation",
+    listingType: String = "",
     addListingViewModel: AddListingViewModel? = null,
+    hostTourViewModel: HostTourViewModel? = null,
+    addBusinessViewModel: AddBusinessViewModel? = null,
     onNavToNext: (String) -> Unit,
     onNavToBack: () -> Unit,
 ){
+
+    val header = if (listingType == "Staycation") {
+        "Where is it located?"
+    } else if (listingType == "Business"){
+        "Where is it located?"
+    }
+    else {
+        "Where will you meet?"
+    }
 
     Surface(
         modifier = Modifier
@@ -81,7 +94,7 @@ fun AddListingScreen4(
                 ) {
                     item {
                         Text(
-                            text = "Where is it located?",
+                            text = header,
                             color = Color(0xff333333),
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Medium,

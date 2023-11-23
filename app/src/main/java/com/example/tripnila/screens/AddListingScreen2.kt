@@ -38,26 +38,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.PropertyDescription
+import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
+import com.example.tripnila.model.HostTourViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddListingScreen2(
-    listingType: String = "Staycation",
+    listingType: String = "",
     addListingViewModel: AddListingViewModel? = null,
+    hostTourViewModel: HostTourViewModel? = null,
+    addBusinessViewModel: AddBusinessViewModel? = null,
     onNavToNext: (String) -> Unit,
     onNavToBack: () -> Unit,
 ){
 
-    var selectedPropertyLabel by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationType) }
+    var selectedPropertyLabel by when (listingType) {
+        "Staycation" -> remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationType) }
+        "Tour" -> remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourType) }
+        "Business" -> remember { mutableStateOf(addBusinessViewModel?.business?.value?.businessType) }
+        else -> throw IllegalStateException("Unknown")
+    }
 
-//    var selectedPropertyLabel = addListingViewModel?.staycation?.collectAsState()?.value?.staycationType
-
-   // var selectedPropertyIndex by remember { mutableStateOf(-1) }
     val header = if (listingType == "Staycation") {
         "Which of these best describe your space?"
     } else if (listingType == "Business"){
@@ -154,7 +161,13 @@ fun AddListingScreen2(
                     onCancel = {
                         onNavToBack()
                     },
-                    enableRightButton = addListingViewModel?.staycation?.collectAsState()?.value?.staycationType != ""
+                    enableRightButton = when (listingType) {
+                        "Staycation" -> addListingViewModel?.staycation?.collectAsState()?.value?.staycationType != ""
+                        "Tour" -> hostTourViewModel?.tour?.collectAsState()?.value?.tourType != ""
+                        "Business" -> addBusinessViewModel?.business?.collectAsState()?.value?.businessType != ""
+                        else -> throw IllegalStateException("Unknown")
+                    }
+
                 )
             },
             topBar = {
@@ -212,14 +225,22 @@ fun AddListingScreen2(
                                     onSelectedChange = { isSelected ->
                                         if (isSelected) {
                                             selectedPropertyLabel = type.label
-                                            selectedPropertyLabel?.let { type ->
-                                                addListingViewModel?.setStaycationType(
-                                                    type
-                                                )
+                                            when (listingType) {
+                                                "Staycation" -> selectedPropertyLabel?.let { type -> addListingViewModel?.setStaycationType(type) }
+                                                "Tour" -> selectedPropertyLabel?.let { type -> hostTourViewModel?.setTourType(type) }
+                                                "Business" -> selectedPropertyLabel?.let { type -> addBusinessViewModel?.setBusinessType(type) }
+                                                else -> throw IllegalStateException("Unknown")
                                             }
+
                                         } else {
                                             selectedPropertyLabel = null
-                                            addListingViewModel?.clearStaycationType()
+                                            when (listingType) {
+                                                "Staycation" -> addListingViewModel?.clearStaycationType()
+                                                "Tour" -> hostTourViewModel?.clearTourType()
+                                                "Business" -> addBusinessViewModel?.clearBusinessType()
+                                                else -> throw IllegalStateException("Unknown")
+                                            }
+
                                         }
                                     },
                                 )
@@ -228,25 +249,6 @@ fun AddListingScreen2(
                     }
 
                 }
-
-//                LazyVerticalGrid(
-//                    columns = GridCells.Fixed(2),
-//                    contentPadding = PaddingValues(vertical = 25.dp),
-//                    verticalArrangement = Arrangement.spacedBy(15.dp),
-//                    horizontalArrangement = Arrangement.spacedBy(15.dp),
-//                    modifier = Modifier.fillMaxWidth()
-//                ) {
-//                    items(types) { type ->
-//                        PropertyTypeCard(
-//                            icon = type.icon,
-//                            label = type.label,
-//                            selected = selectedPropertyIndex == types.indexOf(type),
-//                            onSelectedChange = { isSelected ->
-//                                selectedPropertyIndex = if (isSelected) types.indexOf(type) else -1
-//                            },
-//                        )
-//                    }
-//                }
 
                 Spacer(modifier = Modifier.weight(1f))
                 AddListingStepIndicator(modifier = Modifier, currentPage = 0, pageCount = 4)

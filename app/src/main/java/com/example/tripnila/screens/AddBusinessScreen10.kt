@@ -34,10 +34,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,14 +49,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.common.Orange
+import com.example.tripnila.model.AddBusinessViewModel
+import com.example.tripnila.model.HostTourViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddBusinessScreen10(){
+fun AddBusinessScreen10(
+    listingType: String = "",
+    addBusinessViewModel: AddBusinessViewModel? = null,
+    onNavToNext: (String) -> Unit,
+    onNavToBack: () -> Unit,
+){
 
     val days = listOf(
         "Monday",
@@ -65,7 +78,17 @@ fun AddBusinessScreen10(){
         "Saturday",
         "Sunday"
     )
-    val selectedDayIndex = remember { mutableStateListOf<Int>() }
+
+    var selectedOpeningHour by remember { mutableStateOf(0) }
+    var selectedOpeningMinute by remember { mutableStateOf(0) }
+
+    var selectedClosingHour by remember { mutableStateOf(0) }
+    var selectedClosingMinute by remember { mutableStateOf(0) }
+
+
+
+  //  val selectedDayIndex = remember { mutableStateListOf<Int>() }
+    var selectedDays by remember { mutableStateOf(addBusinessViewModel?.business?.value?.schedule?.map { it.day }) }
 
     Surface(
         modifier = Modifier
@@ -73,7 +96,22 @@ fun AddBusinessScreen10(){
     ){
         Scaffold(
             bottomBar = {
-                AddListingBottomBookingBar()
+                AddListingBottomBookingBar(
+                    leftButtonText = "Back",
+                    onNext = {
+                        onNavToNext(listingType)
+                    },
+                    onCancel = {
+                        onNavToBack()
+                    },
+//                    enableRightButton = when (listingType) {
+//                        "Staycation" -> addListingViewModel?.staycation?.collectAsState()?.value?.staycationType != ""
+//                        "Tour" -> hostTourViewModel?.tour?.collectAsState()?.value?.tourType != ""
+//                        "Business" -> addBusinessViewModel?.business?.collectAsState()?.value?.businessType != ""
+//                        else -> throw IllegalStateException("Unknown")
+//                    }
+
+                )
             },
             topBar = {
                 TopAppBar(
@@ -111,15 +149,34 @@ fun AddBusinessScreen10(){
                         )
                     }
 
+
+                    // addBusinessViewModel?.addDay(day)
+
+                    // addBusinessViewModel?.removeDay(day)
+
                     items(days){day ->
                         ScheduleCard(
                             day = day,
-                            selected = days.indexOf(day) in selectedDayIndex,
+                            selected = selectedDays?.contains(day) == true  ,//days.indexOf(day) in selectedDayIndex,
+                            selectedOpeningHour = selectedOpeningHour,
+                            selectedOpeningMinute = selectedOpeningMinute,
+                            selectedClosingHour = selectedClosingHour,
+                            selectedClosingMinute = selectedClosingMinute,
                             onSelectedChange = { isSelected ->
                                 if (isSelected) {
-                                    selectedDayIndex.add(days.indexOf(day))
+                                    selectedDays = selectedDays?.plus(day)
+                                   // if (openingTime != "08:00 AM" ||  )
+                                 //   addBusinessViewModel?.addSchedule(day, openingTime, closingTime)
+
                                 } else {
-                                    selectedDayIndex.remove(days.indexOf(day))
+                                    selectedDays = selectedDays?.minus(day)
+                                    addBusinessViewModel?.removeSchedule(day)
+                                  //  addBusinessViewModel?.removeSchedule(day)
+                                }
+                            },
+                            onConfirm = { openingTime, closingTime ->
+                                if (selectedDays?.contains(day) == true) {
+                                    addBusinessViewModel?.addSchedule(day, openingTime, closingTime)
                                 }
                             }
                         )
@@ -134,20 +191,28 @@ fun AddBusinessScreen10(){
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleCard(
     day: String,
     selected: Boolean,
+    selectedOpeningHour: Int,
+    selectedOpeningMinute: Int,
+    selectedClosingHour: Int,
+    selectedClosingMinute: Int,
     onSelectedChange: (Boolean) -> Unit,
+    onConfirm: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ){
-    var selectedOpeningHour by remember { mutableStateOf(0) }
-    var selectedOpeningMinute by remember { mutableStateOf(0) }
-    var showOpeningDialog by remember { mutableStateOf(false) }
 
-    var selectedClosingHour by remember { mutableStateOf(0) }
-    var selectedClosingMinute by remember { mutableStateOf(0) }
+    var selectedOpeningHour by remember { mutableStateOf(selectedOpeningHour) }
+    var selectedOpeningMinute by remember { mutableStateOf(selectedOpeningMinute) }
+    var showOpeningDialog by remember { mutableStateOf(false) }
+    var coroutineScope = rememberCoroutineScope()
+
+    var selectedClosingHour by remember { mutableStateOf(selectedClosingHour) }
+    var selectedClosingMinute by remember { mutableStateOf(selectedClosingMinute) }
     var showClosingDialog by remember { mutableStateOf(false) }
 
     val openingTimePickerState = rememberTimePickerState(
@@ -162,6 +227,17 @@ fun ScheduleCard(
         is24Hour = false
     )
 
+    val openingCalendar = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, selectedOpeningHour.toInt())
+        set(Calendar.MINUTE, selectedOpeningMinute.toInt())
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+
+    val formattedOpeningTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(openingCalendar.time)
+
+
+
     val borderColor = if (selected) Orange else Color(0xff999999)
     val containerColor = if (selected) Orange.copy(alpha = 0.2f) else Color.White
 
@@ -175,7 +251,10 @@ fun ScheduleCard(
                 shape = RoundedCornerShape(10.dp)
             )
             .background(containerColor)
-            .clickable { onSelectedChange(!selected) } // Toggle the selection state
+            .clickable {
+                onSelectedChange(!selected)
+                showOpeningDialog = true
+            } // Toggle the selection state
     ) {
         Column(
             modifier = Modifier
@@ -214,8 +293,9 @@ fun ScheduleCard(
                         .clickable { showOpeningDialog = true }
 
                 ){
-                    val formattedOpeningTime = SimpleDateFormat("hh:mm a", Locale.getDefault())
-                        .format(Date(selectedOpeningHour.toLong() * 60 * 60 * 1000 + selectedOpeningMinute.toLong() * 60 * 1000))
+
+
+
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -231,7 +311,7 @@ fun ScheduleCard(
 
                         )
                         Text(
-                            text = formattedOpeningTime,
+                            text = if(!selected) "00:00 AM" else formattedOpeningTime, //formattedOpeningTime,
                             color = Color(0xff333333),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
@@ -244,7 +324,9 @@ fun ScheduleCard(
                     color = Color(0xff333333),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(end = 10.dp, top = 5.dp).offset(x = 10.dp)
+                    modifier = Modifier
+                        .padding(end = 10.dp, top = 5.dp)
+                        .offset(x = 10.dp)
                 )
                 Card(
                     colors = CardDefaults.outlinedCardColors(
@@ -260,8 +342,6 @@ fun ScheduleCard(
                         .clickable { showClosingDialog = true }
 
                 ){
-                    val formattedClosingTime = SimpleDateFormat("hh:mm a", Locale.getDefault())
-                        .format(Date(selectedClosingHour.toLong() * 60 * 60 * 1000 + selectedClosingMinute.toLong() * 60 * 1000))
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -276,8 +356,18 @@ fun ScheduleCard(
                                 .align(Alignment.Start)
 
                         )
+
+                        val closingCalendar = Calendar.getInstance().apply {
+                            set(Calendar.HOUR_OF_DAY, selectedClosingHour.toInt())
+                            set(Calendar.MINUTE, selectedClosingMinute.toInt())
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }
+
+                        val formattedClosingTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(closingCalendar.time)
+
                         Text(
-                            text = formattedClosingTime,
+                            text = if(!selected) "00:00 PM" else formattedClosingTime,
                             color = Color(0xff333333),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
@@ -287,9 +377,12 @@ fun ScheduleCard(
                 Spacer(modifier = Modifier.weight(1f))
                 Checkbox(
                     checked = selected,
-                    onCheckedChange = { onSelectedChange(it) },
+                    onCheckedChange = {
+                        showOpeningDialog = true
+                        onSelectedChange(it)
+                    },
                     colors = CheckboxDefaults.colors(
-                        checkedColor = Color(0xFF333333)
+                        checkedColor = Orange //Color(0xFF333333)
                     ),
                     modifier = Modifier.offset(y = (-8).dp)
                 )
@@ -299,7 +392,7 @@ fun ScheduleCard(
         }
     }
 
-    if (showOpeningDialog && selected) {
+    if (showOpeningDialog && selected) { //showOpeningDialog &&
         AlertDialog(
             modifier = Modifier
                 .fillMaxWidth()
@@ -319,7 +412,11 @@ fun ScheduleCard(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // time picker
-                TimeInput(state = openingTimePickerState)
+                TimeInput(
+                    state = openingTimePickerState,
+
+
+                )
 
                 // buttons
                 Row(
@@ -329,16 +426,27 @@ fun ScheduleCard(
                     horizontalArrangement = Arrangement.End
                 ) {
                     // dismiss button
-                    TextButton(onClick = { showOpeningDialog = false }) {
+                    TextButton(onClick = {
+                        showOpeningDialog = false
+                    }) {
                         Text(text = "Dismiss")
                     }
 
                     // confirm button
                     TextButton(
                         onClick = {
-                            showOpeningDialog = false
-                            selectedOpeningHour = openingTimePickerState.hour
-                            selectedOpeningMinute = openingTimePickerState.minute
+                            coroutineScope.launch {
+                                showOpeningDialog = false
+                                selectedOpeningHour = openingTimePickerState.hour
+                                selectedOpeningMinute = openingTimePickerState.minute
+                                delay(300)
+
+                                showClosingDialog = true
+                            }
+
+
+                           // onOpeningTimeSelected(selectedOpeningHour, selectedOpeningMinute)
+                          //  onOpeningTimeSelected(formattedOpeningTime)
                         }
                     ) {
                         Text(text = "Confirm")
@@ -384,9 +492,19 @@ fun ScheduleCard(
                     // confirm button
                     TextButton(
                         onClick = {
-                            showClosingDialog = false
-                            selectedClosingHour = closingTimePickerState.hour
-                            selectedClosingMinute = closingTimePickerState.minute
+                            coroutineScope.launch{
+                                val closingCalendar = Calendar.getInstance().apply {
+                                    set(Calendar.HOUR_OF_DAY, closingTimePickerState.hour.toInt())
+                                    set(Calendar.MINUTE, closingTimePickerState.minute.toInt())
+                                    set(Calendar.SECOND, 0)
+                                    set(Calendar.MILLISECOND, 0)
+                                }
+
+                                val formattedClosingTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(closingCalendar.time)
+                             //   delay(300)
+                                onConfirm(formattedOpeningTime, formattedClosingTime)
+                                showClosingDialog = false
+                            }
                         }
                     ) {
                         Text(text = "Confirm")
@@ -402,13 +520,18 @@ fun ScheduleCard(
 @Preview
 @Composable
 private fun AddBusinessPreview(){
-    ScheduleCard(
-        "Monday", false, {},
-    )
+
 }
 
 @Preview
 @Composable
 private fun AddBusinessScreen10Preview(){
-    AddBusinessScreen10()
+
+    val addBusinessViewModel = viewModel(modelClass = AddBusinessViewModel::class.java)
+    AddBusinessScreen10(
+        "Business",
+        addBusinessViewModel,
+        {},
+        {}
+    )
 }
