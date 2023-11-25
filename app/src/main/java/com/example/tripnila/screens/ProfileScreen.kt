@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,7 +50,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
+import coil.request.ImageRequest
 import com.example.tripnila.R
 import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.common.Orange
@@ -396,11 +399,11 @@ fun UserProfileComposable(profileData : ProfileData, modifier: Modifier = Modifi
             .clip(RoundedCornerShape(100.dp))
     ){
 
-        val imageLoader = rememberImagePainter(
-            data = profileData.profilePicture,
-            builder = {
-                crossfade(true)
-            }
+        val imageLoader = rememberAsyncImagePainter(
+            ImageRequest.Builder(LocalContext.current).data(data = profileData.profilePicture)
+                .apply(block = fun ImageRequest.Builder.() {
+                    crossfade(true)
+                }).build()
         )
 
         Image(

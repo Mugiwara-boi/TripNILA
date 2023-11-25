@@ -38,7 +38,13 @@ fun AddListingScreen15(
     onNavToBack: () -> Unit,
 ){
 
-    val staycation = addListingViewModel?.staycation?.collectAsState()?.value
+    val staycation = when (listingType) {
+        "Staycation" -> addListingViewModel?.staycation?.collectAsState()?.value
+        "Tour" -> hostTourViewModel?.tour?.collectAsState()?.value
+        "Business" -> addBusinessViewModel?.business?.collectAsState()?.value
+        else -> throw IllegalStateException("Unknown")
+    }
+
 
     val header = if (listingType == "Staycation") {
         "Your listing has been published"
@@ -68,10 +74,12 @@ fun AddListingScreen15(
                     leftButtonText = "Back",
                     rightButtonText = "Confirm",
                     onNext = {
-                       Log.d("Staycation", "$staycation")
-                        addListingViewModel?.staycation?.value?.host?.hostId?.substring(5)?.let { touristId ->
-                            onNavToDashboard(touristId)
+                       Log.d("$listingType", "$staycation")
 
+                        when (listingType) {
+                            "Staycation" -> addListingViewModel?.staycation?.value?.host?.hostId?.substring(5)?.let { touristId -> onNavToDashboard(touristId) }
+                            "Tour" -> hostTourViewModel?.tour?.value?.host?.hostId?.substring(5)?.let { touristId -> onNavToDashboard(touristId) }
+                            "Business" -> addBusinessViewModel?.business?.value?.host?.hostId?.substring(5)?.let { touristId -> onNavToDashboard(touristId) }
                         }
 
                     },

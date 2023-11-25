@@ -2,6 +2,8 @@ package com.example.tripnila.data
 
 import android.net.Uri
 import com.google.firebase.Timestamp
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Calendar
 import java.util.Date
 import java.util.concurrent.TimeUnit
@@ -36,7 +38,6 @@ data class Staycation(
     val amenities: List<Amenity> = emptyList(),
     val staycationBookings: List<StaycationBooking> = emptyList(),
     val nearbyAttractions: List<String> = emptyList()
-  //  val averageReviewRating: Double = 0.0
 ) {
     val totalReviews: Int
         get() = staycationBookings.count { it.bookingReview != null }
@@ -49,6 +50,20 @@ data class Staycation(
                 0.0 // or any default value if there are no reviews
             }
         }
+    val pendingBookingsCount: Int
+        get() = staycationBookings.count { it.bookingStatus == "Pending" }
+    val ongoingBookingsCount: Int
+        get() = staycationBookings.count { it.bookingStatus == "Ongoing" }
+
+    val completedBookingsCount: Int
+        get() = staycationBookings.count { it.bookingStatus == "Completed" }
+
+    val cancelledBookingsCount: Int
+        get() = staycationBookings.count { it.bookingStatus == "Cancelled" }
+
+    val checkingOutBookingsCount: Int
+        get() = staycationBookings.count { it.bookingStatus == "Ongoing" && (it.checkOutDate?.toInstant()?.atZone(ZoneId.systemDefault())?.toLocalDate() == LocalDate.now() || it.checkOutDate?.toInstant()?.atZone(ZoneId.systemDefault())?.toLocalDate() == LocalDate.now().plusDays(1))
+    }
 }
 
 data class StaycationAvailability(
@@ -73,9 +88,7 @@ data class Photo(
 
 data class StaycationBooking(
     val staycationBookingId: String = "",
- //   val touristId: String = "",
     val tourist: Tourist? = null,
-   // val staycationId: String = "",
     val bookingDate: Date? = null,
     val checkInDate: Date? = null,
     val checkOutDate: Date? = null,

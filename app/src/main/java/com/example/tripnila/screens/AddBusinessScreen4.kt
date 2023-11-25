@@ -26,10 +26,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -48,8 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
 import com.example.tripnila.model.AddBusinessViewModel
-import com.example.tripnila.model.AddListingViewModel
-import com.example.tripnila.model.HostTourViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,7 +148,7 @@ fun AddBusinessScreen4(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
-                    /*TODO*/
+
                     LongBasicTextFieldWithCharacterLimit(
                         inputText = mutableDescription,
                         maxCharacterLimit = 500,

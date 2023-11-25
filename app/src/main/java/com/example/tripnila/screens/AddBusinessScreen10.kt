@@ -34,6 +34,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -79,16 +80,28 @@ fun AddBusinessScreen10(
         "Sunday"
     )
 
+
+
     var selectedOpeningHour by remember { mutableStateOf(0) }
     var selectedOpeningMinute by remember { mutableStateOf(0) }
 
     var selectedClosingHour by remember { mutableStateOf(0) }
     var selectedClosingMinute by remember { mutableStateOf(0) }
 
-
-
-  //  val selectedDayIndex = remember { mutableStateListOf<Int>() }
     var selectedDays by remember { mutableStateOf(addBusinessViewModel?.business?.value?.schedule?.map { it.day }) }
+
+    val coroutineScope = rememberCoroutineScope()
+    val alreadySubmitted = addBusinessViewModel?.isSuccessAddBusiness?.collectAsState()?.value
+
+    val isLoading = addBusinessViewModel?.isLoadingAddBusiness?.collectAsState()?.value
+
+    LaunchedEffect(isLoading){
+        if (isLoading != null) {
+            if (isLoading == false && alreadySubmitted == true) {
+                onNavToNext(listingType)
+            }
+        }
+    }
 
     Surface(
         modifier = Modifier
@@ -99,17 +112,19 @@ fun AddBusinessScreen10(
                 AddListingBottomBookingBar(
                     leftButtonText = "Back",
                     onNext = {
-                        onNavToNext(listingType)
+                       if (alreadySubmitted == true) {
+                            onNavToNext(listingType)
+                        } else {
+                            coroutineScope.launch {
+                                addBusinessViewModel?.addNewBusiness()
+                            }
+                        }
                     },
                     onCancel = {
                         onNavToBack()
                     },
-//                    enableRightButton = when (listingType) {
-//                        "Staycation" -> addListingViewModel?.staycation?.collectAsState()?.value?.staycationType != ""
-//                        "Tour" -> hostTourViewModel?.tour?.collectAsState()?.value?.tourType != ""
-//                        "Business" -> addBusinessViewModel?.business?.collectAsState()?.value?.businessType != ""
-//                        else -> throw IllegalStateException("Unknown")
-//                    }
+                    enableRightButton = addBusinessViewModel?.business?.collectAsState()?.value?.schedule?.isNotEmpty() == true,
+                    isRightButtonLoading = addBusinessViewModel?.isLoadingAddBusiness?.collectAsState()?.value == true
 
                 )
             },
@@ -149,10 +164,6 @@ fun AddBusinessScreen10(
                         )
                     }
 
-
-                    // addBusinessViewModel?.addDay(day)
-
-                    // addBusinessViewModel?.removeDay(day)
 
                     items(days){day ->
                         ScheduleCard(

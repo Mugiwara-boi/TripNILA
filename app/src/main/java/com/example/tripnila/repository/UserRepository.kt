@@ -4,7 +4,10 @@ import android.net.Uri
 import android.util.Log
 import com.example.tripnila.common.Constants
 import com.example.tripnila.data.Amenity
+import com.example.tripnila.data.Business
+import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.Host
+import com.example.tripnila.data.Offer
 import com.example.tripnila.data.Photo
 import com.example.tripnila.data.Preference
 import com.example.tripnila.data.Promotion
@@ -13,15 +16,14 @@ import com.example.tripnila.data.Staycation
 import com.example.tripnila.data.StaycationAvailability
 import com.example.tripnila.data.StaycationBooking
 import com.example.tripnila.data.Tag
+import com.example.tripnila.data.Tour
+import com.example.tripnila.data.TourSchedule
 import com.example.tripnila.data.Tourist
-import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import java.security.MessageDigest
@@ -57,9 +59,20 @@ class UserRepository {
     private val touristProfileCollection = db.collection("tourist_profile")
     private val reviewPhotoCollection = db.collection("review_photo")
 
+    private val businessCollection = db.collection("business")
+    private val businessMenuCollection = db.collection("business_menu")
+    private val businessAvailabilityCollection = db.collection("business_availability")
+
+    private val tourCollection = db.collection("tour")
+    private val tourHistoryCollection = db.collection("tour_history")
+    private val tourOffersCollection = db.collection("tour_offers")
+    private val tourAvailabilityCollection = db.collection("tour_availability")
+
+
     private val paymentHistoryCollection = db.collection("payment_history")
     private val staycationBookingHistoryCollection = db.collection("staycation_booking_history")
     private val staycationHistoryCollection = db.collection("staycation_history")
+    private val businessHistoryCollection = db.collection("business_history")
     private val serviceAmenityHistoryCollection = db.collection("service_amenity_history")
     private val servicePhotoHistoryCollection = db.collection("service_photo_history")
 
@@ -71,79 +84,524 @@ class UserRepository {
 
 
 
+    suspend fun getStaycationsByHostId(host: Host): List<Staycation> {
+        val staycations = mutableListOf<Staycation>()
 
-//        hasDangerousAnimal: Boolean,
-//        hasSecurityCamera: Boolean,
-//        hasWeapon: Boolean,
-//        hostId: String,
-//        noOfBathrooms: Int,
-//        noOfBedrooms: Int,
-//        noOfBeds: Int,
-//        noOfGuests: Int,
-//        staycationDescription: String,
-//        staycationLocation: String,
-//        staycationPrice: Int,
-//        staycationSpace: String,
-//        staycationTitle: String,
-//        staycationType: String,
-//        amenities: List<String>,
-//        photos: List<Photo>,
-//        availableDates: List<Timestamp>,
-//        promotions: List<Promotion>,
-//        nearbyAttractions: List<String>,          /*TODO*/
-//        staycationTags: List<String>               /*TODO*/
+        try {
 
-    suspend fun forAddingRecordsFromCSV(
-        user: Tourist,
-        staycationDescription: String = "",
-        staycationLocation: String = "",
-        staycationPrice: Int = 0,
-        staycationTitle: String = "",
-        amenities: List<String> = emptyList(),
-        nearbyAttractions: List<String> = emptyList(),
-        staycationTags: List<String> = emptyList()
-    ): Boolean {
-        return try {
-            val hashedPassword = hashPassword(user.password)
-            val userData = hashMapOf(
-                "fullName" to mapOf(
-                    "firstName" to user.firstName,
-                    "middleName" to user.middleName,
-                    "lastName" to user.lastName
-                ),
-                "username" to user.username,
-                "password" to hashedPassword
-            )
+            val hostId = host.hostId
 
-            val touristDocRef = touristCollection.add(userData).await()
-            val touristId = touristDocRef.id
+            val querySnapshot = staycationCollection
+                .whereEqualTo("hostId", hostId)
+                .get()
+                .await()
 
-            val hostData = hashMapOf(
-                "touristId" to touristId
-            )
-            hostCollection.document("HOST-$touristId").set(hostData).await()
+            for (document in querySnapshot.documents) {
+                val staycationId = document.id
+                val hasDangerousAnimal = document.getBoolean("hasDangerousAnimal") ?: false
+                val hasSecurityCamera = document.getBoolean("hasSecurityCamera") ?: false
+                val hasWeapon = document.getBoolean("hasWeapon") ?: false
+                val hostId = document.getString("hostId") ?: ""
+                val noOfBathrooms = document.getLong("noOfBathrooms")?.toInt() ?: 0
+                val noOfBedrooms = document.getLong("noOfBedrooms")?.toInt() ?: 0
+                val noOfBeds = document.getLong("noOfBeds")?.toInt() ?: 0
+                val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
+                val staycationDescription = document.getString("staycationDescription") ?: ""
+                val staycationLocation = document.getString("staycationLocation") ?: ""
+                val staycationPrice = document.getDouble("staycationPrice") ?: 0.0
+                val staycationSpace = document.getString("staycationSpace") ?: ""
+                val staycationTitle = document.getString("staycationTitle") ?: ""
+                val staycationType = document.getString("staycationType") ?: ""
 
-            val isSuccess = addStaycation(
-                staycationTitle = staycationTitle,
-                staycationDescription = staycationDescription,
-                staycationTags = staycationTags,
-                hostId = "HOST-$touristId",
-                staycationPrice = staycationPrice.toDouble(),
-                amenities = amenities,
-                staycationLocation = staycationLocation,
-                nearbyAttractions = nearbyAttractions
+                val staycationImages = getServiceImages(staycationId, "Staycation")
+                val staycationBookings = getStaycationBookings(staycationId)
+            //    val hostInfo = getHostInfo(hostId)
 
-            )
+                val staycation = Staycation(
+                    staycationId = staycationId,
+                    hasDangerousAnimal = hasDangerousAnimal,
+                    hasSecurityCamera = hasSecurityCamera,
+                    hasWeapon = hasWeapon,
+                    noOfBathrooms = noOfBathrooms,
+                    noOfBedrooms = noOfBedrooms,
+                    noOfBeds = noOfBeds,
+                    noOfGuests = noOfGuests,
+                    staycationDescription = staycationDescription,
+                    staycationLocation = staycationLocation,
+                    staycationPrice = staycationPrice,
+                    staycationSpace = staycationSpace,
+                    staycationTitle = staycationTitle,
+                    staycationType = staycationType,
+                    staycationImages = staycationImages,
+                    staycationBookings = staycationBookings,
+                    host = Host(
+                        profilePicture = host?.profilePicture ?: "",
+                        firstName = host?.firstName ?: "",
+                        middleName = host?.middleName ?: "",
+                        lastName = host?.lastName ?: "",
+                        hostId = host?.hostId ?: "",
+                        username = host?.username ?: "",
+                    )
+                )
+                staycations.add(staycation)
 
-            Log.d("AddStaycation", "$isSuccess")
 
-            true
+            }
+        } catch (e: Exception) {
+            // Handle the exception, e.g., log or throw
+            e.printStackTrace()
+        }
+        return staycations
+    }
+
+
+    suspend fun getStaycationBookingsByStaycationId(staycationId: String) : List<StaycationBooking> {
+
+        val bookings = mutableListOf<StaycationBooking>()
+
+        try {
+            val querySnapshot = staycationBookingCollection
+                .whereEqualTo("staycationId", staycationId)
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                val bookingId = document.id
+                val bookingDate = (document["bookingDate"] as? Timestamp)?.toDate() ?: Date()
+                val bookingStatus = document.getString("bookingStatus") ?: ""
+                val checkInDate = (document["checkInDate"] as? Timestamp)?.toDate() ?: Date()
+                val checkOutDate = (document["checkOutDate"] as? Timestamp)?.toDate() ?: Date()
+                val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
+                val noOfInfants = document.getLong("noOfInfants")?.toInt() ?: 0
+                val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
+                val totalAmount = document.getDouble("totalAmount") ?: 0.0
+                val touristId = document.getString("touristId") ?: ""
+
+                val guest = getTouristProfile(touristId)
+
+                val staycationBooking = StaycationBooking(
+                    staycationBookingId = bookingId,
+                    bookingDate = bookingDate,
+                    bookingStatus = bookingStatus,
+                    checkInDate = checkInDate,
+                    checkOutDate = checkOutDate,
+                    noOfGuests = noOfGuests,
+                    noOfInfants = noOfInfants,
+                    noOfPets = noOfPets,
+                    totalAmount = totalAmount,
+                    tourist = Tourist(
+                        touristId = touristId,
+                        firstName = guest?.firstName ?: "",
+                        middleName = guest?.middleName ?: "",
+                        lastName = guest?.lastName ?: "",
+                        profilePicture = guest?.profilePicture ?: "",
+                    )
+                )
+
+                bookings.add(staycationBooking)
+            }
+
         } catch (e: Exception) {
             e.printStackTrace()
-            false
         }
+        return bookings
 
     }
+
+
+    suspend fun getToursByHostId(host: Host): List<Tour> {
+        val tours = mutableListOf<Tour>()
+
+        try {
+
+            val hostId = host.hostId
+
+            val querySnapshot = tourCollection
+                .whereEqualTo("hostId", hostId)
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                val tourId = document.id
+                val tourContact = document.getString("tourContact") ?: ""
+                val tourDescription = document.getString("tourDescription") ?: ""
+                val tourDuration = document.getString("tourDuration") ?: ""
+                val tourEmail = document.getString("tourEmail") ?: ""
+                val tourFacebook = document.getString("tourFacebook") ?: ""
+                val tourInstagram = document.getString("tourInstagram") ?: ""
+                val tourLanguage = document.getString("tourLanguage") ?: ""
+                val tourLocation = document.getString("tourLocation") ?: ""
+                val tourPrice = document.getDouble("tourPrice") ?: 0.0
+                val tourTitle = document.getString("tourTitle") ?: ""
+                val tourType = document.getString("tourType") ?: ""
+
+                val tourImages = getServiceImages(tourId, "Tour")
+
+                val tour = Tour(
+                    tourId = tourId,
+                    tourContact = tourContact,
+                    tourDescription = tourDescription,
+                    tourDuration = tourDuration,
+                    tourEmail = tourEmail,
+                    tourFacebook = tourFacebook,
+                    tourInstagram = tourInstagram,
+                    tourLanguage = tourLanguage,
+                    tourLocation = tourLocation,
+                    tourPrice = tourPrice,
+                    tourTitle = tourTitle,
+                    tourType = tourType,
+                    tourImages = tourImages,
+                    host = Host(
+                        profilePicture = host?.profilePicture ?: "",
+                        firstName = host?.firstName ?: "",
+                        middleName = host?.middleName ?: "",
+                        lastName = host?.lastName ?: "",
+                        hostId = host?.hostId ?: "",
+                    )
+                )
+
+                tours.add(tour)
+            }
+        } catch (e: Exception) {
+            // Handle the exception, e.g., log or throw
+            e.printStackTrace()
+        }
+        return tours
+    }
+
+    suspend fun getBusinessesByHostId(host: Host): List<Business> {
+        val businesses = mutableListOf<Business>()
+
+        try {
+            val hostId = host.hostId
+
+            val querySnapshot = businessCollection
+                .whereEqualTo("hostId", hostId)
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                val businessId = document.id
+                val additionalInfo = document.getString("additionalInfo") ?: ""
+                val businessContact = document.getString("businessContact") ?: ""
+                val businessDescription = document.getString("businessDescription") ?: ""
+                val businessEmail = document.getString("businessEmail") ?: ""
+                val businessLocation = document.getString("businessLocation") ?: ""
+                val businessTitle = document.getString("businessTitle") ?: ""
+                val businessType = document.getString("businessType") ?: ""
+                val businessURL = document.getString("businessURL") ?: ""
+
+                val businessImages = getServiceImages(businessId, "Business")
+
+                val business = Business(
+                    businessId = businessId,
+                    additionalInfo = additionalInfo,
+                    businessContact = businessContact,
+                    businessDescription = businessDescription,
+                    businessEmail = businessEmail,
+                    businessLocation = businessLocation,
+                    businessTitle = businessTitle,
+                    businessType = businessType,
+                    businessURL = businessURL,
+                    businessImages = businessImages,
+                    host = Host(
+                        profilePicture = host?.profilePicture ?: "",
+                        firstName = host?.firstName ?: "",
+                        middleName = host?.middleName ?: "",
+                        lastName = host?.lastName ?: "",
+                        hostId = host?.hostId ?: "",
+                    )
+                )
+
+                businesses.add(business)
+            }
+        } catch (e: Exception) {
+            // Handle the exception, e.g., log or throw
+            e.printStackTrace()
+        }
+
+        return businesses
+    }
+
+
+
+
+
+    suspend fun addTour(
+        hostId: String = "",
+        tourType: String = "",
+        tourTitle: String = "",
+        tourDescription: String = "",
+        tourDuration: String = "",
+        tourLanguage: String = "",
+        tourContact: String = "",
+        tourEmail: String = "",
+        tourFacebook: String = "",
+        tourInstagram: String = "",
+        tourLocation: String = "",
+        offers: List<Offer> = emptyList(),
+        tourImages: List<Photo> = emptyList(),
+        schedule: List<TourSchedule> = emptyList(),
+        tourPrice: Double = 0.0,
+        // promotions: List<Promotion> = emptyList(),
+        //  nearbyAttractions: List<String> = emptyList(), ?????????   /*TODO*/
+        tourTags: List<String> = emptyList()
+    ): Boolean {
+        try {
+            val querySnapshot = tourHistoryCollection
+                .orderBy("tourId", Query.Direction.DESCENDING)
+                .limit(1)
+                .get()
+                .await()
+
+            val lastDocument = querySnapshot.documents.firstOrNull()
+            val lastId = lastDocument?.getString("tourId")
+            val newId = (lastId?.toInt() ?: 0) + 1
+
+            val tour = hashMapOf(
+                "hostId" to hostId,
+                "tourTitle" to tourTitle,
+                "tourDescription" to tourDescription,
+                "tourType" to tourType,
+                "tourLocation" to tourLocation,
+                "tourDuration" to tourDuration,
+                "tourLanguage" to tourLanguage,
+                "tourContact" to tourContact,
+                "tourEmail" to tourEmail,
+                "tourFacebook" to tourFacebook,
+                "tourInstagram" to tourInstagram,
+                "tourPrice" to tourPrice,
+            )
+
+            tourCollection.document(newId.toString()).set(tour).await()
+
+            addTourToHistory(newId.toString(), "add")
+
+            addTourOffers(newId.toString(), offers)
+
+            addServicePhotos(newId.toString(), "Tour", tourImages)
+
+            addServiceTags(newId.toString(), "Tour", tourTags)
+
+            addTourAvailability(newId.toString(), schedule)
+
+            //   addStaycationPromotions(newId.toString(), promotions)
+
+            //   addStaycationNearbyAttractions(newId.toString(), nearbyAttractions) /*TODO*/
+
+
+
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+
+    suspend fun addTourAvailability(tourId: String, schedules: List<TourSchedule>) {
+        try {
+            schedules.forEach { schedule ->
+                val scheduleData = hashMapOf(
+                    "tourId" to tourId,
+                    "date" to schedule.date,
+                    "startTime" to schedule.startTime,
+                    "endTime" to schedule.endTime,
+                )
+
+                tourAvailabilityCollection.add(scheduleData).await()
+
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun addTourOffers(tourId: String, offers: List<Offer>) {
+        try {
+            offers.forEach { offer ->
+                val data = hashMapOf(
+                    "tourId" to tourId,
+                    "typeOfOffer" to offer.typeOfOffer,
+                    "offer" to offer.offer
+                )
+
+                // Use add() to automatically generate a unique document ID
+                val documentReference = tourOffersCollection.add(data).await()
+
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+    }
+
+    suspend fun addTourToHistory(tourId: String, transaction: String) {
+        try {
+            val tourDocument = tourCollection.document(tourId).get().await()
+
+            // Check if the document exists
+            if (tourDocument.exists()) {
+                // Get the data from the document
+                val tourData = tourDocument.data
+
+                // Add additional fields
+                tourData?.put("tourId", tourId)
+                tourData?.put("transaction", transaction) // or "update" or "delete" based on your use case
+                tourData?.put("transactionTimestamp", FieldValue.serverTimestamp())
+
+                // Add the fetched document to the payment_history collection
+                tourHistoryCollection.add(tourData!!).await()
+            } else {
+                Log.d("", "No document found with the provided paymentId")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+    }
+
+
+
+    suspend fun addBusiness(
+        hostId: String = "",
+        businessDescription: String = "",
+        businessLocation: String = "",
+        businessTitle: String = "",
+        businessType: String = "",
+        businessContact: String = "",
+        businessEmail: String = "",
+        businessURL: String = "",
+        additionalInfo: String = "",
+        amenities: List<String> = emptyList(),
+        businessImages: List<Photo> = emptyList(),
+        businessMenusPhotos: List<Photo> = emptyList(),
+        schedule: List<DailySchedule> = emptyList(),
+       // promotions: List<Promotion> = emptyList(),
+      //  nearbyAttractions: List<String> = emptyList(), ?????????   /*TODO*/
+        businessTags: List<String> = emptyList()
+    ): Boolean {
+        try {
+            val querySnapshot = businessHistoryCollection
+                .orderBy("businessId", Query.Direction.DESCENDING)
+                .limit(1)
+                .get()
+                .await()
+
+            val lastDocument = querySnapshot.documents.firstOrNull()
+            val lastId = lastDocument?.getString("businessId")
+            val newId = (lastId?.toInt() ?: 0) + 1
+
+            val business = hashMapOf(
+                "hostId" to hostId,
+                "additionalInfo" to additionalInfo,
+                "businessDescription" to businessDescription,
+                "businessLocation" to businessLocation,
+                "businessEmail" to businessEmail,
+                "businessContact" to businessContact,
+                "businessURL" to businessURL,
+                "businessTitle" to businessTitle,
+                "businessType" to businessType
+            )
+
+            businessCollection.document(newId.toString()).set(business).await()
+
+            addBusinessToHistory(newId.toString(), "add")
+
+            addServiceAmenities(newId.toString(), "Business", amenities)
+
+            addServicePhotos(newId.toString(), "Business", businessImages)
+
+            addServiceTags(newId.toString(), "Business", businessTags)
+
+            addBusinessMenu(newId.toString(), businessMenusPhotos)
+
+            addBusinessAvailability(newId.toString(), schedule)
+
+         //   addStaycationPromotions(newId.toString(), promotions)
+
+         //   addStaycationNearbyAttractions(newId.toString(), nearbyAttractions) /*TODO*/
+
+
+
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+
+    suspend fun addBusinessAvailability(businessId: String, schedules: List<DailySchedule>) {
+        try {
+            schedules.forEach { schedule ->
+                val scheduleData = hashMapOf(
+                    "businessId" to businessId,
+                    "day" to schedule.day,
+                    "openingTime" to schedule.openingTime,
+                    "closingTime" to schedule.closingTime,
+                )
+
+                businessAvailabilityCollection.add(scheduleData).await()
+
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+
+    suspend fun addBusinessToHistory(businessId: String, transaction: String) {
+        try {
+            val businessDocument = businessCollection.document(businessId).get().await()
+
+            // Check if the document exists
+            if (businessDocument.exists()) {
+                // Get the data from the document
+                val businessData = businessDocument.data
+
+                // Add additional fields
+                businessData?.put("businessId", businessId)
+                businessData?.put("transaction", transaction) // or "update" or "delete" based on your use case
+                businessData?.put("transactionTimestamp", FieldValue.serverTimestamp())
+
+                // Add the fetched document to the payment_history collection
+                businessHistoryCollection.add(businessData!!).await()
+            } else {
+                Log.d("", "No document found with the provided paymentId")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+    }
+
+    suspend fun addBusinessMenu(businessId: String, photos: List<Photo>) {
+        try {
+            photos.mapNotNull { it.photoUri }.forEach { uri ->
+                val fileName = UUID.randomUUID().toString()
+                val imageRef = storageReference.child("images/service_photos/business_menus/$fileName")
+                imageRef.putFile(uri).await()
+
+                val photoUrl = imageRef.downloadUrl.await().toString()
+
+                val photoType = photos.firstOrNull { it.photoUri == uri }?.photoType ?: "Others"
+
+                val photoData = hashMapOf(
+                    "businessId" to businessId,
+                    "photoUrl" to photoUrl,
+                    "photoType" to photoType
+                )
+
+                businessMenuCollection.add(photoData).await()
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+    }
+
 
     suspend fun addStaycation(
         hasDangerousAnimal: Boolean = false,
@@ -314,6 +772,7 @@ class UserRepository {
             e.printStackTrace()
         }
     }
+
 
     suspend fun addStaycationAvailability(staycationId: String, availableDates: List<Timestamp>) {
         try {
@@ -692,7 +1151,7 @@ class UserRepository {
                 val staycationType = staycationDocument.getString("staycationType") ?: ""
 
                 // Fetch Staycation images
-                val staycationImages = getStaycationImages(staycationId)
+                val staycationImages = getServiceImages(staycationId, "Staycation")
                 val hostInfo = getHostInfo(hostId)
 
                 return Staycation(
@@ -700,7 +1159,6 @@ class UserRepository {
                     hasDangerousAnimal = hasDangerousAnimal,
                     hasSecurityCamera = hasSecurityCamera,
                     hasWeapon = hasWeapon,
-                    // hostId = hostId,
                     noOfBathrooms = noOfBathrooms,
                     noOfBedrooms = noOfBedrooms,
                     noOfBeds = noOfBeds,
@@ -719,12 +1177,6 @@ class UserRepository {
                         lastName = hostInfo?.lastName ?: "",
                         touristId = hostInfo?.touristId ?: "",
                     )
-                  //  hostImage = hostInfo?.profilePicture ?: "",
-//                    hostFirstName = hostInfo?.firstName ?: "",
-//                    hostMiddleName = hostInfo?.middleName ?: "",
-//                    hostLastName = hostInfo?.lastName ?: "",
-
-                    // Add other properties as needed
                 )
             }
         } catch (e: Exception) {
@@ -766,23 +1218,24 @@ class UserRepository {
         }
     }
 
-    suspend fun getStaycationImages(staycationId: String): List<Photo> {
+    suspend fun getServiceImages(serviceId: String, serviceType: String): List<Photo> {
         return try {
             val result = servicePhotoCollection
-                .whereEqualTo("serviceId", staycationId)
+                .whereEqualTo("serviceId", serviceId)
+                .whereEqualTo("serviceType", serviceType)
                 .get()
                 .await()
 
-            val staycationImages = mutableListOf<Photo>()
+            val serviceImages = mutableListOf<Photo>()
 
             for (document in result.documents) {
                 val photoType = document.getString("photoType") ?: ""
                 val photoUrl = document.getString("photoUrl") ?: ""
 
-                staycationImages.add(Photo(photoUrl = photoUrl, photoType = photoType))
+                serviceImages.add(Photo(photoUrl = photoUrl, photoType = photoType))
             }
 
-            staycationImages
+            serviceImages
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -1236,7 +1689,7 @@ class UserRepository {
         val hasDangerousAnimal = document.getBoolean("hasDangerousAnimal") ?: false
 
         val touristInfo = getHostInfo(hostId)
-        val staycationImages = getStaycationImages(staycationId)
+        val staycationImages = getServiceImages(staycationId, "Staycation")
         val staycationTags = getStaycationTags(staycationId)
         val promotions = getPromotions(staycationId)
         val availability = getStaycationAvailability(staycationId)
@@ -1303,7 +1756,7 @@ class UserRepository {
                 val hasDangerousAnimal = document.getBoolean("hasDangerousAnimal") ?: false
 
                 val touristInfo = getHostInfo(hostId)
-                val staycationImages = getStaycationImages(staycationId)
+                val staycationImages = getServiceImages(staycationId, "Staycation")
                 val staycationTags = getStaycationTags(staycationId)
                 val promotions = getPromotions(staycationId)
                 val availability = getStaycationAvailability(staycationId)
@@ -1469,6 +1922,58 @@ class UserRepository {
             e.printStackTrace()
             emptyList() // Handle the error case as needed
         }
+    }
+
+    suspend fun forAddingRecordsFromCSV(
+        user: Tourist,
+        staycationDescription: String = "",
+        staycationLocation: String = "",
+        staycationPrice: Int = 0,
+        staycationTitle: String = "",
+        amenities: List<String> = emptyList(),
+        nearbyAttractions: List<String> = emptyList(),
+        staycationTags: List<String> = emptyList()
+    ): Boolean {
+        return try {
+            val hashedPassword = hashPassword(user.password)
+            val userData = hashMapOf(
+                "fullName" to mapOf(
+                    "firstName" to user.firstName,
+                    "middleName" to user.middleName,
+                    "lastName" to user.lastName
+                ),
+                "username" to user.username,
+                "password" to hashedPassword
+            )
+
+            val touristDocRef = touristCollection.add(userData).await()
+            val touristId = touristDocRef.id
+
+            val hostData = hashMapOf(
+                "touristId" to touristId
+            )
+            hostCollection.document("HOST-$touristId").set(hostData).await()
+
+            val isSuccess = addStaycation(
+                staycationTitle = staycationTitle,
+                staycationDescription = staycationDescription,
+                staycationTags = staycationTags,
+                hostId = "HOST-$touristId",
+                staycationPrice = staycationPrice.toDouble(),
+                amenities = amenities,
+                staycationLocation = staycationLocation,
+                nearbyAttractions = nearbyAttractions
+
+            )
+
+            Log.d("AddStaycation", "$isSuccess")
+
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+
     }
 
     suspend fun getPromotions(staycationId: String): List<Promotion> {

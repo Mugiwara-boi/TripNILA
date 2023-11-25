@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.AppOutlinedButton
 import com.example.tripnila.common.AppReviewsCard
@@ -119,7 +120,7 @@ fun StaycationManagerScreen(){
     )
     val transactions = listOf(
         Transaction(
-            customerImage = R.drawable.joshua,
+          //  customerImage = R.drawable.joshua,
             customerName = "Juan Cruz",
             customerUsername = "@jcruz",
             guestsCount = 4,
@@ -129,7 +130,7 @@ fun StaycationManagerScreen(){
             transactionStatus = "Completed"
         ),
         Transaction(
-            customerImage = R.drawable.joshua,
+          // customerImage = R.drawable.joshua,
             customerName = "Juan Cruz",
             customerUsername = "@jcruz",
             guestsCount = 4,
@@ -293,10 +294,11 @@ fun TransactionCard(transaction: Transaction, modifier: Modifier = Modifier){
                             .size(30.dp)
                             .clip(shape = RoundedCornerShape(50.dp))
                     ) {
-                        Image(
-                            painter = painterResource(id = transaction.customerImage),
-                            contentDescription = "Host",
+                        AsyncImage(
+                            model = if (transaction.customerImage == "") "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png" else transaction.customerImage,//imageLoader,
+                            contentDescription = "",
                             contentScale = ContentScale.Crop
+
                         )
                     }
                     Column(
@@ -360,7 +362,7 @@ private fun StaycationManagerPreview() {
 
     val transactions = listOf(
         Transaction(
-            customerImage = R.drawable.joshua,
+        //    customerImage = R.drawable.joshua,
             customerName = "Juan Cruz",
             customerUsername = "@jcruz",
             guestsCount = 4,
@@ -370,7 +372,7 @@ private fun StaycationManagerPreview() {
             transactionStatus = "Completed"
         ),
         Transaction(
-            customerImage = R.drawable.joshua,
+      //      customerImage = R.drawable.joshua,
             customerName = "Juan Cruz",
             customerUsername = "@jcruz",
             guestsCount = 4,

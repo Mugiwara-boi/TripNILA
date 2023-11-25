@@ -1,5 +1,7 @@
 package com.example.tripnila.data
 
+import java.time.LocalDate
+
 data class Tour(
 
     val tourId: String = "",
@@ -9,7 +11,7 @@ data class Tour(
     val tourDescription: String = "",
     val tourType: String = "",
     val tourLocation: String = "",
-    val tourDuration: Int = 0,
+    val tourDuration: String = "",
     val tourLanguage: String = "",
     val tourContact: String = "",
     val tourEmail: String = "",
@@ -17,11 +19,25 @@ data class Tour(
     val tourInstagram: String = "",
     val additionalInfo: String = "",
     val tourPrice: Double = 0.0,
-    val amenities: List<Amenity> = emptyList(),
+    val offers: List<Offer> = emptyList(),
     val tourImages: List<Photo> = emptyList(),
     val tourMenu: List<Photo> = emptyList(),
     val promotions: List<Promotion> = emptyList(),
-    val schedule: List<DailySchedule> = emptyList(),
+    val schedule: List<TourSchedule> = emptyList(),
     val reviews: List<Review> = emptyList(),
 
+)
+
+data class Offer(
+    val tourOfferId: String = "",
+    val tourId: String = "",
+    val typeOfOffer: String = "",
+    val offer: String = "",
+)
+
+data class TourSchedule(
+    val tourScheduleId: String = "",
+    val date: LocalDate = LocalDate.now(),
+    val startTime: String = "00:00 AM",
+    val endTime: String = "00:00 PM"
 )

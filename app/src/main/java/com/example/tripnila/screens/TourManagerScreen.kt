@@ -128,7 +128,7 @@ fun TourManagerScreen(){
 
     val transactions = listOf(
         Transaction(
-            customerImage = R.drawable.joshua,
+        //    customerImage = R.drawable.joshua,
             customerName = "Juan Cruz",
             customerUsername = "@jcruz",
             guestsCount = 4,
@@ -138,7 +138,7 @@ fun TourManagerScreen(){
             transactionStatus = "Completed"
         ),
         Transaction(
-            customerImage = R.drawable.joshua,
+     //       customerImage = R.drawable.joshua,
             customerName = "Juan Cruz",
             customerUsername = "@jcruz",
             guestsCount = 4,

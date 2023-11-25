@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +42,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
@@ -86,7 +90,7 @@ fun AddListingScreen7(
 
     var selectedAmenities by when (listingType) {
         "Staycation" -> remember { mutableStateOf(addListingViewModel?.staycation?.value?.amenities?.map { it.amenityName }) }
-        "Tour" -> remember { mutableStateOf(hostTourViewModel?.tour?.value?.amenities?.map { it.amenityName }) }
+        "Tour" -> remember { mutableStateOf(hostTourViewModel?.tour?.value?.offers?.map { it.typeOfOffer }) }
         "Business" -> remember { mutableStateOf(addBusinessViewModel?.business?.value?.amenities?.map { it.amenityName }) }
         else -> throw IllegalStateException("Unknown")
     }
@@ -94,6 +98,7 @@ fun AddListingScreen7(
 //    var selectedAmenities by remember {
 //        mutableStateOf(addListingViewModel?.staycation?.value?.amenities?.map { it.amenityName })
 //    }
+
 
     val offers = if (listingType == "Staycation") {
         listOf(
@@ -208,7 +213,7 @@ fun AddListingScreen7(
                     },
                     enableRightButton =  when (listingType) {
                         "Staycation" -> addListingViewModel?.staycation?.collectAsState()?.value?.amenities?.isNotEmpty() == true
-                        "Tour" -> hostTourViewModel?.tour?.collectAsState()?.value?.amenities?.isNotEmpty() == true
+                        "Tour" -> hostTourViewModel?.tour?.collectAsState()?.value?.offers?.isNotEmpty() == true
                         "Business" -> addBusinessViewModel?.business?.collectAsState()?.value?.amenities?.isNotEmpty() == true
                         else -> throw IllegalStateException("Unknown")
                     }
@@ -256,9 +261,6 @@ fun AddListingScreen7(
                         )
                     }
 
-
-
-
                     if (listingType != "Tour") {
                         items(numOffersRows) { row ->
                             lastIndex = 0
@@ -281,7 +283,6 @@ fun AddListingScreen7(
 
                                                 when (listingType) {
                                                     "Staycation" -> addListingViewModel?.addStaycationAmenity(offer.label)
-                                                    "Tour" -> hostTourViewModel?.addAmenity(offer.label)
                                                     "Business" -> addBusinessViewModel?.addBusinessAmenity(offer.label)
                                                     else -> throw IllegalStateException("Unknown")
                                                 }
@@ -291,7 +292,6 @@ fun AddListingScreen7(
 
                                                 when (listingType) {
                                                     "Staycation" -> addListingViewModel?.removeStaycationAmenity(offer.label)
-                                                    "Tour" -> hostTourViewModel?.removeAmenity(offer.label)
                                                     "Business" -> addBusinessViewModel?.removeBusinessAmenity(offer.label)
                                                     else -> throw IllegalStateException("Unknown")
                                                 }
@@ -350,7 +350,6 @@ fun AddListingScreen7(
 
                                                 when (listingType) {
                                                     "Staycation" -> addListingViewModel?.addStaycationAmenity(amenity.label)
-                                                    "Tour" -> hostTourViewModel?.addAmenity(amenity.label)
                                                     "Business" -> addBusinessViewModel?.addBusinessAmenity(amenity.label)
                                                     else -> throw IllegalStateException("Unknown")
                                                 }
@@ -360,7 +359,6 @@ fun AddListingScreen7(
 
                                                 when (listingType) {
                                                     "Staycation" -> addListingViewModel?.removeStaycationAmenity(amenity.label)
-                                                    "Tour" -> hostTourViewModel?.removeAmenity(amenity.label)
                                                     "Business" -> addBusinessViewModel?.removeBusinessAmenity(amenity.label)
                                                     else -> throw IllegalStateException("Unknown")
                                                 }
@@ -419,7 +417,6 @@ fun AddListingScreen7(
 
                                                 when (listingType) {
                                                     "Staycation" -> addListingViewModel?.addStaycationAmenity(view.label)
-                                                    "Tour" -> hostTourViewModel?.addAmenity(view.label)
                                                     "Business" -> addBusinessViewModel?.addBusinessAmenity(view.label)
                                                     else -> throw IllegalStateException("Unknown")
                                                 }
@@ -428,7 +425,6 @@ fun AddListingScreen7(
 
                                                 when (listingType) {
                                                     "Staycation" -> addListingViewModel?.removeStaycationAmenity(view.label)
-                                                    "Tour" -> hostTourViewModel?.removeAmenity(view.label)
                                                     "Business" -> addBusinessViewModel?.removeBusinessAmenity(view.label)
                                                     else -> throw IllegalStateException("Unknown")
                                                 }
@@ -464,28 +460,27 @@ fun AddListingScreen7(
                                 for (i in startIndex until endIndex) {
                                     val offer = offers[i]
                                     TourOfferCard(
+                                        inputText = remember {
+                                            mutableStateOf(hostTourViewModel?.tour?.value?.offers?.find { it.typeOfOffer == offer.label }?.offer ?: "")
+                                        },
                                         icon = offer.icon,
                                         label = offer.label,
                                         selected = selectedAmenities?.contains(offer.label) == true,
+                                    //    isEnable = selectedAmenities?.contains(offer.label) == true,
+                                    //    textField = focusRequester,
                                         onSelectedChange = { isSelected ->
                                             if (isSelected) {
                                                 selectedAmenities = selectedAmenities?.plus(offer.label)
+                                               // hostTourViewModel?.addOffer(offer.label, offerText)
 
-                                                when (listingType) {
-                                                    "Staycation" -> addListingViewModel?.addStaycationAmenity(offer.label)
-                                                    "Tour" -> hostTourViewModel?.addAmenity(offer.label)
-                                                    "Business" -> addBusinessViewModel?.addBusinessAmenity(offer.label)
-                                                    else -> throw IllegalStateException("Unknown")
-                                                }
                                             } else {
                                                 selectedAmenities = selectedAmenities?.minus(offer.label)
-
-                                                when (listingType) {
-                                                    "Staycation" -> addListingViewModel?.removeStaycationAmenity(offer.label)
-                                                    "Tour" -> hostTourViewModel?.removeAmenity(offer.label)
-                                                    "Business" -> addBusinessViewModel?.removeBusinessAmenity(offer.label)
-                                                    else -> throw IllegalStateException("Unknown")
-                                                }
+                                                hostTourViewModel?.removeOffer(offer.label)
+                                            }
+                                        },
+                                        onValueChange = { offerText ->
+                                            if (selectedAmenities?.contains(offer.label) == true ) {
+                                                hostTourViewModel?.addOffer(offer.label, offerText)
                                             }
                                         }
                                     )
@@ -561,16 +556,19 @@ fun AddMoreAmenity(modifier: Modifier = Modifier){
 
 @Composable
 fun TourOfferCard(
+    inputText: MutableState<String>,
+   //isEnable: Boolean,
     icon: Int,
     label: String,
     selected: Boolean,
     onSelectedChange: (Boolean) -> Unit,
+    onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val borderColor = if (selected) Orange else Color(0xff999999)
     val containerColor = if (selected) Orange.copy(alpha = 0.2f) else Color.White
     val localFocusManager = LocalFocusManager.current
-
+    val focusRequester = remember { FocusRequester() }
 
     Box(
         modifier = modifier
@@ -582,7 +580,15 @@ fun TourOfferCard(
                 shape = RoundedCornerShape(10.dp)
             )
             .background(containerColor)
-            .clickable { onSelectedChange(!selected) } // Toggle the selection state
+            .clickable {
+                onSelectedChange(!selected)
+                if (!selected) {
+                    focusRequester.requestFocus()
+                } else {
+                    localFocusManager.clearFocus()
+                }
+
+            } // Toggle the selection state
     ) {
         Column(
             modifier = Modifier
@@ -601,20 +607,72 @@ fun TourOfferCard(
                 fontWeight = FontWeight.Medium,
             )
 
-            BasicTextFieldWithUnderline(
-                placeholder = "What type of ...", //"What type of ${label.lowercase()}?"
-                isEnable = selected,
-                KeyboardOptions(
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions {
-                    localFocusManager.clearFocus()
-                },
-               // color = containerColor,
-            )
+            Column {
+                BasicTextField(
+                    value = inputText.value,
+                    onValueChange = {
+                        inputText.value = it
+
+                    },
+                    textStyle = TextStyle(fontSize = 12.sp, color =  if (selected) Color(0xFF333333) else Color(0xFF6B6B6B)),
+                    keyboardOptions =  KeyboardOptions(
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions {
+                        localFocusManager.clearFocus()
+                        onValueChange(inputText.value)
+                    },
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier
+                                .padding(vertical = 4.dp, horizontal = 0.dp)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Row {
+                                if (inputText.value.isEmpty()) {
+                                    Text(
+                                        text = "What type of ...",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF6B6B6B),
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                            innerTextField()
+                        }
+                    },
+                   // enabled = isEnable,
+                    singleLine = true,
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .height(30.dp)
+//                        .onFocusChanged {
+//                            isFocused = it.isFocused
+//                        }
+                        .focusRequester(focusRequester)
+
+                )
+                Divider(
+                    color = if (selected) Color(0xFF333333) else Color(0xFF6B6B6B),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = (-5).dp)
+                )
+            }
+
         }
     }
 }
+
+
+//            BasicTextFieldWithUnderline(
+//                placeholder = "What type of ...", //"What type of ${label.lowercase()}?"
+//                isEnable = selected,
+
+//                modifier = Modifier.focusRequester(focusRequester),
+//               // color = containerColor,
+//            )
 
 @Composable
 fun BasicTextFieldWithUnderline(
@@ -664,9 +722,9 @@ fun BasicTextFieldWithUnderline(
             modifier = modifier
                 .fillMaxWidth()
                 .height(30.dp)
-                .onFocusChanged {
-                    isFocused = it.isFocused
-                }
+//                .onFocusChanged {
+//                    isFocused = it.isFocused
+//                }
         )
         Divider(
             color = if (isFocused) Color(0xFF333333) else Color(0xFF6B6B6B),
@@ -682,8 +740,11 @@ fun BasicTextFieldWithUnderline(
 @Composable
 private fun AddListingScreen7Preview(){
     val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
+    val hostTourViewModel = viewModel(modelClass = HostTourViewModel::class.java)
 
     AddListingScreen7(
+        listingType = "Tour",
+        hostTourViewModel = hostTourViewModel,
         addListingViewModel = addListingViewModel,
         onNavToBack = {},
         onNavToNext = {}

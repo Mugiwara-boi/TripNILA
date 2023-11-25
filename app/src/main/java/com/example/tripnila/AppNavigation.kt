@@ -61,6 +61,7 @@ import com.example.tripnila.screens.AddListingScreen7
 import com.example.tripnila.screens.AddListingScreen8
 import com.example.tripnila.screens.AddListingScreen9
 import com.example.tripnila.screens.AddTourScreen3
+import com.example.tripnila.screens.AddTourScreen9
 import com.example.tripnila.screens.BookingHistoryScreen
 import com.example.tripnila.screens.HomeScreen
 import com.example.tripnila.screens.HostDashboardScreen
@@ -108,6 +109,7 @@ enum class HostRoutes {
     AddListing8,
     AddBusiness8,
     AddListing9,
+    AddTour9,
     AddListing10,
     AddBusiness10,
     AddListing11,
@@ -381,7 +383,7 @@ fun NavGraphBuilder.hostGraph(
                 onNavToNext = { listingType ->
                     when (listingType) {
                         "Staycation" ->  navigateToAddListingNext(navController, 11, listingType)
-                        //"Tour" ->  navigateToTourDates(navController, listingType)
+                        "Tour" ->  navigateToAddTour9(navController, listingType)
                         "Business" -> navigateToAddBusiness10(navController, listingType)
 
                     }
@@ -396,8 +398,14 @@ fun NavGraphBuilder.hostGraph(
             AddListingScreen11(
                 listingType = entry.arguments?.getString("listingType") ?: "",
                 addListingViewModel = addListingViewModel,
+                hostTourViewModel = hostTourViewModel,
                 //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
-                onNavToNext = { listingType -> navigateToAddListingNext(navController, 12, listingType) },
+                onNavToNext = { listingType ->
+                    when (listingType) {
+                        "Staycation" -> navigateToAddListingNext(navController, 12, listingType)
+                        "Tour" -> navigateToAddListingNext(navController, 15, listingType)
+                    }
+                },
                 onNavToBack = { navController.popBackStack() }
             )
         }
@@ -508,6 +516,22 @@ fun NavGraphBuilder.hostGraph(
                 onNavToBack = { navController.popBackStack() }
             )
         }
+
+        composable(
+            route = HostRoutes.AddTour9.name + "/{listingType}",
+            arguments = listOf(navArgument("listingType") { type = NavType.StringType })
+        ) {entry ->
+            AddTourScreen9(
+                listingType = entry.arguments?.getString("listingType") ?: "",
+                hostTourViewModel = hostTourViewModel,
+                //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
+                onNavToNext = { listingType ->
+                    navigateToAddListingNext(navController, 11, listingType)
+                },
+                onNavToBack = { navController.popBackStack() }
+            )
+        }
+
 
     }
 }
@@ -690,6 +714,11 @@ private fun navigateToAddTour3(navController: NavHostController, listingType: St
     }
 }
 
+private fun navigateToAddTour9(navController: NavHostController, listingType: String) {
+    navController.navigate("${HostRoutes.AddTour9.name}/$listingType") {
+        launchSingleTop = true
+    }
+}
 
 private fun navigateToBookingHistory(navController: NavHostController, touristId: String) {
     navController.navigate("${HomeRoutes.BookingHistory.name}/$touristId") {

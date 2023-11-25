@@ -5,10 +5,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,12 +28,14 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,9 +49,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -55,11 +61,25 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.example.tripnila.R
 import com.example.tripnila.common.AppBottomNavigationBar
+import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.common.Orange
+import com.example.tripnila.common.Tag
 import com.example.tripnila.data.HostProperty
+import com.example.tripnila.data.StaycationBooking
+import com.example.tripnila.data.Transaction
 import com.example.tripnila.model.HostDashboardViewModel
+import com.example.tripnila.model.HostTourViewModel
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun HostDashboardScreen(
@@ -81,40 +101,42 @@ fun HostDashboardScreen(
     val horizontalPaddingValue = 16.dp
     val verticalPaddingValue = 10.dp
 
-    val staycationProperties = listOf(
-        HostProperty(
-            propertyName = "Modern house with 2 bedrooms",
-            image = R.drawable.staycation1,
-            host = "Joshua",
-            location = "North Greenhills"
-        ),
-        HostProperty(
-            propertyName = "Modern house with 2 bedrooms",
-            image = R.drawable.staycation1,
-            host = "Joshua",
-            location = "North Greenhills"
-        ),
-    )
-    val businessProperties = listOf(
-        HostProperty(
-            propertyName = "Josh's Bbq Grill",
-            propertyDescription = "Bar & Grill",
-            image = R.drawable.business1,
-            host = "Joshua",
-            location = "12th St. Sitio Santo, Quezon, City",
 
-        )
-    )
-    
-    val tourProperties = listOf(
-        HostProperty(
-            propertyName = "Cubao Night Tour",
-            propertyDescription = "Food Trip",
-            image = R.drawable.tour1,
-            host = "Joshua",
-            location = "12th St. Sitio Santo, Quezon, City"
-        )
-    )
+    val staycationProperties = hostDashboardViewModel?.staycations?.collectAsState()?.value?.map {staycation ->
+        staycation.staycationImages.find { it.photoType == "Cover" }?.photoUrl?.let {
+            HostProperty(
+                propertyName = staycation.staycationTitle,
+                image = it, // You may need to replace this with the actual logic to get the image
+                host = staycation.host.firstName, // Assuming host is a Host object with a firstName property
+                location = staycation.staycationLocation
+            )
+        }
+    }
+
+    val businessProperties = hostDashboardViewModel?.businesses?.collectAsState()?.value?.map { business ->
+        business.businessImages.find { it.photoType == "Cover" }?.photoUrl?.let {
+            HostProperty(
+                propertyName = business.businessTitle,
+                propertyDescription = business.businessDescription,
+                image = it, // You may need to replace this with the actual logic to get the image
+                host = business.host.firstName, // Assuming host is a Host object with a firstName property
+                location = business.businessLocation
+            )
+        }
+    }
+
+    val tourProperties = hostDashboardViewModel?.tours?.collectAsState()?.value?.map { tour ->
+        tour.tourImages.find { it.photoType == "Cover" }?.photoUrl?.let {
+            HostProperty(
+                propertyName = tour.tourTitle,
+                propertyDescription = tour.tourDescription,
+                image = it, // You may need to replace this with the actual logic to get the image
+                host = tour.host.firstName, // Assuming host is a Host object with a firstName property
+                location = tour.tourLocation
+            )
+        }
+    }
+
 
     var selectedItemIndex by rememberSaveable { mutableStateOf(3) }
 
@@ -132,103 +154,111 @@ fun HostDashboardScreen(
                 )
             }
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(it)
-            ) {
-                item {
-                    AppTopBar(
-                        headerText = "Dashboard",
-                        color = Color.White
-                    )
-                }
-                item {
-                    HostWalletCard(
-                        hostName = "Joshua Araneta",
-                        hostBalance = 7600.00,
-                        modifier = Modifier
-                            .padding(
-                                vertical = verticalPaddingValue,
-                                horizontal = horizontalPaddingValue
+
+            if (hostDashboardViewModel?.isStateRetrieved?.collectAsState()?.value == false) {
+                LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(it)
+                ) {
+                    item {
+                        AppTopBar(
+                            headerText = "Dashboard",
+                            color = Color.White
+                        )
+                    }
+                    item {
+                        HostWalletCard(
+                            hostName = "${host?.firstName} ${host?.lastName}" ,
+                            hostBalance = 7600.00,
+                            modifier = Modifier
+                                .padding(
+                                    vertical = verticalPaddingValue,
+                                    horizontal = horizontalPaddingValue
+                                )
+                        )
+                    }
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .padding(vertical = verticalPaddingValue)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            HostOptionButton(
+                                buttonIcon = R.drawable.add_staycation,
+                                buttonLabel = "Add listing",
+                                onClick = {
+                                    host?.hostId?.let { hostId -> onNavToAddListing(hostId, "Staycation") }
+                                }
                             )
-                    )
-                }
-                item {
-                    Row(
-                        modifier = Modifier
-                            .padding(vertical = verticalPaddingValue)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        HostOptionButton(
-                            buttonIcon = R.drawable.add_staycation,
-                            buttonLabel = "Add listing",
-                            onClick = {
-                                host?.hostId?.let { hostId -> onNavToAddListing(hostId, "Staycation") }
-                            }
+                            HostOptionButton(
+                                buttonIcon = R.drawable.host_tour,
+                                buttonLabel = "Host a tour",
+                                onClick = {
+                                    host?.hostId?.let { hostId -> onNavToHostTour(hostId, "Tour") }
+                                }
+                            )
+                            HostOptionButton(
+                                buttonIcon = R.drawable.add_business,
+                                buttonLabel = "Add business",
+                                onClick = {
+                                    host?.hostId?.let { hostId -> onNavToAddBusiness(hostId, "Business") }
+                                }
+                            )
+                            HostOptionButton(
+                                buttonIcon = R.drawable.insights,
+                                buttonLabel = "Insights",
+                                onClick = {}
+                            )
+                        }
+                    }
+                    item {
+                        ReservationsList(
+                            hostDashboardViewModel = hostDashboardViewModel,
+                            modifier = Modifier
+                                .padding(
+                                    vertical = verticalPaddingValue,
+                                    horizontal = horizontalPaddingValue
+                                )
                         )
-                        HostOptionButton(
-                            buttonIcon = R.drawable.host_tour,
-                            buttonLabel = "Host a tour",
-                            onClick = {
-                                host?.hostId?.let { hostId -> onNavToHostTour(hostId, "Tour") }
-                            }
+                    }
+                    item {
+                        HostPropertiesList(
+                            properties = staycationProperties,
+                            modifier = Modifier
+                                .padding(
+                                    vertical = verticalPaddingValue,
+                                    //horizontal = horizontalPaddingValue
+                                )
                         )
-                        HostOptionButton(
-                            buttonIcon = R.drawable.add_business,
-                            buttonLabel = "Add business",
-                            onClick = {
-                                host?.hostId?.let { hostId -> onNavToHostTour(hostId, "Business") }
-                            }
+                    }
+                    item {
+                        HostBusinessesList(
+                            properties = businessProperties,
+                            modifier = Modifier
+                                .padding(
+                                    vertical = verticalPaddingValue,
+                                    //horizontal = horizontalPaddingValue
+                                )
                         )
-                        HostOptionButton(
-                            buttonIcon = R.drawable.insights,
-                            buttonLabel = "Insights",
-                            onClick = {}
+                    }
+                    item {
+                        HostToursList(
+                            properties = tourProperties,
+                            modifier = Modifier
+                                .padding(
+                                    vertical = verticalPaddingValue,
+                                    //horizontal = horizontalPaddingValue
+                                )
                         )
                     }
                 }
-                item {
-                    ReservationsList(
-                        modifier = Modifier
-                            .padding(
-                                vertical = verticalPaddingValue,
-                                horizontal = horizontalPaddingValue
-                            )
-                    )
-                }
-                item {
-                    HostPropertiesList(
-                        properties = staycationProperties,
-                        modifier = Modifier
-                            .padding(
-                                vertical = verticalPaddingValue,
-                                //horizontal = horizontalPaddingValue
-                            )
-                    )
-                }
-                item {
-                    HostBusinessesList(
-                        properties = businessProperties,
-                        modifier = Modifier
-                            .padding(
-                                vertical = verticalPaddingValue,
-                                //horizontal = horizontalPaddingValue
-                            )
-                    )
-                }
-                item {
-                    HostToursList(
-                        properties = tourProperties,
-                        modifier = Modifier
-                            .padding(
-                                vertical = verticalPaddingValue,
-                                //horizontal = horizontalPaddingValue
-                            )
-                    )
-                }
             }
+
+
         }
     }
 }
@@ -374,15 +404,52 @@ fun HostOptionButton(
 }
 
 @Composable
-fun ReservationsList(modifier: Modifier = Modifier) {
+fun ReservationsList(
+    hostDashboardViewModel: HostDashboardViewModel?,
+    modifier: Modifier = Modifier
+) {
+
+
+    val staycations = hostDashboardViewModel?.staycations?.collectAsState()?.value
+
+    val staycationBookings = staycations?.flatMap { it.staycationBookings }
+
+    val checkingOutCount = staycations?.sumOf { it.checkingOutBookingsCount }
+
+    val currentlyHostingCount = staycations?.sumOf { it.ongoingBookingsCount }
+
+    val upcomingCount = staycations?.sumOf { it.pendingBookingsCount }
+
     var selectedTab by remember { mutableStateOf(0) }
     val reservationTabs = listOf("Checking out", "Currently hosting", "Upcoming")
-    val contentCounts = listOf(0, 15, 5)
+    val contentCounts = listOf(checkingOutCount, currentlyHostingCount, upcomingCount)
+
+
+//    val transactionList = staycationBookings?.filter { it.bookingStatus == "Pending" }?.map { staycationBooking ->
+//
+//        val formatter = SimpleDateFormat("MMM d", Locale.getDefault())
+//        val start = formatter.format(staycationBooking.checkInDate)
+//        val end = formatter.format(staycationBooking.checkOutDate)
+//        val year = SimpleDateFormat("yyyy", Locale.getDefault()).format(staycationBooking.checkInDate)
+//
+//        Transaction(
+//            customerImage = R.drawable.joshua,
+//            bookedRental = staycationBooking.staycation?.staycationTitle ?: "",
+//            customerName = "${staycationBooking.tourist?.firstName} ${staycationBooking.tourist?.lastName}",
+//            customerUsername = staycationBooking.tourist?.username ?: "",
+//            guestsCount = staycationBooking.noOfGuests,
+//            price = staycationBooking.totalAmount ?: 0.0,
+//            bookedDate = "$start-$end, $year",
+//            transactionDate = SimpleDateFormat("MMM dd, yyyy").format(staycationBooking.bookingDate) , //staycationBooking.bookingDate.toString(),
+//            transactionStatus = staycationBooking.bookingStatus
+//        )
+//    }
+
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.White)
+           // .background(Color.White)
     ) {
         Text(
             text = "Reservations",
@@ -396,17 +463,19 @@ fun ReservationsList(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             reservationTabs.forEachIndexed { index, tabLabel ->
-                ReservationTab(
-                    tabLabel = tabLabel,
-                    contentCount = contentCounts[index],
-                    isSelected = index == selectedTab,
-                    onTabSelected = { selectedTab = index },
-                )
+                contentCounts[index]?.let { count ->
+                    ReservationTab(
+                        tabLabel = tabLabel,
+                        contentCount = count,
+                        isSelected = index == selectedTab,
+                        onTabSelected = { selectedTab = index },
+                    )
+                }
             }
         }
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = if (contentCounts[selectedTab] == 0) Color(0xFFDFDFDF) else Color.White
+                containerColor = Color.White //if (contentCounts[selectedTab] == 0) Color(0xFFDFDFDF) else Color.White
             ),
             elevation = CardDefaults.cardElevation(
                 defaultElevation = 5.dp
@@ -437,6 +506,37 @@ fun ReservationsList(modifier: Modifier = Modifier) {
                             .width(158.dp)
                     )
                 }
+            } else {
+                staycationBookings?.filter { staycationBooking ->
+                    when (selectedTab) {
+                        0 -> staycationBooking.bookingStatus == "Ongoing" &&
+                                (staycationBooking.checkOutDate?.toInstant()?.atZone(ZoneId.systemDefault())?.toLocalDate() == LocalDate.now() ||
+                                        staycationBooking.checkOutDate?.toInstant()?.atZone(ZoneId.systemDefault())?.toLocalDate() == LocalDate.now().plusDays(1))
+                        1 -> staycationBooking.bookingStatus == "Ongoing"
+                        2 -> staycationBooking.bookingStatus == "Pending"
+                        else -> staycationBooking.bookingStatus != "None"
+                    }
+                }?.map { staycationBooking ->
+                    val formatter = SimpleDateFormat("MMM d", Locale.getDefault())
+                    val start = formatter.format(staycationBooking.checkInDate)
+                    val end = formatter.format(staycationBooking.checkOutDate)
+                    val year = SimpleDateFormat("yyyy", Locale.getDefault()).format(staycationBooking.checkInDate)
+
+                    Transaction(
+                        customerImage = staycationBooking.tourist?.profilePicture ?: "",
+                        bookedRental = staycationBooking.staycation?.staycationTitle ?: "",
+                        customerName = "${staycationBooking.tourist?.firstName} ${staycationBooking.tourist?.lastName}",
+                        customerUsername = staycationBooking.tourist?.username ?: "",
+                        guestsCount = staycationBooking.noOfGuests,
+                        price = staycationBooking.totalAmount ?: 0.0,
+                        bookedDate = "$start-$end, $year",
+                        transactionDate = SimpleDateFormat("MMM dd, yyyy").format(staycationBooking.bookingDate) , //staycationBooking.bookingDate.toString(),
+                        transactionStatus = staycationBooking.bookingStatus
+                    )
+                }?.forEach { transaction ->
+                    BookingCard(transaction = transaction)
+                }
+
             }
         }
     }
@@ -469,67 +569,83 @@ fun ReservationTab(
 }
 
 @Composable
-fun HostPropertiesList(properties: List<HostProperty>, modifier: Modifier = Modifier){
+fun HostPropertiesList(properties: List<HostProperty?>?, modifier: Modifier = Modifier){
+    Log.d("Properties", "$properties")
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        Text(
-            text = "Properties",
-            fontWeight = FontWeight.Medium,
-            fontSize = 16.sp,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        properties.forEach { property ->
-            HostPropertyCard(
-                hostProperty = property,
-                propertyType = "Staycation",
-                modifier = Modifier.padding(top = 8.dp)
+        if (properties?.any { it == null } == false) {
+            Text(
+                text = "Properties",
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp,
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
+            Spacer(modifier = Modifier.height(2.dp))
+            properties?.forEach { property ->
+                if (property != null) {
+                    HostPropertyCard(
+                        hostProperty = property,
+                        propertyType = "Staycation",
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+        }
+
+    }
+
+
+}
+
+@Composable
+fun HostBusinessesList(properties: List<HostProperty?>?, modifier: Modifier = Modifier){
+    Column(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        if (properties?.any { it == null } == false) {
+            Text(
+                text = "Business",
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            properties?.forEach { property ->
+                if (property != null) {
+                    HostPropertyCard(
+                        hostProperty = property,
+                        propertyType = "Business",
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-fun HostBusinessesList(properties: List<HostProperty>, modifier: Modifier = Modifier){
+fun HostToursList(properties: List<HostProperty?>?, modifier: Modifier = Modifier){
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        Text(
-            text = "Business",
-            fontWeight = FontWeight.Medium,
-            fontSize = 16.sp,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        properties.forEach { property ->
-            HostPropertyCard(
-                hostProperty = property,
-                propertyType = "Business",
-                modifier = Modifier.padding(top = 8.dp)
+        if (properties?.any { it == null } == false) {
+            Text(
+                text = "Tours",
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp,
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
-        }
-    }
-}
-
-@Composable
-fun HostToursList(properties: List<HostProperty>, modifier: Modifier = Modifier){
-    Column(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Text(
-            text = "Tours",
-            fontWeight = FontWeight.Medium,
-            fontSize = 16.sp,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        properties.forEach { property ->
-            HostPropertyCard(
-                hostProperty = property,
-                propertyType = "Tours",
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            Spacer(modifier = Modifier.height(2.dp))
+            properties?.forEach { property ->
+                if (property != null) {
+                    HostPropertyCard(
+                        hostProperty = property,
+                        propertyType = "Tours",
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -595,7 +711,7 @@ fun HostPropertyCard(
                         modifier = Modifier.padding(end = 5.dp)
                     )
                     Text(
-                        text = hostProperty.location,
+                        text = if (hostProperty.location == "") "Somewhere in Metro Manila" else hostProperty.location,
                         fontWeight = FontWeight.Medium,
                         fontSize = 10.sp,
                         color = Color(0xFF999999)
@@ -613,11 +729,29 @@ fun HostPropertyCard(
                     defaultElevation = 10.dp
                 )
             ){
-                Image(
-                    painter = painterResource(id = hostProperty.image),
-                    contentDescription = "Image",
-                    contentScale = ContentScale.FillBounds
+//                val imageLoader = rememberAsyncImagePainter(
+//                    ImageRequest.Builder(LocalContext.current).data(data = hostProperty.image)
+//                        .apply(block = fun ImageRequest.Builder.() {
+//                            crossfade(true)
+//                        }).build()
+//                )
+
+                AsyncImage(
+                    model = hostProperty.image,//imageLoader,
+                    contentDescription = "",
+                    contentScale = ContentScale.Crop
+
                 )
+//                Image(
+//                    painter = imageLoader,
+//                    contentDescription = "Image",
+//                    contentScale = ContentScale.FillWidth//FillBounds
+//                )
+//                Image(
+//                    painter = painterResource(id = hostProperty.image),
+//                    contentDescription = "Image",
+//                    contentScale = ContentScale.FillBounds
+//                )
             }
         }
 
@@ -664,24 +798,141 @@ fun AppOutlinedButtonWithBadge(
     }
 }
 
+@Composable
+fun BookingCard(transaction: Transaction, modifier: Modifier = Modifier){
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(80.dp)
+    ) {
+        Box(
+            contentAlignment = Alignment.CenterEnd,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            IconButton(
+                onClick = { /*TODO*/ },
+                modifier = Modifier
+                    .size(24.dp)
+
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.KeyboardArrowRight,
+                    contentDescription = "Expand",
+                    tint = Color(0xFF999999),
+                    modifier = Modifier.size(36.dp)
+                )
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(
+                    horizontal = 5.dp,
+                    //vertical = 10.dp // 12
+                ),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Column {
+                Row {
+                    Box(
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clip(shape = RoundedCornerShape(50.dp))
+                    ) {
+                        AsyncImage(
+                            model = if (transaction.customerImage == "") "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png" else transaction.customerImage,//imageLoader,
+                            contentDescription = "",
+                            contentScale = ContentScale.Crop
+
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .padding(start = 5.dp, end = 5.dp, bottom = 5.dp)
+                            .weight(1f)
+                    ) {
+                        Text(
+                            text = transaction.customerName,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        Text(
+                            text = transaction.customerUsername,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF999999)
+                        )
+                    }
+
+                    Text(
+                        text = transaction.transactionDate,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Orange,
+                        modifier = Modifier.offset(x = (-10).dp)
+                    )
+
+                }
+                Text(
+                    text = "${transaction.guestsCount} guests • ₱ ${"%.2f".format(transaction.price)} • ${transaction.bookedDate} • ${transaction.bookedRental}",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF999999),
+                )
+            }
+
+        }
+
+        Divider(modifier = Modifier.align(Alignment.BottomCenter))
+    }
+
+
+}
+
+
 @Preview
 @Composable
 private fun HostDashboardItemPreview(){
-    //HostPropertiesList()
 
-    val property = HostProperty(
-        propertyName = "Josh's Bbq Grill",
-        image = R.drawable.business1,
-        host = "Joshua",
-        location = "12th St. Sitio Santo, Quezon, City",
-        propertyDescription = "Bar & Grill"
-    )
+//    val transaction = Transaction(
+//        customerImage = R.drawable.joshua,
+//        bookedRental = "Staycation in Pasig",
+//        customerName = "Juan Cruz",
+//        customerUsername = "@jcruz",
+//        guestsCount = 4,
+//        price = 2500.00,
+//        bookedDate = "Sep 3-6, 2023",
+//        transactionDate = "Aug 24, 2023",
+//        transactionStatus = "Completed"
+//    )
 
-    HostPropertyCard(property, "Business")
+  //  BookingCard(transaction)
+
 }
 
 @Preview
 @Composable
 private fun HostDashboardScreenPreview(){
-   // HostDashboardScreen("", onNavToAddListing = {})
+
+   // ReservationsList(hostDashboardViewModel = null)
+
+    val hostDashboardViewModel = viewModel(modelClass = HostDashboardViewModel::class.java)
+
+    HostDashboardScreen(
+        touristId ="ITZbCFfF7Fzqf1qPBiwx",
+        onNavToAddListing = { hostId,listingType ->
+           // navigateToAddListing1(navController, hostId, listingType)
+        },
+        onNavToHostTour = { hostId,listingType ->
+            //navigateToAddListing1(navController, hostId, listingType)
+        },
+        onNavToAddBusiness = { hostId,listingType ->
+           // navigateToAddListing1(navController, hostId, listingType)
+        },
+        hostDashboardViewModel = hostDashboardViewModel,
+    )
+
 }

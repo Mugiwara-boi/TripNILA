@@ -110,29 +110,6 @@ fun AddListingScreen8(
     }
 
 
-//    val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
-//        contract = ActivityResultContracts.PickVisualMedia()
-//    ) { uri ->
-//        selectedImageUri.value = uri
-//        addListingViewModel?.setStaycationCoverPhoto(selectedImageUri.value as Uri)
-//    }
-
-    // var selectedImageUris =
-
-//    var selectedImageUri = remember {
-//        mutableStateOf(addListingViewModel?.staycation?.value?.staycationImages
-//            ?.firstOrNull { it.photoType == "Cover" }
-//            ?.photoUri)
-//    }
-
-
-//    val multiplePhotoPickerLauncher = rememberLauncherForActivityResult(
-//        contract = ActivityResultContracts.PickMultipleVisualMedia()
-//    ) { uris ->
-//        selectedImageUris.value = selectedImageUris.value?.plus(uris)
-//        addListingViewModel?.setSelectedImageUris(selectedImageUris.value as List<@JvmSuppressWildcards Uri>)
-//    }
-
     var singlePhotoPickerLauncher = when (listingType) {
         "Staycation" -> rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia()
@@ -177,33 +154,6 @@ fun AddListingScreen8(
         }
         else -> throw IllegalStateException("Unknown")
     }
-
-
-
-    val photos = if (listingType == "Staycation") {
-                                listOf(
-                                    R.drawable.staycation1,
-                                    R.drawable.staycation1,
-                                    R.drawable.staycation1,
-                                    R.drawable.staycation1,
-                                )
-                            }
-                            else if (listingType == "Business") {
-                                listOf(
-                                    R.drawable.business1,
-                                    R.drawable.business1,
-                                    R.drawable.business1,
-                                    R.drawable.business1,
-                                )
-                            }
-                            else {
-                                listOf(
-                                    R.drawable.tour1,
-                                    R.drawable.tour1,
-                                    R.drawable.tour1,
-                                    R.drawable.tour1,
-                                )
-                            }
 
     Surface(
         modifier = Modifier
@@ -252,7 +202,7 @@ fun AddListingScreen8(
                 LazyColumn(
                     //contentPadding = PaddingValues(vertical = 25.dp),
                     verticalArrangement = Arrangement.spacedBy(15.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().weight(1f)
                 ) {
 
                     item {
@@ -393,7 +343,6 @@ fun AddListingScreen8(
                     }
 
                 }
-                Spacer(modifier = Modifier.weight(1f))
                 AddListingStepIndicator(modifier = Modifier, currentPage = 1, pageCount = 4)
             }
         }

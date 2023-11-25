@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,11 +26,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.model.AddListingViewModel
+import com.example.tripnila.model.HostTourViewModel
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -54,15 +59,36 @@ import java.util.Locale
 fun AddListingScreen11(
     listingType: String = "Staycation",
     addListingViewModel: AddListingViewModel? = null,
+    hostTourViewModel: HostTourViewModel? = null,
     onNavToNext: (String) -> Unit,
     onNavToBack: () -> Unit,
 ){
 
 
     val formatter = NumberFormat.getNumberInstance(Locale.US)
-    var price = remember {
-        mutableStateOf(addListingViewModel?.staycation?.value?.staycationPrice?.toInt())
+//    var price = remember {
+//        mutableStateOf(addListingViewModel?.staycation?.value?.staycationPrice?.toInt())
+//    }
+    val coroutineScope = rememberCoroutineScope()
+
+    val alreadySubmitted = hostTourViewModel?.isSuccessAddTour?.collectAsState()?.value
+
+    val isLoading = hostTourViewModel?.isLoadingAddTour?.collectAsState()?.value
+
+    var price =  when (listingType) {
+        "Staycation" -> remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationPrice?.toInt()) }
+        "Tour" -> remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourPrice?.toInt()) }
+        else -> throw IllegalStateException("Unknown")
     }
+
+    LaunchedEffect(isLoading){
+        if (isLoading != null) {
+            if (isLoading == false && alreadySubmitted == true) {
+                onNavToNext(listingType)
+            }
+        }
+    }
+
 
     Surface(
         modifier = Modifier
@@ -73,12 +99,23 @@ fun AddListingScreen11(
                 AddListingBottomBookingBar(
                     leftButtonText = "Back",
                     onNext = {
-                        onNavToNext(listingType)
+                        if (alreadySubmitted == true) {
+                            onNavToNext(listingType)
+                        } else {
+                            coroutineScope.launch {
+                                hostTourViewModel?.addNewTour()
+                            }
+                        }
                     },
                     onCancel = {
                         onNavToBack()
                     },
-                    enableRightButton = addListingViewModel?.staycation?.collectAsState()?.value?.staycationPrice != 0.0
+                    enableRightButton = when (listingType) {
+                        "Staycation" -> addListingViewModel?.staycation?.collectAsState()?.value?.staycationPrice != 0.0
+                        "Tour" -> hostTourViewModel?.tour?.collectAsState()?.value?.tourPrice != 0.0
+                        else -> throw IllegalStateException("Unknown")
+                    },
+                    isRightButtonLoading = hostTourViewModel?.isLoadingAddTour?.collectAsState()?.value == true,
                 )
             },
             topBar = {
@@ -134,7 +171,13 @@ fun AddListingScreen11(
                                     value = formatter.format(price.value),
                                     onValueChange = {
                                         price.value = it.replace(",", "").toIntOrNull() ?: 0
-                                        addListingViewModel?.setStaycationPrice(price?.value!!.toDouble())
+
+                                        when (listingType) {
+                                            "Staycation" -> addListingViewModel?.setStaycationPrice(price?.value!!.toDouble())
+                                            "Tour" -> hostTourViewModel?.setTourPrice(price?.value!!.toDouble())
+                                            else -> throw IllegalStateException("Unknown")
+                                        }
+
                                     },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     textStyle = TextStyle(fontWeight = FontWeight.Bold, fontSize = 36.sp),
@@ -150,72 +193,20 @@ fun AddListingScreen11(
                                     }
                                 )
                                 Text(
-                                    text = " per night",
+                                    text = if (listingType == "Staycation") " per night" else " per person",
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 12.sp,
                                     modifier = Modifier.align(Alignment.CenterEnd)
                                 )
                             }
                         }
-
-
-
-
-//                        Row(
-//                            horizontalArrangement = Arrangement.Center,
-//                            modifier = Modifier
-//                                .padding(bottom = 10.dp)
-//                                .fillMaxWidth()
-//                        ) {
-//                            BasicTextField(
-//                                value = price.value.toString(),
-//                                onValueChange = {
-//                                    price.value = it.toIntOrNull() ?: 0
-//                                },
-//                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-//                                textStyle = TextStyle(fontWeight = FontWeight.Bold, fontSize = 36.sp),
-//                                singleLine = true,
-//                                modifier = Modifier.width(150.dp),
-//                                decorationBox = { innerTextField ->
-//                                    Row(
-//                                    ) {
-//                                        Text("₱ ", style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 36.sp))
-//                                        innerTextField()
-//                                    }
-//                                }
-//                            )
-//                            Text(
-//                                text = " per night",
-//                                fontWeight = FontWeight.Medium,
-//                                fontSize = 12.sp,
-//                                modifier = Modifier.wrapContentHeight(Alignment.CenterVertically)
-//                            )
-//                        }
-
-
-//                        Text(
-//                            text = buildAnnotatedString {
-//                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = 36.sp)) {
-//                                    append("₱ ${String.format("%,d", price)}")
-//                                }
-//                                withStyle(style = SpanStyle(fontWeight = FontWeight.Medium, fontSize = 12.sp)) {
-//                                    append(" per night")
-//                                }
-//                            },
-//                            textAlign = TextAlign.Center,
-//                            color = Color(0xff333333),
-//                            modifier = Modifier
-//                                // .width(300.dp)
-//                                .fillMaxWidth()
-//                                .padding(bottom = 10.dp)
-//                        )
                     }
                     item {
                         price.value?.toDouble()
-                            ?.let { value -> PriceDistributionCard(basePrice = value) }
+                            ?.let { value -> PriceDistributionCard(forStaycation = false, basePrice = value) }
                     }
                     item {
-                        price.value?.toDouble()?.let { value -> ProfitCard(basePrice = value) }
+                        price.value?.toDouble()?.let { value -> ProfitCard(forStaycation = false, basePrice = value) }
                     }
                 }
                 Spacer(modifier = Modifier.weight(1f))
@@ -236,9 +227,13 @@ fun AddListingScreen11(
 //    }
 
 @Composable
-fun PriceDistributionCard(basePrice: Double, modifier: Modifier = Modifier) {
+fun PriceDistributionCard(
+    forStaycation: Boolean = true,
+    basePrice: Double,
+    modifier: Modifier = Modifier
+) {
 
-    val maintenanceFee = basePrice * 0.10
+    val maintenanceFee = if (forStaycation) basePrice * 0.10 else 0.0
     val serviceFee = basePrice * 0.05
     val guestPrice = basePrice + serviceFee + maintenanceFee
 
@@ -272,24 +267,26 @@ fun PriceDistributionCard(basePrice: Double, modifier: Modifier = Modifier) {
                     fontWeight = FontWeight.Medium,
                 )
             }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 3.dp)
-            ) {
-                Text(
-                    text = "Maintenance fee",
-                    color = Color(0xff999999),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "₱ ${String.format("%,.2f", maintenanceFee)}",
-                    color = Color(0xff999999),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                )
+            if (forStaycation) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 3.dp)
+                ) {
+                    Text(
+                        text = "Maintenance fee",
+                        color = Color(0xff999999),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "₱ ${String.format("%,.2f", maintenanceFee)}",
+                        color = Color(0xff999999),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
             }
             Row(
                 modifier = Modifier
@@ -338,10 +335,10 @@ fun PriceDistributionCard(basePrice: Double, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ProfitCard(basePrice: Double, modifier: Modifier = Modifier){
+fun ProfitCard(forStaycation: Boolean = true, basePrice: Double, modifier: Modifier = Modifier){
 
    // val serviceFee = basePrice * 0.05
-    val maintenanceFee = basePrice * 0.10
+    val maintenanceFee = if (forStaycation) basePrice * 0.10 else 0.0
     var profit = basePrice + maintenanceFee
 
 
@@ -377,7 +374,7 @@ fun ProfitCard(basePrice: Double, modifier: Modifier = Modifier){
 @Composable
 private fun AddListingPreview(){
 
-    ProfitCard((1250).toDouble())
+    //ProfitCard((1250).toDouble())
 
 }
 

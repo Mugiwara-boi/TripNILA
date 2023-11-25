@@ -81,6 +81,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.ZoneId
@@ -100,8 +101,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyApplicationTheme {
 
-                val coroutineScope = rememberCoroutineScope()
-   //             PersonList()
 
                 val loginViewModel = viewModel(modelClass = LoginViewModel::class.java)
                 val signupViewModel = viewModel(modelClass = SignupViewModel::class.java)

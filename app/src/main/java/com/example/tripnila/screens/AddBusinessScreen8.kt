@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.annotation.SuppressLint
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -56,6 +57,7 @@ import com.example.tripnila.common.Orange
 import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.HostTourViewModel
 
+@SuppressLint("SuspiciousIndentation")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddBusinessScreen8(
@@ -78,18 +80,17 @@ fun AddBusinessScreen8(
 
     var singleMenuPhotoPickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia()
-        ) { uri ->
+    ) { uri ->
         selectedCoverImageUri.value = uri
-            addBusinessViewModel?.setMenuCoverPhoto(selectedCoverImageUri.value as Uri)
+        addBusinessViewModel?.setMenuCoverPhoto(selectedCoverImageUri.value as Uri)
     }
 
 
     var multipleMenuPhotoPickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickMultipleVisualMedia()
-        ) { uris ->
-            selectedMenuImageUris.value = selectedMenuImageUris.value?.plus(uris)
-            addBusinessViewModel?.setMenuSelectedImageUris(selectedMenuImageUris.value as List<@JvmSuppressWildcards Uri>)
-
+    ) { uris ->
+        selectedMenuImageUris.value = selectedMenuImageUris.value?.plus(uris)
+        addBusinessViewModel?.setMenuSelectedImageUris(selectedMenuImageUris.value as List<@JvmSuppressWildcards Uri>)
     }
 
     var mutableAdditionInfo = remember { mutableStateOf( addBusinessViewModel?.business?.value?.additionalInfo) }
@@ -143,7 +144,7 @@ fun AddBusinessScreen8(
 
                     item {
                         Text(
-                            text = "Upload some photos!",
+                            text = "Upload your menu!",
                             color = Color(0xff333333),
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Medium,
