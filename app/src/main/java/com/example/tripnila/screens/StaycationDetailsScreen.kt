@@ -128,17 +128,18 @@ fun StaycationDetailsScreen(
     var hasNavigationBar = WindowInsets.areNavigationBarsVisible
 
     val staycationReviews = staycation?.value?.staycationBookings?.mapNotNull { it.bookingReview }
-    val reviews: List<ReviewUiState> = staycationReviews?.map { review ->
-        review.let {
-            ReviewUiState(
-                rating = it.rating.toDouble(),
-                comment = it.comment ?: "",
-                touristImage = it?.reviewer?.profilePicture ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
-                touristName = "${it?.reviewer?.firstName} ${it.reviewer?.lastName}",
-                reviewDate = it.reviewDate.toString()
-            )
-        }
-    } ?: emptyList()
+    val reviews: List<ReviewUiState> = staycationReviews?.filter { it.bookingId != "" }
+        ?.map { review ->
+            review.let {
+                ReviewUiState(
+                    rating = it.rating.toDouble() ?: 0.0,
+                    comment = it.comment ?: "",
+                    touristImage = it?.reviewer?.profilePicture ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
+                    touristName = "${it?.reviewer?.firstName} ${it.reviewer?.lastName}",
+                    reviewDate = it.reviewDate.toString()
+                )
+            }
+        } ?: emptyList()
 
     val attractions = listOf(
         Attraction(
