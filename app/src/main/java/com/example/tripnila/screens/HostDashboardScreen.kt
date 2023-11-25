@@ -2,8 +2,6 @@ package com.example.tripnila.screens
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,7 +33,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -53,8 +50,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,22 +58,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
 import com.example.tripnila.R
 import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.common.Orange
-import com.example.tripnila.common.Tag
 import com.example.tripnila.data.HostProperty
-import com.example.tripnila.data.StaycationBooking
 import com.example.tripnila.data.Transaction
 import com.example.tripnila.model.HostDashboardViewModel
-import com.example.tripnila.model.HostTourViewModel
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
@@ -88,6 +77,9 @@ fun HostDashboardScreen(
     onNavToAddListing: (String, String) -> Unit,
     onNavToHostTour: (String, String) -> Unit,
     onNavToAddBusiness: (String, String) -> Unit,
+    onNavToStaycationManager: (String, String) -> Unit,
+    onNavToBusinessManager: (String, String) -> Unit,
+    onNavToTourManager: (String, String) -> Unit,
 ){
 
     Log.d("TouristId", "$touristId")
@@ -105,6 +97,7 @@ fun HostDashboardScreen(
     val staycationProperties = hostDashboardViewModel?.staycations?.collectAsState()?.value?.map {staycation ->
         staycation.staycationImages.find { it.photoType == "Cover" }?.photoUrl?.let {
             HostProperty(
+                propertyId = staycation.staycationId,
                 propertyName = staycation.staycationTitle,
                 image = it, // You may need to replace this with the actual logic to get the image
                 host = staycation.host.firstName, // Assuming host is a Host object with a firstName property
@@ -116,6 +109,7 @@ fun HostDashboardScreen(
     val businessProperties = hostDashboardViewModel?.businesses?.collectAsState()?.value?.map { business ->
         business.businessImages.find { it.photoType == "Cover" }?.photoUrl?.let {
             HostProperty(
+                propertyId = business.businessId,
                 propertyName = business.businessTitle,
                 propertyDescription = business.businessDescription,
                 image = it, // You may need to replace this with the actual logic to get the image
@@ -128,6 +122,7 @@ fun HostDashboardScreen(
     val tourProperties = hostDashboardViewModel?.tours?.collectAsState()?.value?.map { tour ->
         tour.tourImages.find { it.photoType == "Cover" }?.photoUrl?.let {
             HostProperty(
+                propertyId = tour.tourId,
                 propertyName = tour.tourTitle,
                 propertyDescription = tour.tourDescription,
                 image = it, // You may need to replace this with the actual logic to get the image
@@ -228,6 +223,9 @@ fun HostDashboardScreen(
                     item {
                         HostPropertiesList(
                             properties = staycationProperties,
+                            onNavToStaycationManager = { staycationId ->
+                                onNavToStaycationManager(host?.hostId ?: "", staycationId)
+                            },
                             modifier = Modifier
                                 .padding(
                                     vertical = verticalPaddingValue,
@@ -238,6 +236,9 @@ fun HostDashboardScreen(
                     item {
                         HostBusinessesList(
                             properties = businessProperties,
+                            onNavToBusinessManager = { businessId ->
+                                onNavToBusinessManager(host?.hostId ?: "", businessId)
+                            },
                             modifier = Modifier
                                 .padding(
                                     vertical = verticalPaddingValue,
@@ -248,6 +249,9 @@ fun HostDashboardScreen(
                     item {
                         HostToursList(
                             properties = tourProperties,
+                            onNavToTourManager = { tourId ->
+                                onNavToTourManager(host?.hostId ?: "", tourId)
+                            },
                             modifier = Modifier
                                 .padding(
                                     vertical = verticalPaddingValue,
@@ -322,23 +326,6 @@ fun HostWalletCard(
                 }
             }
             Spacer(modifier = Modifier.weight(1f))
-//            Column(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalAlignment = Alignment.End
-//            ) {
-//                Text(
-//                    text = "Available balance",
-//                    color = Color.White,
-//                    fontSize = 12.sp,
-//                    fontWeight = FontWeight.Medium,
-//                )
-//                Text(
-//                    text =  "₱ ${String.format("%.2f", hostBalance)}",
-//                    color = Color.White,
-//                    fontSize = 16.sp,
-//                    fontWeight = FontWeight.Medium,
-//                )
-//            }
             Row {
                 Spacer(modifier = Modifier.weight(1f))
                 Column {
@@ -423,28 +410,6 @@ fun ReservationsList(
     var selectedTab by remember { mutableStateOf(0) }
     val reservationTabs = listOf("Checking out", "Currently hosting", "Upcoming")
     val contentCounts = listOf(checkingOutCount, currentlyHostingCount, upcomingCount)
-
-
-//    val transactionList = staycationBookings?.filter { it.bookingStatus == "Pending" }?.map { staycationBooking ->
-//
-//        val formatter = SimpleDateFormat("MMM d", Locale.getDefault())
-//        val start = formatter.format(staycationBooking.checkInDate)
-//        val end = formatter.format(staycationBooking.checkOutDate)
-//        val year = SimpleDateFormat("yyyy", Locale.getDefault()).format(staycationBooking.checkInDate)
-//
-//        Transaction(
-//            customerImage = R.drawable.joshua,
-//            bookedRental = staycationBooking.staycation?.staycationTitle ?: "",
-//            customerName = "${staycationBooking.tourist?.firstName} ${staycationBooking.tourist?.lastName}",
-//            customerUsername = staycationBooking.tourist?.username ?: "",
-//            guestsCount = staycationBooking.noOfGuests,
-//            price = staycationBooking.totalAmount ?: 0.0,
-//            bookedDate = "$start-$end, $year",
-//            transactionDate = SimpleDateFormat("MMM dd, yyyy").format(staycationBooking.bookingDate) , //staycationBooking.bookingDate.toString(),
-//            transactionStatus = staycationBooking.bookingStatus
-//        )
-//    }
-
 
     Column(
         modifier = modifier
@@ -569,7 +534,11 @@ fun ReservationTab(
 }
 
 @Composable
-fun HostPropertiesList(properties: List<HostProperty?>?, modifier: Modifier = Modifier){
+fun HostPropertiesList(
+    onNavToStaycationManager: (String) -> Unit,
+    properties: List<HostProperty?>?,
+    modifier: Modifier = Modifier
+){
     Log.d("Properties", "$properties")
     Column(
         modifier = modifier.fillMaxWidth()
@@ -587,6 +556,9 @@ fun HostPropertiesList(properties: List<HostProperty?>?, modifier: Modifier = Mo
                     HostPropertyCard(
                         hostProperty = property,
                         propertyType = "Staycation",
+                        onManage = { staycationId ->
+                            onNavToStaycationManager(staycationId)
+                        },
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
@@ -599,7 +571,11 @@ fun HostPropertiesList(properties: List<HostProperty?>?, modifier: Modifier = Mo
 }
 
 @Composable
-fun HostBusinessesList(properties: List<HostProperty?>?, modifier: Modifier = Modifier){
+fun HostBusinessesList(
+    onNavToBusinessManager: (String) -> Unit,
+    properties: List<HostProperty?>?,
+    modifier: Modifier = Modifier
+){
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
@@ -616,6 +592,9 @@ fun HostBusinessesList(properties: List<HostProperty?>?, modifier: Modifier = Mo
                     HostPropertyCard(
                         hostProperty = property,
                         propertyType = "Business",
+                        onManage = { businessId ->
+                            onNavToBusinessManager(businessId)
+                        },
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
@@ -625,7 +604,11 @@ fun HostBusinessesList(properties: List<HostProperty?>?, modifier: Modifier = Mo
 }
 
 @Composable
-fun HostToursList(properties: List<HostProperty?>?, modifier: Modifier = Modifier){
+fun HostToursList(
+    onNavToTourManager: (String) -> Unit,
+    properties: List<HostProperty?>?,
+    modifier: Modifier = Modifier
+){
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
@@ -642,6 +625,9 @@ fun HostToursList(properties: List<HostProperty?>?, modifier: Modifier = Modifie
                     HostPropertyCard(
                         hostProperty = property,
                         propertyType = "Tours",
+                        onManage = { tourId ->
+                            onNavToTourManager(tourId)
+                        },
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
@@ -654,6 +640,7 @@ fun HostToursList(properties: List<HostProperty?>?, modifier: Modifier = Modifie
 fun HostPropertyCard(
     hostProperty: HostProperty,
     propertyType: String,
+    onManage: (String) -> Unit,
     modifier: Modifier = Modifier
 ){
     val propertyDescription =
@@ -694,7 +681,10 @@ fun HostPropertyCard(
                     Spacer(modifier = Modifier.width(5.dp))
                     AppOutlinedButtonWithBadge(
                         buttonLabel = "Manage",
-                        badgeCount = 8
+                        onClick = {
+                            onManage(hostProperty.propertyId)
+                        },
+                       // badgeCount = 8
                     )
                 }
                 Text(
@@ -729,12 +719,6 @@ fun HostPropertyCard(
                     defaultElevation = 10.dp
                 )
             ){
-//                val imageLoader = rememberAsyncImagePainter(
-//                    ImageRequest.Builder(LocalContext.current).data(data = hostProperty.image)
-//                        .apply(block = fun ImageRequest.Builder.() {
-//                            crossfade(true)
-//                        }).build()
-//                )
 
                 AsyncImage(
                     model = hostProperty.image,//imageLoader,
@@ -742,16 +726,6 @@ fun HostPropertyCard(
                     contentScale = ContentScale.Crop
 
                 )
-//                Image(
-//                    painter = imageLoader,
-//                    contentDescription = "Image",
-//                    contentScale = ContentScale.FillWidth//FillBounds
-//                )
-//                Image(
-//                    painter = painterResource(id = hostProperty.image),
-//                    contentDescription = "Image",
-//                    contentScale = ContentScale.FillBounds
-//                )
             }
         }
 
@@ -763,6 +737,7 @@ fun HostPropertyCard(
 fun AppOutlinedButtonWithBadge(
     buttonLabel: String,
     badgeCount: Int? = null,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ){
     BadgedBox(
@@ -779,7 +754,11 @@ fun AppOutlinedButtonWithBadge(
         }
     ) {
         OutlinedButton(
-            onClick = {  },
+            onClick = {
+                if (onClick != null) {
+                    onClick()
+                }
+            },
             border = BorderStroke(width = 1.dp, Orange),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.White
@@ -921,18 +900,18 @@ private fun HostDashboardScreenPreview(){
 
     val hostDashboardViewModel = viewModel(modelClass = HostDashboardViewModel::class.java)
 
-    HostDashboardScreen(
-        touristId ="ITZbCFfF7Fzqf1qPBiwx",
-        onNavToAddListing = { hostId,listingType ->
-           // navigateToAddListing1(navController, hostId, listingType)
-        },
-        onNavToHostTour = { hostId,listingType ->
-            //navigateToAddListing1(navController, hostId, listingType)
-        },
-        onNavToAddBusiness = { hostId,listingType ->
-           // navigateToAddListing1(navController, hostId, listingType)
-        },
-        hostDashboardViewModel = hostDashboardViewModel,
-    )
+//    HostDashboardScreen(
+//        touristId ="ITZbCFfF7Fzqf1qPBiwx",
+//        onNavToAddListing = { hostId,listingType ->
+//           // navigateToAddListing1(navController, hostId, listingType)
+//        },
+//        onNavToHostTour = { hostId,listingType ->
+//            //navigateToAddListing1(navController, hostId, listingType)
+//        },
+//        onNavToAddBusiness = { hostId,listingType ->
+//           // navigateToAddListing1(navController, hostId, listingType)
+//        },
+//        hostDashboardViewModel = hostDashboardViewModel,
+//    )
 
 }

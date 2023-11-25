@@ -40,16 +40,30 @@ data class Staycation(
     val nearbyAttractions: List<String> = emptyList()
 ) {
     val totalReviews: Int
-        get() = staycationBookings.count { it.bookingReview != null }
+        get() = staycationBookings.mapNotNull { it.bookingReview }.filter { it.bookingId != "" }.count()
+
     val averageReviewRating: Double
         get() {
-            val validReviews = staycationBookings.filter { it.bookingReview != null }
-            return if (validReviews.isNotEmpty()) {
-                validReviews.map { it.bookingReview!!.rating }.average()
-            } else {
-                0.0 // or any default value if there are no reviews
-            }
+            val validReviews = staycationBookings
+                .mapNotNull { it.bookingReview }
+                .filter { it.bookingId != "" }
+
+            return validReviews.map { it.rating }.average()
         }
+
+  //  validReviews.map { it.bookingReview!!.rating }.average()
+
+//    val totalReviews: Int
+//        get() = staycationBookings.count { it.bookingReview != null }
+//    val averageReviewRating: Double
+//        get() {
+//            val validReviews = staycationBookings.filter { it.bookingReview != null }
+//            return if (validReviews.isNotEmpty()) {
+//                validReviews.map { it.bookingReview!!.rating }.average()
+//            } else {
+//                0.0 // or any default value if there are no reviews
+//            }
+//        }
     val pendingBookingsCount: Int
         get() = staycationBookings.count { it.bookingStatus == "Pending" }
     val ongoingBookingsCount: Int

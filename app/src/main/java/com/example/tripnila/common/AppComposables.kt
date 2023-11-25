@@ -1174,14 +1174,14 @@ fun AppLocationCard(
                     modifier = Modifier
                         .padding(bottom = 4.dp)
                 )
-                if (withEditButton) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    AppOutlinedButtonWithBadge(
-                        buttonLabel = "Edit",
-                        modifier = Modifier
-                            .width(40.dp)
-                    )
-                }
+//                if (withEditButton) {
+//                    Spacer(modifier = Modifier.width(8.dp))
+//                    AppOutlinedButtonWithBadge(
+//                        buttonLabel = "Edit",
+//                        modifier = Modifier
+//                            .width(40.dp)
+//                    )
+//                }
             }
             ElevatedCard(
                 shape = RoundedCornerShape(10.dp),

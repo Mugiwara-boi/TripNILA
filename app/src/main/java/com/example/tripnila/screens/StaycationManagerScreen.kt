@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +25,8 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.AppOutlinedButton
@@ -43,104 +47,90 @@ import com.example.tripnila.common.Tag
 import com.example.tripnila.data.AmenityBrief
 import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.data.Transaction
+import com.example.tripnila.model.StaycationManagerViewModel
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
-fun StaycationManagerScreen(){
+fun StaycationManagerScreen(
+    staycationId: String = "",
+    hostId: String = "",
+    staycationManagerViewModel: StaycationManagerViewModel
+){
 
-    val amenities = listOf(
-        AmenityBrief(
-            image = R.drawable.person,
-            count = 4,
-            name = "person"
-        ),
-        AmenityBrief(
-            image = R.drawable.pool,
-            count = 1,
-            name = "swimming pool"
-        ),
-        AmenityBrief(
-            image = R.drawable.bedroom,
-            count = 2,
-            name = "bedroom"
-        ),
-        AmenityBrief(
-            image = R.drawable.bathroom,
-            count = 2,
-            name = "bathroom"
-        ),
-        AmenityBrief(
-            image = R.drawable.kitchen,
-            count = 1,
-            name = "kitchen"
-        )
-    )
-    val reviews = listOf(
-        ReviewUiState(
-            rating = 4.5,
-            comment = "A wonderful staycation experience!",
-          //  touristImage = R.drawable.joshua,
-            touristName = "John Doe",
-            reviewDate = "2023-05-15"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-          //  touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-         //   touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-           // touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-         //   touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-          //  touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-    )
-    val transactions = listOf(
-        Transaction(
-          //  customerImage = R.drawable.joshua,
-            customerName = "Juan Cruz",
-            customerUsername = "@jcruz",
-            guestsCount = 4,
-            price = 2500.00,
-            bookedDate = "Sep 3-6, 2023",
-            transactionDate = "Aug 24, 2023",
-            transactionStatus = "Completed"
-        ),
-        Transaction(
-          // customerImage = R.drawable.joshua,
-            customerName = "Juan Cruz",
-            customerUsername = "@jcruz",
-            guestsCount = 4,
-            price = 2500.00,
-            bookedDate = "Sep 3-6, 2023",
-            transactionDate = "Aug 24, 2023",
-            transactionStatus = "Completed"
-        ),
+    Log.d("Staycation", "$staycationId $hostId")
 
+    LaunchedEffect(staycationId) {
+        staycationManagerViewModel.getSelectedStaycation(staycationId)
+    }
+
+    var staycation = staycationManagerViewModel?.staycation?.collectAsState()
+
+    val transactions = staycation?.value?.staycationBookings?.map {staycationBooking ->
+        val formatter = SimpleDateFormat("MMM d", Locale.getDefault())
+        val start = formatter.format(staycationBooking.checkInDate)
+        val end = formatter.format(staycationBooking.checkOutDate)
+        val year = SimpleDateFormat("yyyy", Locale.getDefault()).format(staycationBooking.checkInDate)
+
+        Transaction(
+            customerImage = staycationBooking.tourist?.profilePicture ?: "",
+           // bookedRental = staycationBooking.staycation?.staycationTitle ?: "",
+            customerName = "${staycationBooking.tourist?.firstName} ${staycationBooking.tourist?.lastName}",
+            customerUsername = staycationBooking.tourist?.username ?: "",
+            guestsCount = staycationBooking.noOfGuests,
+            price = staycationBooking.totalAmount ?: 0.0,
+            bookedDate = "$start-$end, $year",
+            transactionDate = SimpleDateFormat("MMM dd, yyyy").format(staycationBooking.bookingDate) , //staycationBooking.bookingDate.toString(),
+            transactionStatus = staycationBooking.bookingStatus
         )
+    }?.sortedByDescending { it.transactionDate } ?: emptyList()
+
+
+
+
+//    val staycationReviews = staycation?.value?.staycationBookings
+//        ?.filter { it.bookingReview != null }
+//        ?.mapNotNull { it.bookingReview }
+
+    val staycationReviews = staycation?.value?.staycationBookings?.mapNotNull { it.bookingReview }
+    val reviews: List<ReviewUiState> = staycationReviews?.filter { it.bookingId != "" }
+        ?.map { review ->
+        review.let {
+            ReviewUiState(
+                rating = it.rating.toDouble() ?: 0.0,
+                comment = it.comment ?: "",
+                touristImage = it?.reviewer?.profilePicture ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
+                touristName = "${it?.reviewer?.firstName} ${it.reviewer?.lastName}",
+                reviewDate = it.reviewDate.toString()
+            )
+        }
+    } ?: emptyList()
+
+
+
+//    val transactions = listOf(
+//        Transaction(
+//          //  customerImage = R.drawable.joshua,
+//            customerName = "Juan Cruz",
+//            customerUsername = "@jcruz",
+//            guestsCount = 4,
+//            price = 2500.00,
+//            bookedDate = "Sep 3-6, 2023",
+//            transactionDate = "Aug 24, 2023",
+//            transactionStatus = "Completed"
+//        ),
+//        Transaction(
+//          // customerImage = R.drawable.joshua,
+//            customerName = "Juan Cruz",
+//            customerUsername = "@jcruz",
+//            guestsCount = 4,
+//            price = 2500.00,
+//            bookedDate = "Sep 3-6, 2023",
+//            transactionDate = "Aug 24, 2023",
+//            transactionStatus = "Completed"
+//        ),
+//
+//        )
 
     Surface(
         modifier = Modifier
@@ -166,6 +156,7 @@ fun StaycationManagerScreen(){
             }
             item {
                 StaycationDescriptionCard1(
+                    staycation = staycation?.value,
                     withEditButton = true,
                     modifier = Modifier
                         .offset(y = (-17).dp)
@@ -173,6 +164,7 @@ fun StaycationManagerScreen(){
             }
             item {
                 StaycationDescriptionCard3(
+                    staycation = staycation?.value,
                     //amenities = amenities,
                     withEditButton = true,
                     modifier = Modifier
@@ -182,6 +174,7 @@ fun StaycationManagerScreen(){
             }
             item {
                 StaycationAmenitiesCard(
+                    staycation = staycation?.value,
                     //amenities = amenities, /*TODO*/
                     withEditButton = true,
                     modifier = Modifier
@@ -206,16 +199,22 @@ fun StaycationManagerScreen(){
                 )
             }
             item {
-                AppReviewsCard(
-                    reviews = reviews,
-                    modifier = Modifier
-                        .offset(y = (-5).dp)
-                        .padding(bottom = 7.dp)
-                )
+                staycation?.value?.averageReviewRating?.let { averageRating ->
+                    staycation?.value?.totalReviews?.let { totalReviews ->
+                        AppReviewsCard(
+                            totalReviews = totalReviews,
+                            averageRating = averageRating,
+                            reviews = reviews,
+                            modifier = Modifier
+                                .offset(y = (-5).dp)
+                                .padding(bottom = 7.dp)
+                        )
+                    }
+                }
             }
-            item {
-                StaycationBottomBookingBar(onClickBook = {}, onClickChatHost = {}, onClickUnderlinedText = {})
-            }
+//            item {
+//                StaycationBottomBookingBar(onClickBook = {}, onClickChatHost = {}, onClickUnderlinedText = {})
+//            }
         }
     }
 }
@@ -248,7 +247,7 @@ fun AppTransactionsCard(transactions: List<Transaction>, modifier: Modifier = Mo
                     .padding(bottom = 4.dp)
             )
 
-            transactions.forEach { transaction ->
+            transactions.take(2).forEach { transaction ->
                 TransactionCard(
                     transaction = transaction,
                     modifier = Modifier.padding(top = 7.dp)
@@ -395,6 +394,12 @@ private fun StaycationManagerPreview() {
 @Composable
 private fun StaycationManagerScreenPreview() {
 
-    StaycationManagerScreen()
+    val staycationManagerViewModel = viewModel(modelClass = StaycationManagerViewModel::class.java)
+
+    StaycationManagerScreen(
+        hostId = "HOST-ITZbCFfF7Fzqf1qPBiwx",
+        staycationId = "LxpNxRFdwkQzBxujF3gx",
+        staycationManagerViewModel = staycationManagerViewModel
+    )
 
 }

@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,7 +24,12 @@ import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.ReviewUiState
 
 @Composable
-fun BusinessManagerScreen(){
+fun BusinessManagerScreen(
+    businessId: String = "",
+    hostId: String = ""
+){
+
+    Log.d("Business", "$businessId $hostId")
 
     val amenities = listOf(
         AmenityBrief(
