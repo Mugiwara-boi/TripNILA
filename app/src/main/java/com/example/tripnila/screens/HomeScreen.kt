@@ -85,6 +85,10 @@ fun HomeScreen(
     navController: NavHostController
 ){
 
+    LaunchedEffect(touristId) {
+        homeViewModel?.getUserPreference(touristId)
+    }
+
     var searchText = remember{ mutableStateOf("") }
     var isActive = remember { mutableStateOf(false) }
     var selectedItemIndex by rememberSaveable {

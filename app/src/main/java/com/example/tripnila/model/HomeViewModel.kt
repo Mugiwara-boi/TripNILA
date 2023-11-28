@@ -15,6 +15,7 @@ import androidx.paging.PagingSource
 import androidx.paging.cachedIn
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.tripnila.data.Filter
+import com.example.tripnila.data.Preference
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
@@ -30,8 +32,24 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
     private val _selectedTab = MutableStateFlow("For You") // Default tab
     val selectedTab: StateFlow<String> get() = _selectedTab
 
+    private val _preferences = MutableStateFlow<List<Preference>>(emptyList()) // Initialize with an empty Host
+    val preferences = _preferences.asStateFlow()
+
+
     fun selectTab(tab: String) {
         _selectedTab.value = tab
+    }
+
+    fun getUserPreference(touristId: String) {
+        viewModelScope.launch {
+            try {
+                val preferences = repository.getTouristPreferences(touristId)
+                _preferences.value = preferences
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     fun getStaycationsByTab(tab: String): Flow<PagingData<Staycation>> {
