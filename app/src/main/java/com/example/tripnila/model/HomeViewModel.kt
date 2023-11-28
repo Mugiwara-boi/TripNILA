@@ -58,9 +58,11 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
             enablePlaceholders = false
         )
 
+        val modifiedTab = if (tab == "For You") preferences.value.joinToString(",") else tab
+
         return Pager(
             config = pagingConfig,
-            pagingSourceFactory = { StaycationPagingSource(repository, tab) }
+            pagingSourceFactory = { StaycationPagingSource(repository, modifiedTab) }
         ).flow.cachedIn(viewModelScope)
     }
 
