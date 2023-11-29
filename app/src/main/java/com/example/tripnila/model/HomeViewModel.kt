@@ -58,10 +58,21 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
             enablePlaceholders = false
         )
 
-        return Pager(
-            config = pagingConfig,
-            pagingSourceFactory = { StaycationPagingSource(repository, tab) }
-        ).flow.cachedIn(viewModelScope)
+        return if (tab == "For You") {
+            val tabs = _preferences.value.map { it.preference }
+
+            Pager(
+                config = pagingConfig,
+                pagingSourceFactory = { ForYouPagingSource(repository, tabs) }
+            ).flow.cachedIn(viewModelScope)
+
+        } else {
+            Pager(
+                config = pagingConfig,
+                pagingSourceFactory = { StaycationPagingSource(repository, tab) }
+            ).flow.cachedIn(viewModelScope)
+        }
+
     }
 
 }

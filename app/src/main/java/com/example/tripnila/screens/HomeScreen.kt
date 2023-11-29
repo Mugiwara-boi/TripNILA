@@ -89,6 +89,8 @@ fun HomeScreen(
         homeViewModel?.getUserPreference(touristId)
     }
 
+    val userPreferences = homeViewModel?.preferences?.collectAsState()?.value
+
     var searchText = remember{ mutableStateOf("") }
     var isActive = remember { mutableStateOf(false) }
     var selectedItemIndex by rememberSaveable {

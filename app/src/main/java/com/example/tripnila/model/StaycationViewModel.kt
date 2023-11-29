@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 
 class StaycationViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
 
-    val staycations = Pager(PagingConfig(pageSize = 1)) {
-        StaycationPagingSource(repository, "History")
-    }.flow.cachedIn(viewModelScope)
+//    val staycations = Pager(PagingConfig(pageSize = 1)) {
+//        StaycationPagingSource(repository, "History")
+//    }.flow.cachedIn(viewModelScope)
 }

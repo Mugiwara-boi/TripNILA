@@ -2316,6 +2316,62 @@ class UserRepository {
     }
     fun getCurrentUser(): Tourist? { return currentUser }
 
+    private suspend fun getServiceIdsByTags(tagNames: List<String>): List<Tag> {
+        return try {
+            val result = serviceTagCollection
+                .whereIn("tagName", tagNames)
+                .get()
+                .await()
+
+            val tags = mutableListOf<Tag>()
+
+            for (document in result.documents) {
+                val tagId = document.id
+                val tagName = document.getString("tagName") ?: ""
+                val serviceId = document.getString("serviceId") ?: ""
+
+                tags.add(Tag(tagId = tagId, tagName = tagName, serviceId = serviceId))
+            }
+
+            tags
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList() // Handle the error case as needed
+        }
+    }
+
+    suspend fun getAllStaycationsByTags(tags: List<String>, page: Int): List<Staycation> {
+        return try {
+            val pageSize = Constants.PAGE_SIZE
+            // Fetch serviceIds with the specified tags
+            val serviceIds = getServiceIdsByTags(tags)
+
+            // Fetch staycations with document id (staycationId) equal to the serviceId
+            val staycationList = mutableListOf<Staycation>()
+
+            val startIdx = page * pageSize
+            val endIdx = startIdx + pageSize
+
+            for (i in startIdx until min(endIdx, serviceIds.size)) {
+                val serviceId = serviceIds[i].serviceId
+                val document = db.collection("staycation").document(serviceId).get().await()
+
+                if (document.exists()) {
+                    val staycationId = document.id
+                    val staycation = createStaycationFromDocument(document, staycationId)
+                    staycationList.add(staycation)
+                }
+            }
+
+            staycationList
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList() // Handle the error case as needed
+        }
+    }
+
+
     suspend fun getServiceIdsByTag(tagName: String): List<Tag> {
         return try {
             val result = serviceTagCollection

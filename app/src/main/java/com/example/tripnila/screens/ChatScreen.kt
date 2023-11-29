@@ -1,7 +1,9 @@
 package com.example.tripnila.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,18 +44,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
+import com.example.tripnila.data.Message
 import com.example.tripnila.model.ChatViewModel
 
 @Composable
@@ -90,8 +97,32 @@ fun ChatScreen(
                     .fillMaxSize()
                     .padding(it)
             ) {
+                if (messages.isEmpty()) {
+                   // AsyncImage(model = , contentDescription = )
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(vertical = 280.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Image(painter = painterResource(id = R.drawable.chat_placeholder), contentDescription = null)
+                            Text(
+                                text = "Start a conversation",
+                                color = Color(0xff999999),
+                                style = TextStyle(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium),
+                            )
+                        }
+                    }
+                }
                 items(messages) { message ->
-                    Text(text = message.content)
+                    ChatBubble(
+                        message = message,
+                        isIncoming = false
+                    )
                 }
 
             }
@@ -101,16 +132,80 @@ fun ChatScreen(
 }
 
 @Composable
+fun ChatBubble(
+    modifier: Modifier = Modifier,
+    message: Message,
+    isIncoming: Boolean
+
+){
+
+    val incomingShape = RoundedCornerShape(
+        topStart = 8.dp,
+        topEnd = 8.dp,
+        bottomEnd = 8.dp,
+        bottomStart = 0.dp
+    )
+
+    val outgoingShape = RoundedCornerShape(
+        topStart = 8.dp,
+        topEnd = 8.dp,
+        bottomEnd = 0.dp,
+        bottomStart = 8.dp
+    )
+
+    Column(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Surface(
+            color = if (isIncoming) Orange.copy(0.3f) else Orange,
+            shape = if (isIncoming) incomingShape else outgoingShape,
+            modifier = Modifier
+                .align(if (isIncoming) Alignment.Start else Alignment.End)
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 5.dp, vertical = 5.dp)
+            ) {
+                Text(
+                    text = message.content,
+                    fontSize = 14.sp,
+                    color = if (isIncoming) Orange else Color.White,
+                   // textAlign = if (isIncoming) TextAlign.Start else TextAlign.End
+                )
+                Text(
+                    text = message.timestamp.toString(),
+                    fontSize = 8.sp,
+                    color = Color.LightGray,
+                    textAlign = TextAlign.End
+                )
+
+            }
+
+        }
+    }
+
+}
+
+@Composable
 fun ChatBottomBar(
     modifier: Modifier = Modifier,
     chatViewModel: ChatViewModel
 ){
-    Box(
+
+
+//    Box(
+//        modifier = modifier
+//            .fillMaxWidth()
+//            .height(70.dp)
+//            .background(color = Color.White)
+//            .border(0.1.dp, Color.Black)
+//    ) {
+    Surface(
+        color = Color.White,
+        tonalElevation = 10.dp,
+        shadowElevation = 10.dp,
         modifier = modifier
-            .fillMaxWidth()
             .height(70.dp)
-            .background(color = Color.White)
-            .border(0.1.dp, Color.Black)
+            .fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
@@ -149,37 +244,6 @@ fun ChatBottomBar(
     }
 
 }
-
-//@Composable
-//fun UsingBottomBar(){
-//    BottomAppBar(
-//        actions = {
-//            FloatingActionButton(
-//                onClick = { /*TODO*/ },
-//                shape = CircleShape,
-//                containerColor = Orange,
-//                contentColor = Color.White,
-//                elevation = FloatingActionButtonDefaults.elevation(
-//                    defaultElevation = 10.dp
-//                ),
-//                modifier = Modifier
-//                    .padding(end = 10.dp)
-//                    .size(30.dp)
-//
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Filled.Add,
-//                    contentDescription = "Add",
-//                )
-//            }
-//            ChatTextField(
-//                chatViewModel = chatViewModel
-//            )
-//        },
-//
-//
-//    )
-//}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
