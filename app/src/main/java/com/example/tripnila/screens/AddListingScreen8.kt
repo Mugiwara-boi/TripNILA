@@ -40,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,84 +77,88 @@ fun AddListingScreen8(
     onNavToBack: () -> Unit,
 ){
 
-    Log.d("Listing8", "$listingType")
+    Log.d("Listing8", listingType)
 
-    var selectedImageUris = when (listingType) {
-        "Staycation" -> remember {
-            mutableStateOf(addListingViewModel?.staycation?.value?.staycationImages
-                ?.filter { it.photoType == "Others" }
-                ?.map { it.photoUri })
-        }
-        "Tour" -> remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourImages
-            ?.filter { it.photoType == "Others" }
-            ?.map { it.photoUri }) }
-        "Business" -> remember { mutableStateOf(addBusinessViewModel?.business?.value?.businessImages
-            ?.filter { it.photoType == "Others" }
-            ?.map { it.photoUri }) }
+    val selectedImageUris = when (listingType) {
+        "Staycation" -> remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationImages?.filter { it.photoType == "Others" }?.map { it.photoUri }) }
+        "Tour" -> remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourImages?.filter { it.photoType == "Others" }?.map { it.photoUri }) }
+        "Business" -> remember { mutableStateOf(addBusinessViewModel?.business?.value?.businessImages?.filter { it.photoType == "Others" }?.map { it.photoUri }) }
         else -> throw IllegalStateException("Unknown")
     }
 
 
-    var selectedImageUri = when (listingType) {
+    val selectedImageUri = when (listingType) {
         "Staycation" -> remember {
             mutableStateOf(addListingViewModel?.staycation?.value?.staycationImages
                 ?.firstOrNull { it.photoType == "Cover" }
                 ?.photoUri)
         }
-        "Tour" -> remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourImages
-            ?.firstOrNull { it.photoType == "Cover" }
-            ?.photoUri) }
-        "Business" -> remember { mutableStateOf(addBusinessViewModel?.business?.value?.businessImages
-            ?.firstOrNull { it.photoType == "Cover" }
-            ?.photoUri) }
+        "Tour" -> remember {
+            mutableStateOf(hostTourViewModel?.tour?.value?.tourImages
+                ?.firstOrNull { it.photoType == "Cover" }
+                ?.photoUri)
+        }
+        "Business" -> remember {
+            mutableStateOf(addBusinessViewModel?.business?.value?.businessImages
+                ?.firstOrNull { it.photoType == "Cover" }
+                ?.photoUri)
+        }
         else -> throw IllegalStateException("Unknown")
     }
 
 
-    var singlePhotoPickerLauncher = when (listingType) {
+    val singlePhotoPickerLauncher = when (listingType) {
         "Staycation" -> rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia()
         ) { uri ->
-            selectedImageUri.value = uri
-            addListingViewModel?.setStaycationCoverPhoto(selectedImageUri.value as Uri)
+            if (uri != null) {
+                selectedImageUri.value = uri
+                addListingViewModel?.setStaycationCoverPhoto(uri)
+            }
+
         }
         "Tour" -> rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia()
         ) { uri ->
-            selectedImageUri.value = uri
-            hostTourViewModel?.setCoverPhoto(selectedImageUri.value as Uri)
+            if (uri != null) {
+                selectedImageUri.value = uri
+                hostTourViewModel?.setCoverPhoto(uri)
+            }
         }
         "Business" -> rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia()
         ) { uri ->
-            selectedImageUri.value = uri
-            addBusinessViewModel?.setCoverPhoto(selectedImageUri.value as Uri)
+            if (uri != null) {
+                selectedImageUri.value = uri
+                addBusinessViewModel?.setCoverPhoto(uri)
+            }
         }
         else -> throw IllegalStateException("Unknown")
     }
 
 
-    var multiplePhotoPickerLauncher = when (listingType) {
+    val multiplePhotoPickerLauncher = when (listingType) {
         "Staycation" -> rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickMultipleVisualMedia()
         ) { uris ->
             selectedImageUris.value = selectedImageUris.value?.plus(uris)
-            addListingViewModel?.setSelectedImageUris(selectedImageUris.value as List<@JvmSuppressWildcards Uri>)
+            addListingViewModel?.setSelectedImageUris(uris)
         }
         "Tour" -> rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickMultipleVisualMedia()
         ) { uris ->
             selectedImageUris.value = selectedImageUris.value?.plus(uris)
-            hostTourViewModel?.setSelectedImageUris(selectedImageUris.value as List<@JvmSuppressWildcards Uri>)
+            hostTourViewModel?.setSelectedImageUris(uris)
         }
         "Business" -> rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickMultipleVisualMedia()
         ) { uris ->
             selectedImageUris.value = selectedImageUris.value?.plus(uris)
-            addBusinessViewModel?.setSelectedImageUris(selectedImageUris.value as List<@JvmSuppressWildcards Uri>)
+            addBusinessViewModel?.setSelectedImageUris(uris)
         }
         else -> throw IllegalStateException("Unknown")
     }
+
 
     Surface(
         modifier = Modifier
@@ -170,9 +175,9 @@ fun AddListingScreen8(
                         onNavToBack()
                     },
                     enableRightButton = when (listingType) {
-                        "Staycation" -> addListingViewModel?.staycation?.collectAsState()?.value?.staycationImages?.any { it.photoType == "Cover" } == true && addListingViewModel?.staycation?.collectAsState()?.value?.staycationImages?.any { it.photoType == "Others" } == true
-                        "Tour" -> hostTourViewModel?.tour?.collectAsState()?.value?.tourImages?.any { it.photoType == "Cover" } == true && hostTourViewModel?.tour?.collectAsState()?.value?.tourImages?.any { it.photoType == "Others" } == true
-                        "Business" -> addBusinessViewModel?.business?.collectAsState()?.value?.businessImages?.any { it.photoType == "Cover" } == true && addBusinessViewModel?.business?.collectAsState()?.value?.businessImages?.any { it.photoType == "Others" } == true
+                        "Staycation" -> addListingViewModel?.staycation?.collectAsState()?.value?.staycationImages?.any { it.photoType == "Cover" } == true && addListingViewModel.staycation.collectAsState().value.staycationImages.any { it.photoType == "Others" }
+                        "Tour" -> hostTourViewModel?.tour?.collectAsState()?.value?.tourImages?.any { it.photoType == "Cover" } == true && hostTourViewModel.tour.collectAsState().value.tourImages.any { it.photoType == "Others" }
+                        "Business" -> addBusinessViewModel?.business?.collectAsState()?.value?.businessImages?.any { it.photoType == "Cover" } == true && addBusinessViewModel.business.collectAsState().value.businessImages.any { it.photoType == "Others" }
                         else -> throw IllegalStateException("Unknown")
                     }
 
@@ -276,7 +281,6 @@ fun AddListingScreen8(
                         items(numRows) { row ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                //horizontalArrangement = Arrangement.spacedBy(15.dp)
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 val startIndex = row * 2
@@ -303,11 +307,11 @@ fun AddListingScreen8(
                                                 selectedImageUris.value = selectedImageUris.value?.filter { it != uri }
 
                                                 when (listingType) {
-                                                    "Staycation" -> addListingViewModel?.setSelectedImageUris(selectedImageUris.value as List<@JvmSuppressWildcards Uri>)
-                                                    "Tour" -> hostTourViewModel?.setSelectedImageUris(selectedImageUris.value as List<@JvmSuppressWildcards Uri>)
-                                                    "Business" -> addBusinessViewModel?.setSelectedImageUris(selectedImageUris.value as List<@JvmSuppressWildcards Uri>)
-                                                    else -> throw IllegalStateException("Unknown")
+                                                    "Staycation" -> uri?.let { uri -> addListingViewModel?.removeSelectedImage(uri = uri) }
+                                                    "Business" -> uri?.let { uri -> addBusinessViewModel?.removeSelectedImage(uri = uri) }
+                                                    "Tour" -> uri?.let { uri -> hostTourViewModel?.removeSelectedImage(uri = uri) }
                                                 }
+
                                             },
                                             modifier = Modifier
                                                 .align(Alignment.TopEnd)
@@ -329,7 +333,7 @@ fun AddListingScreen8(
                             }
                         }
                     }
-                    if (selectedImageUris.value?.size?.rem(2) ?: 0  == 0) {
+                    if ((selectedImageUris.value?.size?.rem(2) ?: 0) == 0) {
                         item {
                             AddMorePhoto(
                                 onClick = {
@@ -444,6 +448,7 @@ private fun AddListingScreen8Preview(){
     val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
 
     AddListingScreen8(
+        listingType = "Staycation",
         addListingViewModel = addListingViewModel,
         onNavToBack = {},
         onNavToNext = {}

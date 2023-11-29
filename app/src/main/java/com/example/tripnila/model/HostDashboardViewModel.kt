@@ -1,5 +1,6 @@
 package com.example.tripnila.model
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Business
@@ -48,6 +49,8 @@ class HostDashboardViewModel(private val repository: UserRepository = UserReposi
                 _staycations.value = staycations!!
                 _businesses.value = businesses!!
                 _tours.value = tours!!
+
+                Log.d("Staycation", "${_staycations.value}")
 
                 _isStateRetrieved.value = true
 

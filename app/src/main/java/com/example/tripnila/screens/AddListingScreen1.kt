@@ -45,6 +45,7 @@ import com.example.tripnila.model.HostTourViewModel
 fun AddListingScreen1(
     listingType: String = "",
     hostId: String = "",
+    serviceId: String = "empty",
     onNavToNext: (String) -> Unit,
     onNavToCancel: (String) -> Unit,
     addListingViewModel: AddListingViewModel? = null,
@@ -53,37 +54,55 @@ fun AddListingScreen1(
 ){
 
     LaunchedEffect(hostId) {
-        when (listingType) {
-            "Staycation" -> addListingViewModel?.setHostId(hostId)
-            "Tour" -> hostTourViewModel?.setHostId(hostId)
-            "Business" -> addBusinessViewModel?.setHostId(hostId)
-            else -> throw IllegalStateException("Unknown")
+        if (hostId != "") {
+            when (listingType) {
+                "Staycation" -> addListingViewModel?.setHostId(hostId)
+                "Tour" -> hostTourViewModel?.setHostId(hostId)
+                "Business" -> addBusinessViewModel?.setHostId(hostId)
+                else -> throw IllegalStateException("Unknown")
+            }
         }
-
     }
 
-    Log.d("HostId", "$hostId")
-    Log.d("listingType", "$listingType")
-
-    val header = if (listingType == "Staycation") {
-        "Tell us about your space"
-    } else if (listingType == "Business"){
-        "Tell us about your business"
-    }
-    else {
-        "Tell us about your tour"
+    LaunchedEffect(serviceId) {
+        if (serviceId != "empty"){
+            when (listingType) {
+                "Staycation" -> addListingViewModel?.getSelectedStaycation(serviceId)
+                "Tour" -> hostTourViewModel?.getSelectedTour(serviceId)
+                "Business" -> addBusinessViewModel?.getSelectedBusiness(serviceId)
+            }
+        }
     }
 
-    val description = if (listingType == "Staycation") {
-        "In this step, we’ll ask you what type of property you want to list and " +
-        "if guests will book the entire space or just a room. Then tell us how many" +
-        " guests will be allowed to book, and how many rooms does your space have."
-    } else if (listingType == "Business"){
-        "In this step, we’ll ask you what type of business you want to upload, " +
-        "and basic information about it."
+
+
+    Log.d("HostId", "Host ID: $hostId, ListingType: $listingType, Service ID: $serviceId")
+
+    val header = when (listingType) {
+        "Staycation" -> {
+            "Tell us about your space"
+        }
+        "Business" -> {
+            "Tell us about your business"
+        }
+        else -> {
+            "Tell us about your tour"
+        }
     }
-    else {
-        "In this step, we’ll ask you what type of tour you want to list, and basic information about it."
+
+    val description = when (listingType) {
+        "Staycation" -> {
+            "In this step, we’ll ask you what type of property you want to list and " +
+                    "if guests will book the entire space or just a room. Then tell us how many" +
+                    " guests will be allowed to book, and how many rooms does your space have."
+        }
+        "Business" -> {
+            "In this step, we’ll ask you what type of business you want to upload, " +
+                    "and basic information about it."
+        }
+        else -> {
+            "In this step, we’ll ask you what type of tour you want to list, and basic information about it."
+        }
     }
 
     Surface(
@@ -131,14 +150,11 @@ fun AddListingScreen1(
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
-                        //.width(width = 145.dp)
                 )
                 Spacer(modifier = Modifier.height(5.dp))
                 Text(
                     text = description,
                     fontSize = 12.sp,
-//                    modifier = Modifier
-//                        .width(309.dp)
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 AddListingStepIndicator(modifier = Modifier, currentPage = 0, pageCount = 4)
@@ -152,6 +168,7 @@ fun AddListingScreen1(
 
 @Composable
 fun AddListingBottomBookingBar(
+    modifier: Modifier = Modifier,
     onCancel: (() -> Unit)? = null,
     onNext: (() -> Unit)? = null,
     leftButtonText: String = "Cancel",
@@ -159,14 +176,7 @@ fun AddListingBottomBookingBar(
     enableLeftButton: Boolean = true,
     enableRightButton: Boolean = true,
     isRightButtonLoading: Boolean = false,
-    modifier: Modifier = Modifier
 ){
-//   {  Box(
-////        modifier = modifier
-////            .fillMaxWidth()
-////            .background(color = Color.White)
-////            .border(0.1.dp, Color.Black)
-////    )
     Surface(
         color = Color.White,
         tonalElevation = 10.dp,

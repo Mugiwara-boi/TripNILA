@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.AppLocationCard
 import com.example.tripnila.common.AppOutlinedButton
@@ -209,7 +210,7 @@ fun BusinessDetailsScreen(){
             }
             item {
                 BusinessDescriptionCard2(
-                    hostImage = R.drawable.joshua,
+                    hostImage = "R.drawable.joshua",
                     hostName = "Juswa",
                     businessDescription = "Enjoy our wide selection of meat and vegetables in our menu, along with our selection of cocktails and drinks. Chill and have fun with your families and friends.",
                     modifier = Modifier
@@ -227,7 +228,7 @@ fun BusinessDetailsScreen(){
             }
             item {
                 BusinessMenuCard(
-                    menuImage = R.drawable.business1,
+                    menuImage = "R.drawable.business1",
                     promos = promos,
                     modifier = Modifier
                         .offset(y = (-5).dp)
@@ -358,7 +359,7 @@ fun BusinessDescriptionCard1(
 
 @Composable
 fun BusinessDescriptionCard2(
-    hostImage: Int,
+    hostImage: String,
     hostName: String,
     businessDescription: String,
     withEditButton: Boolean = false,
@@ -383,14 +384,23 @@ fun BusinessDescriptionCard2(
         ) {
             Row {
                 Box {
-                    Image(
-                        painter = painterResource(hostImage),
-                        contentDescription = "Host",
+                    AsyncImage(
+                        model = if (hostImage == "") "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png" else hostImage,
+                        contentDescription = "",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(50.dp)
                             .clip(shape = RoundedCornerShape(50.dp))
+
                     )
+//                    Image(
+//                        painter = painterResource(hostImage),
+//                        contentDescription = "Host",
+//                        contentScale = ContentScale.Crop,
+//                        modifier = Modifier
+//                            .size(50.dp)
+//                            .clip(shape = RoundedCornerShape(50.dp))
+//                    )
                 }
                 Text(
                     text = "Hosted by $hostName",
@@ -496,7 +506,8 @@ fun BusinessAmenitiesCard(
 
 @Composable
 fun BusinessMenuCard(
-    menuImage: Int, promos: List<String>,
+    menuImage: String,
+    promos: List<String>,
     withEditButton: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -548,11 +559,19 @@ fun BusinessMenuCard(
                     .height(165.dp)
 
             ){
-                Image(
-                    painter = painterResource(id = menuImage),
-                    contentDescription = "Menu",
-                    contentScale = ContentScale.FillWidth
+                AsyncImage(
+                    model = if ( menuImage == "") "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png" else menuImage,//imageLoader,
+                    contentDescription = "",
+                    contentScale = ContentScale.FillWidth,
+                    modifier = Modifier
+
                 )
+
+//                Image(
+//                    painter = painterResource(id = menuImage),
+//                    contentDescription = "Menu",
+//                    contentScale = ContentScale.FillWidth
+//                )
             }
             Text(
                 text = "Discount and promos",

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -32,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,11 +51,19 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
+import com.example.tripnila.model.ChatViewModel
 
 @Composable
-fun ChatScreen(){
+fun ChatScreen(
+    chatViewModel: ChatViewModel,
+    senderTouristId: String,
+    receiverTouristId: String,
+){
+
+    val messages = chatViewModel.messages.collectAsState().value
 
     var name = "Joshua"
     var isActive = true
@@ -70,7 +80,9 @@ fun ChatScreen(){
 
             },
             bottomBar = {
-                ChatBottomBar()
+                ChatBottomBar(
+                    chatViewModel = chatViewModel
+                )
             }
         ) {
             LazyColumn(
@@ -78,7 +90,9 @@ fun ChatScreen(){
                     .fillMaxSize()
                     .padding(it)
             ) {
-
+                items(messages) { message ->
+                    Text(text = message.content)
+                }
 
             }
 
@@ -87,7 +101,10 @@ fun ChatScreen(){
 }
 
 @Composable
-fun ChatBottomBar(modifier: Modifier = Modifier){
+fun ChatBottomBar(
+    modifier: Modifier = Modifier,
+    chatViewModel: ChatViewModel
+){
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -124,41 +141,45 @@ fun ChatBottomBar(modifier: Modifier = Modifier){
                     contentDescription = "Add",
                 )
             }
-            ChatTextField()
+            ChatTextField(
+                chatViewModel = chatViewModel
+            )
         }
 
     }
 
 }
 
-@Composable
-fun UsingBottomBar(){
-    BottomAppBar(
-        actions = {
-            FloatingActionButton(
-                onClick = { /*TODO*/ },
-                shape = CircleShape,
-                containerColor = Orange,
-                contentColor = Color.White,
-                elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 10.dp
-                ),
-                modifier = Modifier
-                    .padding(end = 10.dp)
-                    .size(30.dp)
-
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Add",
-                )
-            }
-            ChatTextField()
-        },
-
-
-    )
-}
+//@Composable
+//fun UsingBottomBar(){
+//    BottomAppBar(
+//        actions = {
+//            FloatingActionButton(
+//                onClick = { /*TODO*/ },
+//                shape = CircleShape,
+//                containerColor = Orange,
+//                contentColor = Color.White,
+//                elevation = FloatingActionButtonDefaults.elevation(
+//                    defaultElevation = 10.dp
+//                ),
+//                modifier = Modifier
+//                    .padding(end = 10.dp)
+//                    .size(30.dp)
+//
+//            ) {
+//                Icon(
+//                    imageVector = Icons.Filled.Add,
+//                    contentDescription = "Add",
+//                )
+//            }
+//            ChatTextField(
+//                chatViewModel = chatViewModel
+//            )
+//        },
+//
+//
+//    )
+//}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -231,7 +252,10 @@ fun ChatTopBar(
 }
 
 @Composable
-fun ChatTextField(modifier: Modifier = Modifier){
+fun ChatTextField(
+    chatViewModel: ChatViewModel,
+    modifier: Modifier = Modifier
+){
 
 
     var text by remember { mutableStateOf("") }
@@ -253,7 +277,10 @@ fun ChatTextField(modifier: Modifier = Modifier){
         ),
         keyboardActions = KeyboardActions {
             localFocusManager.clearFocus()
-            text = ""
+            if (text.isNotEmpty()) {
+                chatViewModel.sendMessage(text)
+                text = ""
+            }
         },
         decorationBox = { innerTextField ->
             Box(
@@ -291,15 +318,14 @@ fun ChatTextField(modifier: Modifier = Modifier){
 
 @Preview
 @Composable
-private fun ChatItemPreview(){
-    UsingBottomBar()
-
-}
-
-@Preview
-@Composable
 private fun ChatScreenPreview(){
 
-    ChatScreen()
+    val chatViewModel = viewModel(modelClass = ChatViewModel::class.java)
+
+    ChatScreen(
+        chatViewModel = chatViewModel,
+        senderTouristId = "ITZbCFfF7Fzqf1qPBiwx",
+        receiverTouristId = "3BKN3xDmKlI4P60FW3Q9"
+    )
 
 }

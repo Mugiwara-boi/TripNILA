@@ -429,7 +429,6 @@ fun AddListingScreen7(
                                                     else -> throw IllegalStateException("Unknown")
                                                 }
                                             }
-                                           // addListingViewModel?.setStaycationAmenities(selectedAmenities.toList())
                                         }
                                     )
                                     lastIndex = i
@@ -466,12 +465,9 @@ fun AddListingScreen7(
                                         icon = offer.icon,
                                         label = offer.label,
                                         selected = selectedAmenities?.contains(offer.label) == true,
-                                    //    isEnable = selectedAmenities?.contains(offer.label) == true,
-                                    //    textField = focusRequester,
                                         onSelectedChange = { isSelected ->
                                             if (isSelected) {
                                                 selectedAmenities = selectedAmenities?.plus(offer.label)
-                                               // hostTourViewModel?.addOffer(offer.label, offerText)
 
                                             } else {
                                                 selectedAmenities = selectedAmenities?.minus(offer.label)
@@ -647,9 +643,6 @@ fun TourOfferCard(
                     modifier = modifier
                         .fillMaxWidth()
                         .height(30.dp)
-//                        .onFocusChanged {
-//                            isFocused = it.isFocused
-//                        }
                         .focusRequester(focusRequester)
 
                 )

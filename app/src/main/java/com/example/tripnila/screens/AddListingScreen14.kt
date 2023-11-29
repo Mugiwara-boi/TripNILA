@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -58,6 +59,8 @@ fun AddListingScreen14(
     onNavToBack: () -> Unit,
 ){
 
+
+    val context = LocalContext.current
 
     var ppHasError = remember { mutableStateOf(false) }
     var npHasError = remember { mutableStateOf(false) }
@@ -101,7 +104,7 @@ fun AddListingScreen14(
                             onNavToNext(listingType)
                         } else {
                             coroutineScope.launch {
-                                addListingViewModel.addNewListing()
+                                addListingViewModel.addNewListing(context)
 //                                if (alreadySubmitted == true) {
 //
 //                                }

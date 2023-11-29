@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +65,7 @@ fun AddListingScreen11(
     onNavToBack: () -> Unit,
 ){
 
+    val context = LocalContext.current
 
     val formatter = NumberFormat.getNumberInstance(Locale.US)
 //    var price = remember {
@@ -75,7 +77,7 @@ fun AddListingScreen11(
 
     val isLoading = hostTourViewModel?.isLoadingAddTour?.collectAsState()?.value
 
-    var price =  when (listingType) {
+    val price =  when (listingType) {
         "Staycation" -> remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationPrice?.toInt()) }
         "Tour" -> remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourPrice?.toInt()) }
         else -> throw IllegalStateException("Unknown")
@@ -103,7 +105,7 @@ fun AddListingScreen11(
                             onNavToNext(listingType)
                         } else {
                             coroutineScope.launch {
-                                hostTourViewModel?.addNewTour()
+                                hostTourViewModel?.addNewTour(context)
                             }
                         }
                     },
@@ -203,10 +205,10 @@ fun AddListingScreen11(
                     }
                     item {
                         price.value?.toDouble()
-                            ?.let { value -> PriceDistributionCard(forStaycation = false, basePrice = value) }
+                            ?.let { value -> PriceDistributionCard(forStaycation = listingType == "Staycation", basePrice = value) }
                     }
                     item {
-                        price.value?.toDouble()?.let { value -> ProfitCard(forStaycation = false, basePrice = value) }
+                        price.value?.toDouble()?.let { value -> ProfitCard(forStaycation = listingType == "Staycation", basePrice = value) }
                     }
                 }
                 Spacer(modifier = Modifier.weight(1f))

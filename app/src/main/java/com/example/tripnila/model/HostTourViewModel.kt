@@ -1,10 +1,13 @@
 package com.example.tripnila.model
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Amenity
+import com.example.tripnila.data.Business
 import com.example.tripnila.data.Host
 import com.example.tripnila.data.Offer
 import com.example.tripnila.data.Photo
@@ -96,8 +99,15 @@ class HostTourViewModel(private val repository: UserRepository = UserRepository(
 
 
     fun setCoverPhoto(uri: Uri){
-        val coverPhoto = Photo(photoUri = uri, photoType = "Cover")
-        _tour.value = _tour.value.copy(tourImages = _tour.value.tourImages + listOf(coverPhoto))
+        val newCoverPhoto = Photo(photoUri = uri, photoType = "Cover")
+
+        _tour.value = _tour.value.copy(
+            tourImages = _tour.value.tourImages
+                .filterNot { it.photoType == "Cover" } // Remove existing cover photo if any
+                .plus(newCoverPhoto)// If the list is empty, add the new cover photo
+        )
+
+        //Log.d("Business", "${_business.value.businessImages}")
     }
 
     fun setSelectedImageUris(uris: List<Uri>) {
@@ -105,25 +115,50 @@ class HostTourViewModel(private val repository: UserRepository = UserRepository(
         _tour.value = _tour.value.copy(tourImages = _tour.value.tourImages + imageUris)
     }
 
+    fun removeSelectedImage(uri: Uri) {
+
+        _tour.value = _tour.value.copy(tourImages = _tour.value.tourImages.filter { it.photoUri != uri })
+        Log.d("Tour", "${_tour.value.tourImages.map { it.photoUri }}")
+    }
+
+
     fun setTourPrice(price: Double) {
         _tour.value = _tour.value.copy(tourPrice = price)
 
     }
 
-    suspend fun addNewTour() {
+    fun clearTour() {
+        _isLoadingAddTour.value = null
+        _isSuccessAddTour.value = false
+        _tour.value = Tour()
+    }
+
+    fun getSelectedTour(tourId: String) {
+        viewModelScope.launch {
+            val tour = repository.getTourById(tourId)
+            _tour.value = tour
+
+            Log.d("Tour", "$tour")
+            Log.d("Tour", "${_tour.value}")
+        }
+    }
+
+
+    suspend fun addNewTour(context: Context) {
         viewModelScope.launch {
             try {
                 _isLoadingAddTour.value = true
 
                 // Call addStaycationReview with the assigned values
                 val success = repository.addTour(
+                    tourId = _tour.value.tourId,
+                    context = context,
                     hostId = _tour.value.host.hostId,
                     tourType = _tour.value.tourType,
                     tourTitle = _tour.value.tourTitle,
                     tourDescription = _tour.value.tourDescription,
                     tourDuration = _tour.value.tourDuration,
                     tourLanguage = _tour.value.tourLanguage,
-
                     tourContact = _tour.value.tourContact,
                     tourEmail = _tour.value.tourEmail,
                     tourFacebook = _tour.value.tourFacebook,

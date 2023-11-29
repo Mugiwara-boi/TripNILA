@@ -1,5 +1,6 @@
 package com.example.tripnila.model
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -11,10 +12,15 @@ import com.example.tripnila.data.Promotion
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.data.StaycationAvailability
 import com.example.tripnila.repository.UserRepository
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Date
 
 class AddListingViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
@@ -49,8 +55,26 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
         Log.d("Staycation", "${_staycation.value.staycationType}")
     }
 
-    fun setAvailableDates(availability: List<StaycationAvailability>) {
-        _staycation.value = _staycation.value.copy(availableDates = availability)
+//    fun setAvailableDates(availability: List<StaycationAvailability>) {
+//        _staycation.value = _staycation.value.copy(availableDates = availability)
+//    }
+
+    fun addAvailableDate(localDate: LocalDate){
+        val newStaycationAvailability = StaycationAvailability(
+            availableDate = Timestamp(Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant()))
+        )
+        _staycation.value = _staycation.value.copy(availableDates = _staycation.value.availableDates + newStaycationAvailability)
+    }
+
+    fun removeAvailableDate(localDate: LocalDate) {
+
+        val updatedAvailableDates = _staycation.value.availableDates.filterNot {
+            val timestamp = it.availableDate
+            val date = timestamp?.toDate()?.toInstant()?.atZone(ZoneId.systemDefault())?.toLocalDate()
+            date == localDate
+        }
+
+        _staycation.value = _staycation.value.copy(availableDates = updatedAvailableDates)
     }
 
 
@@ -75,8 +99,11 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
     }
 
     fun removeStaycationAmenity(amenity: String) {
-        val newAmenity = Amenity(amenityName = amenity)
-        _staycation.value = _staycation.value.copy(amenities = _staycation.value.amenities - newAmenity)
+
+        _staycation.value = _staycation.value.copy(
+            amenities = _staycation.value.amenities.filter { it.amenityName != amenity }
+        )
+
         Log.d("Staycation", "${_staycation.value.amenities.map { it.amenityName }}")
     }
 
@@ -92,16 +119,28 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
     }
 
     fun setStaycationCoverPhoto(uri: Uri){
-        val coverPhoto = Photo(photoUri = uri, photoType = "Cover")
-        _staycation.value = _staycation.value.copy(staycationImages = _staycation.value.staycationImages + listOf(coverPhoto))
+        val newCoverPhoto = Photo(photoUri = uri, photoType = "Cover")
+
+        _staycation.value = _staycation.value.copy(
+            staycationImages = _staycation.value.staycationImages
+                .filterNot { it.photoType == "Cover" } // Remove existing cover photo if any
+                .plus(newCoverPhoto)
+        )
+
         Log.d("Staycation", "${_staycation.value.staycationImages}")
     }
 
-
     fun setSelectedImageUris(uris: List<Uri>) {
-        val imageUris = uris.map { Photo(photoUri = it, photoType = "Others") }
-        _staycation.value = _staycation.value.copy(staycationImages = _staycation.value.staycationImages + imageUris)
-        Log.d("Staycation", "${_staycation.value.staycationImages}")
+        val newImages = uris.map { Photo(photoUri = it, photoType = "Others") }
+        _staycation.value = _staycation.value.copy(staycationImages = _staycation.value.staycationImages + newImages)
+
+        Log.d("Staycation", "${_staycation.value.staycationImages.map { it.photoUri }}")
+    }
+
+
+    fun removeSelectedImage(uri: Uri) {
+        _staycation.value = _staycation.value.copy(staycationImages = _staycation.value.staycationImages.filter { it.photoUri != uri })
+        Log.d("Staycation", "${_staycation.value.staycationImages.map { it.photoUri }}")
     }
 
 
@@ -112,12 +151,12 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
 
     fun setStaycationSpace(space: String) {
         _staycation.value = _staycation.value.copy(staycationSpace = space)
-        Log.d("Staycation", "${_staycation.value.staycationSpace}")
+        Log.d("Staycation", _staycation.value.staycationSpace)
     }
 
     fun clearStaycationSpace() {
         _staycation.value = _staycation.value.copy(staycationSpace = "")
-        Log.d("Staycation", "${_staycation.value.staycationSpace}")
+        Log.d("Staycation", _staycation.value.staycationSpace)
     }
 
     fun setStaycationPrice(price: Double) {
@@ -176,14 +215,31 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
         return _isAgreeToNonDiscrimination.value
     }
 
+    fun clearStaycation() {
+        _isLoadingAddListing.value = null
+        _isSuccessAddListing.value = false
+        _staycation.value = Staycation()
+    }
 
-    suspend fun addNewListing() {
+
+    fun getSelectedStaycation(staycationId: String) {
+        viewModelScope.launch {
+            val staycation = repository.getStaycationById(staycationId)
+            _staycation.value = staycation ?: Staycation()
+
+            Log.d("Staycation", "${_staycation.value}")
+        }
+    }
+
+    suspend fun addNewListing(context: Context) {
         viewModelScope.launch {
             try {
                 _isLoadingAddListing.value = true
 
                 // Call addStaycationReview with the assigned values
                 val success = repository.addStaycation(
+                    staycationId = _staycation.value.staycationId,
+                    context = context,
                     hasDangerousAnimal = _staycation.value.hasDangerousAnimal,
                     hasSecurityCamera = _staycation.value.hasSecurityCamera,
                     hasWeapon = _staycation.value.hasWeapon,
@@ -198,9 +254,11 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
                     staycationSpace = _staycation.value.staycationSpace,
                     staycationTitle = _staycation.value.staycationTitle,
                     staycationType = _staycation.value.staycationType,
-                    amenities = _staycation.value.amenities.map { it.amenityName },
+                    //amenities = _staycation.value.amenities.map { it.amenityName },
+                    amenities = _staycation.value.amenities,
                     photos = _staycation.value.staycationImages,
-                    availableDates = _staycation.value.availableDates.map { it.availableDate!! },
+                   // availableDates = _staycation.value.availableDates.map { it.availableDate!! },
+                    availableDates = _staycation.value.availableDates,
                     promotions = _staycation.value.promotions,
                     nearbyAttractions = _staycation.value.nearbyAttractions,
                     staycationTags = _staycation.value.staycationTags.map { it.tagName }

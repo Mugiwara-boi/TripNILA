@@ -92,7 +92,7 @@ import com.example.tripnila.common.Tag
 import com.example.tripnila.common.UnderlinedText
 import com.example.tripnila.data.Amenity
 import com.example.tripnila.data.AmenityBrief
-import com.example.tripnila.data.Attraction
+import com.example.tripnila.data.AttractionUiState
 import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.model.DetailViewModel
@@ -141,8 +141,8 @@ fun StaycationDetailsScreen(
             }
         } ?: emptyList()
 
-    val attractions = listOf(
-        Attraction(
+    val attractionUiStates = listOf(
+        AttractionUiState(
             image = R.drawable.map_image,
             name = "Rainforest Park",
             tag = "Nature",
@@ -150,7 +150,7 @@ fun StaycationDetailsScreen(
             price = 1000.00,
             openingTime = "7:30"
         ),
-        Attraction(
+        AttractionUiState(
             image = R.drawable.map_image,
             name = "Pasig Museum",
             tag = "History",
@@ -329,7 +329,7 @@ fun StaycationDetailsScreen(
                     }
                     item {
                         AttractionsNearbyCard(
-                            attractions = attractions,
+                            attractionUiStates = attractionUiStates,
                             modifier = Modifier
                                 .offset(y = (-5).dp)
                                 .padding(bottom = 12.dp)
@@ -563,6 +563,7 @@ fun TopBarIcons(
 fun StaycationDescriptionCard1(
     staycation: Staycation? = null,
     withEditButton: Boolean = false,
+    onEdit: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -595,6 +596,11 @@ fun StaycationDescriptionCard1(
                     Spacer(modifier = Modifier.width(8.dp))
                     AppOutlinedButtonWithBadge(
                         buttonLabel = "Edit",
+                        onClick = {
+                            if (onEdit != null) {
+                                onEdit()
+                            }
+                        },
                         modifier = Modifier
                             .offset(y = 3.dp)
                             .width(40.dp)
@@ -820,7 +826,7 @@ fun StaycationDescriptionCard3(
 
 
 @Composable
-fun AttractionsNearbyCard(attractions: List<Attraction>, modifier: Modifier = Modifier){
+fun AttractionsNearbyCard(attractionUiStates: List<AttractionUiState>, modifier: Modifier = Modifier){
     /*TODO*/
     // NOT FUNCTIONING
 
@@ -851,7 +857,7 @@ fun AttractionsNearbyCard(attractions: List<Attraction>, modifier: Modifier = Mo
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                attractions.forEach { attraction ->
+                attractionUiStates.forEach { attraction ->
                     AttractionRow(attraction)
                 }
             }
@@ -1089,8 +1095,6 @@ fun BookingOutlinedButton(
     modifier: Modifier = Modifier
 ){
 
-
-
     OutlinedButton(
         onClick = onClick,
         border = if (enableButton) borderStroke else BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)),
@@ -1214,7 +1218,7 @@ fun DetailsTopAppBar(
 }
 
 @Composable
-fun AttractionRow(attraction: Attraction, modifier: Modifier = Modifier){
+fun AttractionRow(attractionUiState: AttractionUiState, modifier: Modifier = Modifier){
 
     Box(
         modifier = modifier
@@ -1224,20 +1228,20 @@ fun AttractionRow(attraction: Attraction, modifier: Modifier = Modifier){
         Column {
             Row {
                 Text(
-                    text = attraction.name,
+                    text = attractionUiState.name,
                     fontWeight = FontWeight.Medium,
                 )
                 Tag(
-                    tag = attraction.tag,
+                    tag = attractionUiState.tag,
                     modifier = Modifier
                         .padding(horizontal = 10.dp)
                 )
             }
             Row {
                 Text(
-                    text = attraction.distance.toString() +
-                            " meters • ₱ " + String.format("%.2f", attraction.price) +
-                            " • Opens at " + attraction.openingTime,
+                    text = attractionUiState.distance.toString() +
+                            " meters • ₱ " + String.format("%.2f", attractionUiState.price) +
+                            " • Opens at " + attractionUiState.openingTime,
                     fontWeight = FontWeight.Medium,
                     color = Color(0xFF999999)
                 )
@@ -1245,7 +1249,7 @@ fun AttractionRow(attraction: Attraction, modifier: Modifier = Modifier){
             Divider(modifier = Modifier.padding(top = 20.dp))
         }
         Image(
-            painter = painterResource(id = attraction.image),
+            painter = painterResource(id = attractionUiState.image),
             contentDescription = "Map",
             modifier = Modifier
                 .size(55.dp)

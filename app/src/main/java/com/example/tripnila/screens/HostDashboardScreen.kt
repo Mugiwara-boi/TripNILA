@@ -74,9 +74,9 @@ import java.util.Locale
 fun HostDashboardScreen(
     touristId: String,
     hostDashboardViewModel: HostDashboardViewModel? = null,
-    onNavToAddListing: (String, String) -> Unit,
-    onNavToHostTour: (String, String) -> Unit,
-    onNavToAddBusiness: (String, String) -> Unit,
+    onNavToAddListing: (String, String, String) -> Unit,
+    onNavToHostTour: (String, String, String) -> Unit,
+    onNavToAddBusiness: (String, String, String) -> Unit,
     onNavToStaycationManager: (String, String) -> Unit,
     onNavToBusinessManager: (String, String) -> Unit,
     onNavToTourManager: (String, String) -> Unit,
@@ -93,44 +93,43 @@ fun HostDashboardScreen(
     val horizontalPaddingValue = 16.dp
     val verticalPaddingValue = 10.dp
 
-
-    val staycationProperties = hostDashboardViewModel?.staycations?.collectAsState()?.value?.map {staycation ->
-        staycation.staycationImages.find { it.photoType == "Cover" }?.photoUrl?.let {
+    val staycationProperties = hostDashboardViewModel?.staycations?.collectAsState()?.value?.mapNotNull { staycation ->
             HostProperty(
                 propertyId = staycation.staycationId,
                 propertyName = staycation.staycationTitle,
-                image = it, // You may need to replace this with the actual logic to get the image
+                image = staycation.staycationImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
                 host = staycation.host.firstName, // Assuming host is a Host object with a firstName property
                 location = staycation.staycationLocation
             )
-        }
     }
 
-    val businessProperties = hostDashboardViewModel?.businesses?.collectAsState()?.value?.map { business ->
-        business.businessImages.find { it.photoType == "Cover" }?.photoUrl?.let {
+    Log.d("StaycationProperties", "$staycationProperties")
+
+    val businessProperties = hostDashboardViewModel?.businesses?.collectAsState()?.value?.mapNotNull { business ->
             HostProperty(
                 propertyId = business.businessId,
                 propertyName = business.businessTitle,
                 propertyDescription = business.businessDescription,
-                image = it, // You may need to replace this with the actual logic to get the image
+                image = business.businessImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
                 host = business.host.firstName, // Assuming host is a Host object with a firstName property
                 location = business.businessLocation
             )
-        }
     }
 
-    val tourProperties = hostDashboardViewModel?.tours?.collectAsState()?.value?.map { tour ->
-        tour.tourImages.find { it.photoType == "Cover" }?.photoUrl?.let {
+    Log.d("BusinessProperties", "$businessProperties")
+
+    val tourProperties = hostDashboardViewModel?.tours?.collectAsState()?.value?.mapNotNull { tour ->
             HostProperty(
                 propertyId = tour.tourId,
                 propertyName = tour.tourTitle,
                 propertyDescription = tour.tourDescription,
-                image = it, // You may need to replace this with the actual logic to get the image
+                image = tour.tourImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
                 host = tour.host.firstName, // Assuming host is a Host object with a firstName property
                 location = tour.tourLocation
             )
-        }
     }
+
+    Log.d("TourProperties", "$tourProperties")
 
 
     var selectedItemIndex by rememberSaveable { mutableStateOf(3) }
@@ -186,21 +185,21 @@ fun HostDashboardScreen(
                                 buttonIcon = R.drawable.add_staycation,
                                 buttonLabel = "Add listing",
                                 onClick = {
-                                    host?.hostId?.let { hostId -> onNavToAddListing(hostId, "Staycation") }
+                                    host?.hostId?.let { hostId -> onNavToAddListing("empty", hostId, "Staycation") }
                                 }
                             )
                             HostOptionButton(
                                 buttonIcon = R.drawable.host_tour,
                                 buttonLabel = "Host a tour",
                                 onClick = {
-                                    host?.hostId?.let { hostId -> onNavToHostTour(hostId, "Tour") }
+                                    host?.hostId?.let { hostId -> onNavToHostTour("empty", hostId, "Tour") }
                                 }
                             )
                             HostOptionButton(
                                 buttonIcon = R.drawable.add_business,
                                 buttonLabel = "Add business",
                                 onClick = {
-                                    host?.hostId?.let { hostId -> onNavToAddBusiness(hostId, "Business") }
+                                    host?.hostId?.let { hostId -> onNavToAddBusiness("empty", hostId, "Business") }
                                 }
                             )
                             HostOptionButton(
@@ -538,21 +537,24 @@ fun HostPropertiesList(
     onNavToStaycationManager: (String) -> Unit,
     properties: List<HostProperty?>?,
     modifier: Modifier = Modifier
-){
+) {
     Log.d("Properties", "$properties")
+
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        if (properties?.any { it == null } == false) {
-            Text(
-                text = "Properties",
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            properties?.forEach { property ->
-                if (property != null) {
+        properties
+            ?.filterNotNull()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let {
+                Text(
+                    text = "Properties",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                it.forEach { property ->
                     HostPropertyCard(
                         hostProperty = property,
                         propertyType = "Staycation",
@@ -562,12 +564,8 @@ fun HostPropertiesList(
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
-            }
         }
-
     }
-
-
 }
 
 @Composable
@@ -579,16 +577,18 @@ fun HostBusinessesList(
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        if (properties?.any { it == null } == false) {
-            Text(
-                text = "Business",
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            properties?.forEach { property ->
-                if (property != null) {
+        properties
+            ?.filterNotNull()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let {
+                Text(
+                    text = "Business",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                it.forEach { property ->
                     HostPropertyCard(
                         hostProperty = property,
                         propertyType = "Business",
@@ -597,8 +597,8 @@ fun HostBusinessesList(
                         },
                         modifier = Modifier.padding(top = 8.dp)
                     )
+
                 }
-            }
         }
     }
 }
@@ -612,16 +612,18 @@ fun HostToursList(
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        if (properties?.any { it == null } == false) {
-            Text(
-                text = "Tours",
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            properties?.forEach { property ->
-                if (property != null) {
+        properties
+            ?.filterNotNull()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let {
+                Text(
+                    text = "Tours",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                it.forEach { property ->
                     HostPropertyCard(
                         hostProperty = property,
                         propertyType = "Tours",
@@ -631,7 +633,7 @@ fun HostToursList(
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
-            }
+
         }
     }
 }
@@ -776,6 +778,52 @@ fun AppOutlinedButtonWithBadge(
 
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppFilledButtonWithBadge(
+    buttonLabel: String,
+    badgeCount: Int? = null,
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+){
+    BadgedBox(
+        badge = {
+            if (badgeCount != null) {
+                Badge(
+                    containerColor = Color(0xFFF96E00),
+                    contentColor = Color.White,
+                    modifier = Modifier.offset(x = (-5).dp, y = 5.dp)
+                ) {
+                    Text(badgeCount.toString())
+                }
+            }
+        }
+    ) {
+        OutlinedButton(
+            onClick = {
+                if (onClick != null) {
+                    onClick()
+                }
+            },
+            border = BorderStroke(width = 1.dp, Orange),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Orange
+            ),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+            modifier = modifier.height(22.dp)
+        ) {
+            Text(
+                text = buttonLabel,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White,
+            )
+        }
+
+    }
+}
+
 
 @Composable
 fun BookingCard(transaction: Transaction, modifier: Modifier = Modifier){

@@ -1,6 +1,6 @@
 package com.example.tripnila.data
 
-data class Attraction(
+data class AttractionUiState(
     val image: Int,
     val name: String,
     val tag: String,

@@ -67,33 +67,36 @@ fun AddBusinessScreen8(
     onNavToBack: () -> Unit,
 ){
 
-    var selectedMenuImageUris = remember { mutableStateOf(addBusinessViewModel?.business?.value?.businessMenu
+    val selectedMenuImageUris = remember {
+        mutableStateOf(addBusinessViewModel?.business?.value?.businessMenu
             ?.filter { it.photoType == "Others" }
-            ?.map { it.photoUri })
-    }
+            ?.map { it.photoUri }) }
 
 
-    var selectedCoverImageUri = remember { mutableStateOf(addBusinessViewModel?.business?.value?.businessMenu
+    val selectedCoverImageUri = remember {
+        mutableStateOf(addBusinessViewModel?.business?.value?.businessMenu
             ?.firstOrNull { it.photoType == "Cover" }
             ?.photoUri)
     }
 
-    var singleMenuPhotoPickerLauncher = rememberLauncherForActivityResult(
+    val singleMenuPhotoPickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
-        selectedCoverImageUri.value = uri
-        addBusinessViewModel?.setMenuCoverPhoto(selectedCoverImageUri.value as Uri)
+        if (uri != null) {
+            selectedCoverImageUri.value = uri
+            addBusinessViewModel?.setMenuCoverPhoto(uri)
+        }
     }
 
 
-    var multipleMenuPhotoPickerLauncher = rememberLauncherForActivityResult(
+    val multipleMenuPhotoPickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickMultipleVisualMedia()
     ) { uris ->
         selectedMenuImageUris.value = selectedMenuImageUris.value?.plus(uris)
-        addBusinessViewModel?.setMenuSelectedImageUris(selectedMenuImageUris.value as List<@JvmSuppressWildcards Uri>)
+        addBusinessViewModel?.setMenuSelectedImageUris(uris)
     }
 
-    var mutableAdditionInfo = remember { mutableStateOf( addBusinessViewModel?.business?.value?.additionalInfo) }
+    val mutableAdditionInfo = remember { mutableStateOf( addBusinessViewModel?.business?.value?.additionalInfo) }
 
 
 
@@ -111,7 +114,7 @@ fun AddBusinessScreen8(
                     onCancel = {
                         onNavToBack()
                     },
-                    enableRightButton = addBusinessViewModel?.business?.collectAsState()?.value?.businessMenu?.any { it.photoType == "Cover" } == true && addBusinessViewModel?.business?.collectAsState()?.value?.businessMenu?.any { it.photoType == "Others" } == true
+                    enableRightButton = addBusinessViewModel?.business?.collectAsState()?.value?.businessMenu?.any { it.photoType == "Cover" } == true && addBusinessViewModel.business.collectAsState().value.businessMenu.any { it.photoType == "Others" }
 
                 )
             },
@@ -177,7 +180,6 @@ fun AddBusinessScreen8(
                                 model = selectedCoverImageUri.value,
                                 contentDescription = "Cover photo",
                                 contentScale = ContentScale.FillWidth,
-                                //modifier = Modifier.height(170.dp).fillMaxWidth()
                             )
                             Button(
                                 onClick = {
@@ -238,7 +240,7 @@ fun AddBusinessScreen8(
                                         IconButton(
                                             onClick = {
                                                 selectedMenuImageUris.value = selectedMenuImageUris.value?.filter { it != uri }
-                                                addBusinessViewModel?.setMenuSelectedImageUris(selectedMenuImageUris.value as List<@JvmSuppressWildcards Uri>)
+                                                uri?.let { uri -> addBusinessViewModel?.removeMenuSelectedImage(uri = uri) }
                                             },
                                             modifier = Modifier
                                                 .align(Alignment.TopEnd)
@@ -260,7 +262,7 @@ fun AddBusinessScreen8(
                             }
                         }
                     }
-                    if (selectedMenuImageUris.value?.size?.rem(2) ?: 0  == 0) {
+                    if ((selectedMenuImageUris.value?.size?.rem(2) ?: 0) == 0) {
                         item {
                             AddMorePhoto(
                                 onClick = {

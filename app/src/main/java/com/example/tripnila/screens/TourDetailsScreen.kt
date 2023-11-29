@@ -46,6 +46,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.AdditionalInformationRow
 import com.example.tripnila.common.AppExpandingText
@@ -185,7 +186,7 @@ fun TourDetailsScreen(){
             }
             item {
                 TourDescriptionCard2(
-                    hostImage = R.drawable.joshua,
+                    hostImage = "",
                     hostName = "Joshua",
                     duration = "3",
                     language = "English",
@@ -195,17 +196,17 @@ fun TourDetailsScreen(){
                 )
             }
             item {
-                TourDescriptionCard3(
-                    image1 = R.drawable.karaoke,
-                    image2 = R.drawable.karaoke,
-                    image3 = R.drawable.karaoke,
-                    description = "Do you have a layover in Manila and don’t know what to do while you’re here?\n" +
-                            "I’m Joshua and I’m a food lover, and I would like to share you a " +
-                            "delicate and lorremadasdawqeqweqweqweqweqesadada.",
-                    modifier = Modifier
-                        .offset(y = (-5).dp)
-                        .padding(bottom = 12.dp)
-                )
+//                TourDescriptionCard3(
+//                    image1 = R.drawable.karaoke,
+//                    image2 = R.drawable.karaoke,
+//                    image3 = R.drawable.karaoke,
+//                    description = "Do you have a layover in Manila and don’t know what to do while you’re here?\n" +
+//                            "I’m Joshua and I’m a food lover, and I would like to share you a " +
+//                            "delicate and lorremadasdawqeqweqweqweqweqesadada.",
+//                    modifier = Modifier
+//                        .offset(y = (-5).dp)
+//                        .padding(bottom = 12.dp)
+//                )
             }
             item {
                 TourAvailabilityCard(
@@ -337,7 +338,7 @@ fun TourDescriptionCard1(
 
 @Composable
 fun TourDescriptionCard2(
-    hostImage: Int,
+    hostImage: String,
     hostName: String,
     duration: String,
     language: String,
@@ -363,14 +364,23 @@ fun TourDescriptionCard2(
         ) {
             Row {
                 Box {
-                    Image(
-                        painter = painterResource(hostImage),
-                        contentDescription = "Host",
+                    AsyncImage(
+                        model = if (hostImage == "") "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png" else hostImage,//imageLoader,
+                        contentDescription = "",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(50.dp)
                             .clip(shape = RoundedCornerShape(50.dp))
+
                     )
+//                    Image(
+//                        painter = painterResource(hostImage),
+//                        contentDescription = "Host",
+//                        contentScale = ContentScale.Crop,
+//                        modifier = Modifier
+//                            .size(50.dp)
+//                            .clip(shape = RoundedCornerShape(50.dp))
+//                    )
                 }
                 Column(
                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -410,9 +420,9 @@ fun TourDescriptionCard2(
 @Composable
 fun TourDescriptionCard3(
     description: String,
-    image1: Int,
-    image2: Int,
-    image3: Int,
+    image1: String,
+    image2: String,
+    image3: String,
     withEditButton: Boolean = false,
     modifier: Modifier = Modifier
 ){
@@ -467,14 +477,23 @@ fun TourDescriptionCard3(
                         .fillMaxHeight()
                         .fillMaxWidth(0.48f)
                         .clip(RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp))
-                        .background(Color.Red)
+                        .background(Color.LightGray)
 
                 ) {
-                    Image(
-                        painter = painterResource(id = image1),
+
+                    AsyncImage(
+                        model = if (image1 == "") "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png"
+                                    else image1,
                         contentDescription = "",
-                        contentScale = ContentScale.FillHeight
+                        contentScale = ContentScale.Crop
+
                     )
+
+//                    Image(
+//                        painter = painterResource(id = image1),
+//                        contentDescription = "",
+//                        contentScale = ContentScale.FillHeight
+//                    )
                 }
                 Spacer(modifier = Modifier.fillMaxWidth(0.04f))
                 Column(
@@ -487,13 +506,19 @@ fun TourDescriptionCard3(
                             .height(76.dp)
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(topEnd = 10.dp))
-                            .background(Color.Red)
+                            .background(Color.LightGray)
                     ) {
-                        Image(
-                            painter = painterResource(id = image2),
+                        AsyncImage(
+                            model = if (image2 == "") "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png" else image2,
                             contentDescription = "",
                             contentScale = ContentScale.FillWidth
+
                         )
+//                        Image(
+//                            painter = painterResource(id = image2),
+//                            contentDescription = "",
+//                            contentScale = ContentScale.FillWidth
+//                        )
                     }               
                     Spacer(modifier = Modifier.weight(1f))
                     Box(
@@ -501,13 +526,19 @@ fun TourDescriptionCard3(
                             .height(76.dp)
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(bottomEnd = 10.dp))
-                            .background(Color.Red)
+                            .background(Color.LightGray)
                     ){
-                        Image(
-                            painter = painterResource(id = image3),
+                        AsyncImage(
+                            model = if (image3 == "") "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png" else image3,
                             contentDescription = "",
                             contentScale = ContentScale.FillWidth
+
                         )
+//                        Image(
+//                            painter = painterResource(id = image3),
+//                            contentDescription = "",
+//                            contentScale = ContentScale.FillWidth
+//                        )
                     }
                 }
             }

@@ -1,6 +1,6 @@
 package com.example.tripnila.model
 
-import android.icu.text.CaseMap.Title
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -10,7 +10,6 @@ import com.example.tripnila.data.Business
 import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.Host
 import com.example.tripnila.data.Photo
-import com.example.tripnila.data.Staycation
 import com.example.tripnila.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,9 +45,12 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
     }
 
     fun removeBusinessAmenity(amenity: String) {
-        val newAmenity = Amenity(amenityName = amenity)
-        _business.value = _business.value.copy(amenities = _business.value.amenities - newAmenity)
+        _business.value = _business.value.copy(
+            amenities = _business.value.amenities.filter { it.amenityName != amenity }
+        )
+        Log.d("Business", "${_business.value.amenities.map { it.amenityName }}")
     }
+
 
     fun setDescription(description: String) {
         _business.value = _business.value.copy(businessDescription = description)
@@ -70,12 +72,18 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
         _business.value = _business.value.copy(businessURL = url)
     }
 
-    fun setCoverPhoto(uri: Uri){
-        val coverPhoto = Photo(photoUri = uri, photoType = "Cover")
-        _business.value = _business.value.copy(businessImages = _business.value.businessImages + listOf(coverPhoto))
-        Log.d("BusinessImage", "${_business.value.businessImages}")
-    }
 
+    fun setCoverPhoto(uri: Uri){
+        val newCoverPhoto = Photo(photoUri = uri, photoType = "Cover")
+
+        _business.value = _business.value.copy(
+            businessImages = _business.value.businessImages
+                .filterNot { it.photoType == "Cover" } // Remove existing cover photo if any
+                .plus(newCoverPhoto) // If the list is empty, add the new cover photo
+        )
+
+        Log.d("Business", "${_business.value.businessImages}")
+    }
 
     fun setSelectedImageUris(uris: List<Uri>) {
         val imageUris = uris.map { Photo(photoUri = it, photoType = "Others") }
@@ -83,10 +91,20 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
         Log.d("BusinessImage", "${_business.value.businessImages}")
     }
 
+    fun removeSelectedImage(uri: Uri) {
+        _business.value = _business.value.copy(businessImages = _business.value.businessImages.filter { it.photoUri != uri })
+        Log.d("Staycation", "${_business.value.businessImages.map { it.photoUri }}")
+    }
+
     fun setMenuCoverPhoto(uri: Uri){
+
         val coverPhoto = Photo(photoUri = uri, photoType = "Cover")
-        _business.value = _business.value.copy(businessMenu = _business.value.businessMenu + listOf(coverPhoto))
-        Log.d("BusinessImage", "${_business.value.businessMenu}")
+        _business.value = _business.value.copy(
+            businessMenu = _business.value.businessMenu
+                .filterNot { it.photoType == "Cover" } // Remove existing cover photo if any
+                .plus(coverPhoto)
+        )
+        Log.d("BusinessMenu", "${_business.value.businessMenu}")
     }
 
 
@@ -94,6 +112,10 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
         val imageUris = uris.map { Photo(photoUri = it, photoType = "Others") }
         _business.value = _business.value.copy(businessMenu = _business.value.businessMenu + imageUris)
         Log.d("BusinessImage", "${_business.value.businessMenu}")
+    }
+
+    fun removeMenuSelectedImage(uri: Uri) {
+        _business.value = _business.value.copy(businessMenu = _business.value.businessMenu.filter { it.photoUri != uri })
     }
 
     fun setAdditionalInfo(info: String) {
@@ -113,14 +135,31 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
         Log.d("", "${_business.value}")
     }
 
+    fun clearBusiness() {
+        _isLoadingAddBusiness.value = null
+        _isSuccessAddBusiness.value = false
+        _business.value = Business()
+    }
 
-    suspend fun addNewBusiness() {
+    fun getSelectedBusiness(businessId: String) {
+        viewModelScope.launch {
+            val business = repository.getBusinessById(businessId)
+            _business.value = business
+
+            Log.d("AddBusinessViewModel", "${_business.value}")
+        }
+    }
+
+
+    suspend fun addNewBusiness(context: Context) {
         viewModelScope.launch {
             try {
                 _isLoadingAddBusiness.value = true
 
                 // Call addStaycationReview with the assigned values
                 val success = repository.addBusiness(
+                    businessId = _business.value.businessId,
+                    context = context,
                     hostId = _business.value.host.hostId,
                     businessDescription = _business.value.businessDescription,
                     businessLocation = _business.value.businessLocation,
@@ -129,7 +168,8 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
                     businessContact = _business.value.businessContact,
                     businessEmail = _business.value.businessEmail,
                     businessURL = _business.value.businessURL,
-                    amenities = _business.value.amenities.map { it.amenityName },
+                  //  amenities = _business.value.amenities.map { it.amenityName },
+                    amenities = _business.value.amenities,
                     additionalInfo = _business.value.additionalInfo,
                     businessImages = _business.value.businessImages,
                     businessMenusPhotos = _business.value.businessMenu,

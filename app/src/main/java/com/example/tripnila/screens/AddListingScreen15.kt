@@ -77,9 +77,19 @@ fun AddListingScreen15(
                        Log.d("$listingType", "$staycation")
 
                         when (listingType) {
-                            "Staycation" -> addListingViewModel?.staycation?.value?.host?.hostId?.substring(5)?.let { touristId -> onNavToDashboard(touristId) }
-                            "Tour" -> hostTourViewModel?.tour?.value?.host?.hostId?.substring(5)?.let { touristId -> onNavToDashboard(touristId) }
-                            "Business" -> addBusinessViewModel?.business?.value?.host?.hostId?.substring(5)?.let { touristId -> onNavToDashboard(touristId) }
+                            "Staycation" -> {
+                                addListingViewModel?.staycation?.value?.host?.hostId?.substring(5)?.let { touristId -> onNavToDashboard(touristId) }
+                                addListingViewModel?.clearStaycation()
+                            }
+
+                            "Tour" -> {
+                                hostTourViewModel?.tour?.value?.host?.hostId?.substring(5)?.let { touristId -> onNavToDashboard(touristId) }
+                                hostTourViewModel?.clearTour()
+                            }
+                            "Business" -> {
+                                addBusinessViewModel?.business?.value?.host?.hostId?.substring(5)?.let { touristId -> onNavToDashboard(touristId) }
+                                addBusinessViewModel?.clearBusiness()
+                            }
                         }
 
                     },

@@ -1,7 +1,13 @@
 package com.example.tripnila.repository
 
+import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Log
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.core.net.toUri
 import com.example.tripnila.common.Constants
 import com.example.tripnila.data.Amenity
 import com.example.tripnila.data.Business
@@ -26,7 +32,14 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.net.URL
 import java.security.MessageDigest
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -81,6 +94,7 @@ class UserRepository {
 
     private var currentUser: Tourist? = null
     private var staycationList: List<Staycation>? = null
+
 
 
 
@@ -208,6 +222,156 @@ class UserRepository {
 
     }
 
+    suspend fun getBusinessById(businessId: String): Business {
+        try {
+            val businessDocument = businessCollection.document(businessId).get().await()
+
+            if (businessDocument.exists()) {
+                val hostId = businessDocument.getString("hostId") ?: ""
+                val businessContact = businessDocument.getString("businessContact") ?: ""
+                val businessDescription = businessDocument.getString("businessDescription") ?: ""
+                val businessEmail = businessDocument.getString("businessEmail") ?: ""
+                val businessLocation = businessDocument.getString("businessLocation") ?: ""
+                val businessTitle = businessDocument.getString("businessTitle") ?: ""
+                val businessType = businessDocument.getString("businessType") ?: ""
+                val businessURL = businessDocument.getString("businessURL") ?: ""
+                val additionalInfo = businessDocument.getString("additionalInfo") ?: ""
+
+                val businessImages = getServiceImages(businessId, "Business")
+                val businessMenuImages = getBusinessMenu(businessId)
+                val hostInfo = getHostInfo(hostId)
+                val businessTags = getServiceTags(businessId, "Business")
+                val amenities = getAmenities(businessId, "Business")
+                val schedule = getBusinessAvailability(businessId)
+
+                return Business(
+                    businessId = businessId,
+                    businessContact = businessContact,
+                    businessDescription = businessDescription,
+                    businessEmail = businessEmail,
+                    businessLocation = businessLocation,
+                    businessTitle = businessTitle,
+                    businessType = businessType,
+                    businessURL = businessURL,
+                    additionalInfo = additionalInfo,
+                    host = Host(
+                        profilePicture = hostInfo?.profilePicture ?: "",
+                        firstName = hostInfo?.firstName ?: "",
+                        middleName = hostInfo?.middleName ?: "",
+                        lastName = hostInfo?.lastName ?: "",
+                        hostId = hostId,
+                    ),
+                    businessTags = businessTags,
+                    businessImages = businessImages,
+                    businessMenu = businessMenuImages,
+                    amenities = amenities,
+                    schedule = schedule,
+
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return Business()
+    }
+
+    suspend fun getTourById(tourId: String): Tour {
+
+        try {
+
+            val tourDocument = tourCollection.document(tourId).get().await()
+
+            if (tourDocument.exists()) {
+                val tourId = tourDocument.id
+                val hostId = tourDocument.getString("hostId") ?: ""
+                val tourContact = tourDocument.getString("tourContact") ?: ""
+                val tourDescription = tourDocument.getString("tourDescription") ?: ""
+                val tourDuration = tourDocument.getString("tourDuration") ?: ""
+                val tourEmail = tourDocument.getString("tourEmail") ?: ""
+                val tourFacebook = tourDocument.getString("tourFacebook") ?: ""
+                val tourInstagram = tourDocument.getString("tourInstagram") ?: ""
+                val tourLanguage = tourDocument.getString("tourLanguage") ?: ""
+                val tourLocation = tourDocument.getString("tourLocation") ?: ""
+                val tourPrice = tourDocument.getDouble("tourPrice") ?: 0.0
+                val tourTitle = tourDocument.getString("tourTitle") ?: ""
+                val tourType = tourDocument.getString("tourType") ?: ""
+
+                val tourImages = getServiceImages(tourId, "Tour")
+                val hostInfo = getHostInfo(hostId)
+                val tourTags = getServiceTags(tourId, "Tour")
+                val schedule = getTourAvailabilities(tourId)
+                val offers = getTourOffers(tourId)
+
+                Log.d("Repository", "found")
+
+                return Tour(
+                    tourId = tourId,
+                    tourContact = tourContact,
+                    tourDescription = tourDescription,
+                    tourDuration = tourDuration,
+                    tourEmail = tourEmail,
+                    tourFacebook = tourFacebook,
+                    tourInstagram = tourInstagram,
+                    tourLanguage = tourLanguage,
+                    tourLocation = tourLocation,
+                    tourPrice = tourPrice,
+                    tourTitle = tourTitle,
+                    tourType = tourType,
+                    tourImages = tourImages,
+                    tourTags = tourTags,
+                    schedule = schedule,
+                    offers = offers,
+                    host = Host(
+                        profilePicture = hostInfo?.profilePicture ?: "",
+                        firstName = hostInfo?.firstName ?: "",
+                        middleName = hostInfo?.middleName ?: "",
+                        lastName = hostInfo?.lastName ?: "",
+                        hostId = hostId,
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            // Handle the exception, e.g., log or throw
+            e.printStackTrace()
+        }
+        return Tour()
+    }
+
+    private suspend fun getTourOffers(tourId: String): List<Offer> {
+        return try {
+            val result = tourOffersCollection
+                .whereEqualTo("tourId", tourId)
+                .get()
+                .await()
+
+            val offers = mutableListOf<Offer>()
+
+            for (document in result.documents) {
+                val offerId = document.id
+                val offer = document.getString("offer") ?: ""
+                val typeOfOffer = document.getString("typeOfOffer") ?: ""
+
+                // Fetch amenity details from the amenity collection using amenityId
+//                val amenityDetails = getAmenityDetails(amenityId)
+
+                val offerInstance = Offer(
+                    tourId = tourId,
+                    tourOfferId = offerId,
+                    offer = offer,
+                    typeOfOffer = typeOfOffer
+                )
+
+                offers.add(offerInstance)
+            }
+
+            offers
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList() // Handle the error case as needed
+        }
+    }
+
 
     suspend fun getToursByHostId(host: Host): List<Tour> {
         val tours = mutableListOf<Tour>()
@@ -328,6 +492,7 @@ class UserRepository {
 
 
     suspend fun addTour(
+        tourId: String = "",
         hostId: String = "",
         tourType: String = "",
         tourTitle: String = "",
@@ -345,18 +510,24 @@ class UserRepository {
         tourPrice: Double = 0.0,
         // promotions: List<Promotion> = emptyList(),
         //  nearbyAttractions: List<String> = emptyList(), ?????????   /*TODO*/
-        tourTags: List<String> = emptyList()
+        tourTags: List<String> = emptyList(),
+        context: Context
     ): Boolean {
         try {
-            val querySnapshot = tourHistoryCollection
-                .orderBy("tourId", Query.Direction.DESCENDING)
-                .limit(1)
-                .get()
-                .await()
 
-            val lastDocument = querySnapshot.documents.firstOrNull()
-            val lastId = lastDocument?.getString("tourId")
-            val newId = (lastId?.toInt() ?: 0) + 1
+            val newId = if (tourId == "") {
+                val querySnapshot = tourHistoryCollection
+                    .orderBy("tourId", Query.Direction.DESCENDING)
+                    .limit(1)
+                    .get()
+                    .await()
+
+                val lastDocument = querySnapshot.documents.firstOrNull()
+                val lastId = lastDocument?.getString("tourId")?.toIntOrNull() ?: 0
+                lastId + 1
+            } else {
+                tourId.toIntOrNull() ?: 0
+            }
 
             val tour = hashMapOf(
                 "hostId" to hostId,
@@ -373,13 +544,19 @@ class UserRepository {
                 "tourPrice" to tourPrice,
             )
 
+            val transaction= if (tourId == "") {
+                "add"
+            } else {
+                "update"
+            }
+
             tourCollection.document(newId.toString()).set(tour).await()
 
-            addTourToHistory(newId.toString(), "add")
+            addTourToHistory(newId.toString(), transaction)
 
             addTourOffers(newId.toString(), offers)
 
-            addServicePhotos(newId.toString(), "Tour", tourImages)
+            addServicePhotos(context, newId.toString(), "Tour", tourImages)
 
             addServiceTags(newId.toString(), "Tour", tourTags)
 
@@ -398,12 +575,55 @@ class UserRepository {
         }
     }
 
-    suspend fun addTourAvailability(tourId: String, schedules: List<TourSchedule>) {
+    private suspend fun getTourAvailabilities(tourId: String): List<TourSchedule> {
+        val tourAvailabilities = mutableListOf<TourSchedule>()
+
         try {
+            val querySnapshot = tourAvailabilityCollection
+                .whereEqualTo("tourId", tourId)
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                val date = document.getString("date")
+                val startTime = document.getString("startTime")
+                val endTime = document.getString("endTime")
+
+
+                val tourSchedule = TourSchedule(
+                    date = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                    startTime = startTime ?: "00:00 AM",
+                    endTime = endTime ?: "00:00 PM"
+                )
+
+                tourAvailabilities.add(tourSchedule)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the exception as needed
+        }
+
+        return tourAvailabilities
+    }
+
+
+    private suspend fun addTourAvailability(tourId: String, schedules: List<TourSchedule>) {
+        try {
+
+            tourAvailabilityCollection
+                .whereEqualTo("tourId", tourId)
+                .get()
+                .addOnSuccessListener { documents ->
+                    for (document in documents) {
+                        tourAvailabilityCollection.document(document.id).delete()
+                    }
+                }
+                .await()
+
             schedules.forEach { schedule ->
                 val scheduleData = hashMapOf(
                     "tourId" to tourId,
-                    "date" to schedule.date,
+                    "date" to schedule.date.toString(),
                     "startTime" to schedule.startTime,
                     "endTime" to schedule.endTime,
                 )
@@ -417,8 +637,19 @@ class UserRepository {
         }
     }
 
-    suspend fun addTourOffers(tourId: String, offers: List<Offer>) {
+    private suspend fun addTourOffers(tourId: String, offers: List<Offer>) {
         try {
+
+            tourOffersCollection
+                .whereEqualTo("tourId", tourId)
+                .get()
+                .addOnSuccessListener { documents ->
+                    for (document in documents) {
+                        tourOffersCollection.document(document.id).delete()
+                    }
+                }
+                .await()
+
             offers.forEach { offer ->
                 val data = hashMapOf(
                     "tourId" to tourId,
@@ -427,7 +658,7 @@ class UserRepository {
                 )
 
                 // Use add() to automatically generate a unique document ID
-                val documentReference = tourOffersCollection.add(data).await()
+                tourOffersCollection.add(data).await()
 
             }
         } catch (e: Exception) {
@@ -464,6 +695,7 @@ class UserRepository {
 
 
     suspend fun addBusiness(
+        businessId: String = "",
         hostId: String = "",
         businessDescription: String = "",
         businessLocation: String = "",
@@ -473,24 +705,40 @@ class UserRepository {
         businessEmail: String = "",
         businessURL: String = "",
         additionalInfo: String = "",
-        amenities: List<String> = emptyList(),
+        amenities: List<Amenity> = emptyList(),
         businessImages: List<Photo> = emptyList(),
         businessMenusPhotos: List<Photo> = emptyList(),
         schedule: List<DailySchedule> = emptyList(),
        // promotions: List<Promotion> = emptyList(),
       //  nearbyAttractions: List<String> = emptyList(), ?????????   /*TODO*/
-        businessTags: List<String> = emptyList()
+        businessTags: List<String> = emptyList(),
+        context: Context
     ): Boolean {
         try {
-            val querySnapshot = businessHistoryCollection
-                .orderBy("businessId", Query.Direction.DESCENDING)
-                .limit(1)
-                .get()
-                .await()
 
-            val lastDocument = querySnapshot.documents.firstOrNull()
-            val lastId = lastDocument?.getString("businessId")
-            val newId = (lastId?.toInt() ?: 0) + 1
+            val newId = if (businessId == "") {
+                val querySnapshot = businessHistoryCollection
+                    .orderBy("businessId", Query.Direction.DESCENDING)
+                    .limit(1)
+                    .get()
+                    .await()
+
+                val lastDocument = querySnapshot.documents.firstOrNull()
+                val lastId = lastDocument?.getString("businessId")?.toIntOrNull() ?: 0
+                lastId + 1
+            } else {
+                businessId.toIntOrNull() ?: 0
+            }
+
+//            val querySnapshot = businessHistoryCollection
+//                .orderBy("businessId", Query.Direction.DESCENDING)
+//                .limit(1)
+//                .get()
+//                .await()
+//
+//            val lastDocument = querySnapshot.documents.firstOrNull()
+//            val lastId = lastDocument?.getString("businessId")
+//            val newId = (lastId?.toInt() ?: 0) + 1
 
             val business = hashMapOf(
                 "hostId" to hostId,
@@ -504,17 +752,23 @@ class UserRepository {
                 "businessType" to businessType
             )
 
+            val transaction= if (businessId == "") {
+                "add"
+            } else {
+                "update"
+            }
+
             businessCollection.document(newId.toString()).set(business).await()
 
-            addBusinessToHistory(newId.toString(), "add")
+            addBusinessToHistory(newId.toString(), transaction)
 
             addServiceAmenities(newId.toString(), "Business", amenities)
 
-            addServicePhotos(newId.toString(), "Business", businessImages)
+            addServicePhotos(context, newId.toString(), "Business", businessImages)
 
             addServiceTags(newId.toString(), "Business", businessTags)
 
-            addBusinessMenu(newId.toString(), businessMenusPhotos)
+            addBusinessMenu(context, newId.toString(), businessMenusPhotos)
 
             addBusinessAvailability(newId.toString(), schedule)
 
@@ -531,8 +785,49 @@ class UserRepository {
         }
     }
 
-    suspend fun addBusinessAvailability(businessId: String, schedules: List<DailySchedule>) {
+    private suspend fun getBusinessAvailability(businessId: String): List<DailySchedule> {
+
+        val availabilityList = mutableListOf<DailySchedule>()
+
         try {
+            val querySnapshot = businessAvailabilityCollection
+                .whereEqualTo("businessId", businessId)
+                .get()
+                .await()
+
+            for (document in querySnapshot) {
+                val closingTime = document.getString("closingTime") ?: ""
+                val day = document.getString("day") ?: ""
+                val openingTime = document.getString("openingTime") ?: ""
+
+                val businessAvailability = DailySchedule(
+                    closingTime = closingTime,
+                    day = day,
+                    openingTime = openingTime
+                )
+
+                availabilityList.add(businessAvailability)
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return availabilityList
+    }
+
+    private suspend fun addBusinessAvailability(businessId: String, schedules: List<DailySchedule>) {
+        try {
+
+            businessAvailabilityCollection
+                .whereEqualTo("businessId", businessId)
+                .get()
+                .addOnSuccessListener { documents ->
+                    for (document in documents) {
+                        businessAvailabilityCollection.document(document.id).delete()
+                    }
+                }
+                .await()
+
             schedules.forEach { schedule ->
                 val scheduleData = hashMapOf(
                     "businessId" to businessId,
@@ -576,25 +871,87 @@ class UserRepository {
         }
     }
 
-    suspend fun addBusinessMenu(businessId: String, photos: List<Photo>) {
+    private suspend fun addBusinessMenu(context: Context, businessId: String, photos: List<Photo>) {
         try {
-            photos.mapNotNull { it.photoUri }.forEach { uri ->
-                val fileName = UUID.randomUUID().toString()
-                val imageRef = storageReference.child("images/service_photos/business_menus/$fileName")
-                imageRef.putFile(uri).await()
 
-                val photoUrl = imageRef.downloadUrl.await().toString()
+            businessMenuCollection
+                .whereEqualTo("businessId", businessId)
+                .get()
+                .addOnSuccessListener { documents ->
+                    for (document in documents) {
+                        businessMenuCollection.document(document.id).delete()
+                    }
+                }
+                .await()
 
-                val photoType = photos.firstOrNull { it.photoUri == uri }?.photoType ?: "Others"
+            for (photo in photos) {
+                if (photo.photoUri != null) {
+                    try {
+                        val uri = photo.photoUri
 
-                val photoData = hashMapOf(
-                    "businessId" to businessId,
-                    "photoUrl" to photoUrl,
-                    "photoType" to photoType
-                )
+                        if (uri.toString().startsWith("https://firebasestorage.googleapis.com")) {
+                            // Download the file from Firebase Storage
+                            val fileName = UUID.randomUUID().toString()
+                            val imageRef = FirebaseStorage.getInstance().getReferenceFromUrl(uri.toString())
+                            val file = File(context.cacheDir, fileName)
+                            imageRef.getFile(file).await()
 
-                businessMenuCollection.add(photoData).await()
+                            // Continue with the upload
+                            val newImageRef = storageReference.child("images/service_photos/business_menus/$fileName")
+                            newImageRef.putFile(Uri.fromFile(file)).await()
+
+                            val photoUrl = newImageRef.downloadUrl.await().toString()
+                            val photoType = photo.photoType ?: "Others"
+
+                            val photoData = hashMapOf(
+                                "businessId" to businessId,
+                                "photoUrl" to photoUrl,
+                                "photoType" to photoType
+                            )
+
+                            businessMenuCollection.add(photoData).await()
+                        } else {
+                            // Use the provided file URI for uploading
+                            val fileName = UUID.randomUUID().toString()
+                            val imageRef = storageReference.child("images/service_photos/business_menus/$fileName")
+
+                            imageRef.putFile(uri).await()
+
+                            val photoUrl = imageRef.downloadUrl.await().toString()
+                            val photoType = photo.photoType ?: "Others"
+
+                            val photoData = hashMapOf(
+                                "businessId" to businessId,
+                                "photoUrl" to photoUrl,
+                                "photoType" to photoType
+                            )
+
+                            businessMenuCollection.add(photoData).await()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        Log.e("Upload", "Error processing URI: $e")
+                    }
+                }
             }
+
+//            photos.mapNotNull { it.photoUri }.forEach { uri ->
+//                val fileName = UUID.randomUUID().toString()
+//                val imageRef = storageReference.child("images/service_photos/business_menus/$fileName")
+//                imageRef.putFile(uri).await()
+//
+//                val photoUrl = imageRef.downloadUrl.await().toString()
+//
+//                val photoType = photos.firstOrNull { it.photoUri == uri }?.photoType ?: "Others"
+//
+//                val photoData = hashMapOf(
+//                    "businessId" to businessId,
+//                    "photoUrl" to photoUrl,
+//                    "photoType" to photoType
+//                )
+//
+//                businessMenuCollection.add(photoData).await()
+//            }
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -604,6 +961,7 @@ class UserRepository {
 
 
     suspend fun addStaycation(
+        staycationId: String = "",
         hasDangerousAnimal: Boolean = false,
         hasSecurityCamera: Boolean = false,
         hasWeapon: Boolean = false,
@@ -618,25 +976,32 @@ class UserRepository {
         staycationSpace: String = "",
         staycationTitle: String = "",
         staycationType: String = "",
-        amenities: List<String> = emptyList(),
+       // amenities: List<String> = emptyList(),
+        amenities: List<Amenity> = emptyList(),
         photos: List<Photo> = emptyList(),
-        availableDates: List<Timestamp> = emptyList(),
+        availableDates: List<StaycationAvailability> = emptyList(),
         promotions: List<Promotion> = emptyList(),
         nearbyAttractions: List<String> = emptyList(),
-        staycationTags: List<String> = emptyList()
+        staycationTags: List<String> = emptyList(),
+        context: Context
     ): Boolean {
         try {
-            val querySnapshot = staycationHistoryCollection
-                .orderBy("staycationId", Query.Direction.DESCENDING)
-                .limit(1)
-                .get()
-                .await()
 
-            val lastDocument = querySnapshot.documents.firstOrNull()
-            val lastId = lastDocument?.getString("staycationId")
-            val newId = (lastId?.toInt() ?: 0) + 1
+            val newId = if (staycationId == "") {
+                val querySnapshot = staycationHistoryCollection
+                    .orderBy("staycationId", Query.Direction.DESCENDING)
+                    .limit(1)
+                    .get()
+                    .await()
 
-            val staycation = hashMapOf(
+                val lastDocument = querySnapshot.documents.firstOrNull()
+                val lastId = lastDocument?.getString("staycationId")?.toIntOrNull() ?: 0
+                lastId + 1
+            } else {
+                staycationId.toIntOrNull() ?: 0
+            }
+
+            val staycationData: HashMap<String, Any> = hashMapOf(
                 "hasDangerousAnimal" to hasDangerousAnimal,
                 "hasSecurityCamera" to hasSecurityCamera,
                 "hasWeapon" to hasWeapon,
@@ -653,21 +1018,30 @@ class UserRepository {
                 "staycationType" to staycationType
             )
 
-            staycationCollection.document(newId.toString()).set(staycation).await()
+            val transaction= if (staycationId == "") {
+                "add"
+            } else {
+                "update"
+            }
 
-            addStaycationToHistory(newId.toString(), "add")
+
+            staycationCollection.document(newId.toString()).set(staycationData).await()
+
+
+            addStaycationToHistory(newId.toString(), staycationData, transaction)
 
             addServiceAmenities(newId.toString(), "Staycation", amenities)
 
-            addServicePhotos(newId.toString(), "Staycation", photos)
+            addServicePhotos(context, newId.toString(), "Staycation", photos)  // TRY
 
-            addStaycationAvailability(newId.toString(), availableDates)
+            addStaycationAvailability(newId.toString(), availableDates) // NOT SURE
 
-            addStaycationPromotions(newId.toString(), promotions)
+            addStaycationPromotions(newId.toString(), "Staycation", promotions) // NOT SURE
 
-            addStaycationNearbyAttractions(newId.toString(), nearbyAttractions)
 
-            addServiceTags(newId.toString(), "Staycation", staycationTags)
+            addStaycationNearbyAttractions(newId.toString(), nearbyAttractions) // NOT SURE
+
+            addServiceTags(newId.toString(), "Staycation", staycationTags) // NOT SURE
 
             return true
         } catch (e: Exception) {
@@ -719,8 +1093,20 @@ class UserRepository {
 //        }
 //    }
 
-    suspend fun addServiceTags(serviceId: String, serviceType: String, tags: List<String>) {
+    private suspend fun addServiceTags(serviceId: String, serviceType: String, tags: List<String>) {
         try {
+
+            serviceTagCollection
+                .whereEqualTo("serviceId", serviceId)
+                .whereEqualTo("serviceType", serviceType)
+                .get()
+                .addOnSuccessListener { documents ->
+                    for (document in documents) {
+                        serviceTagCollection.document(document.id).delete()
+                    }
+                }
+                .await()
+
             tags.forEach { tag ->
                 val tagData = hashMapOf(
                     "serviceId" to serviceId,
@@ -739,6 +1125,16 @@ class UserRepository {
     suspend fun addStaycationNearbyAttractions(staycationId: String, attractions: List<String>) {
         try {
 
+            staycationNearbyAttractionCollection
+                .whereEqualTo("staycationId", staycationId)
+                .get()
+                .addOnSuccessListener { documents ->
+                    for (document in documents) {
+                        staycationNearbyAttractionCollection.document(document.id).delete()
+                    }
+                }
+                .await()
+
             attractions.forEach { attraction ->
                 val attractionData = hashMapOf(
                     "staycationId" to staycationId,
@@ -755,13 +1151,27 @@ class UserRepository {
         }
     }
 
-    suspend fun addStaycationPromotions(staycationId: String, promotions: List<Promotion>) {
+    private suspend fun addStaycationPromotions(serviceId: String, serviceType: String, promotions: List<Promotion>) {
         try {
+
+            servicePromotionCollection
+                .whereEqualTo("serviceId", serviceId)
+                .whereEqualTo("serviceType", serviceType)
+                .get()
+                .addOnSuccessListener { documents ->
+                    for (document in documents) {
+                        servicePromotionCollection.document(document.id).delete()
+                    }
+                }
+                .await()
+
+
             if (promotions.isNotEmpty()) {
                 promotions.forEach { promotion ->
                     val promotionData = hashMapOf(
-                        "staycationId" to staycationId,
-                        "promoId" to promotion.promoId
+                        "serviceId" to serviceId,
+                        "promoId" to promotion.promoId,
+                        "serviceType" to serviceType
                     )
 
                     servicePromotionCollection.add(promotionData).await()
@@ -773,17 +1183,104 @@ class UserRepository {
         }
     }
 
-
-    suspend fun addStaycationAvailability(staycationId: String, availableDates: List<Timestamp>) {
+    suspend fun addTourAvailabilityFromManager(tourId: String, schedule: TourSchedule) {
         try {
+
+            val scheduleData = hashMapOf(
+                "tourId" to tourId,
+                "date" to schedule.date.toString(),
+                "startTime" to schedule.startTime,
+                "endTime" to schedule.endTime,
+            )
+
+            tourAvailabilityCollection.add(scheduleData).await()
+
+
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun deleteTourAvailabilityFromManager(tourId: String, schedule: TourSchedule) {
+        try {
+
+            val matchingSchedules = tourAvailabilityCollection
+                .whereEqualTo("tourId", tourId)
+                .whereEqualTo("date", schedule.date.toString())
+                .whereEqualTo("startTime", schedule.startTime)
+                .whereEqualTo("endTime", schedule.endTime)
+                .get()
+                .await()
+
+            for (document in matchingSchedules.documents) {
+                tourAvailabilityCollection.document(document.id).delete().await()
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+
+    suspend fun addStaycationAvailabilityFromManager(staycationId: String, availableDate: StaycationAvailability) {
+        try {
+
+            val availabilityData = hashMapOf(
+                "staycationId" to staycationId,
+                "availableDate" to availableDate.availableDate
+            )
+
+            staycationAvailabilityCollection.add(availabilityData).await()
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun removeStaycationAvailabilityFromManager(staycationId: String, localDate: LocalDate) {
+        try {
+            val availableDates = staycationAvailabilityCollection
+                .whereEqualTo("staycationId", staycationId)
+                .whereEqualTo("availableDate", Timestamp(Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant())))
+                .get()
+                .await()
+
+            for (document in availableDates.documents) {
+                staycationAvailabilityCollection.document(document.id).delete().await()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the exception as needed
+        }
+    }
+
+
+
+
+
+
+
+    private suspend fun addStaycationAvailability(staycationId: String, availableDates: List<StaycationAvailability>) {
+        try {
+
+            staycationAvailabilityCollection
+                .whereEqualTo("staycationId", staycationId)
+                .get()
+                .addOnSuccessListener { documents ->
+                    for (document in documents) {
+                        staycationAvailabilityCollection.document(document.id).delete()
+                    }
+                }
+                .await()
+
             availableDates.forEach { date ->
                 val availabilityData = hashMapOf(
                     "staycationId" to staycationId,
-                    "availableDate" to date
+                    "availableDate" to date.availableDate
                 )
 
                 staycationAvailabilityCollection.add(availabilityData).await()
-
             }
 
         } catch (e: Exception) {
@@ -791,38 +1288,234 @@ class UserRepository {
         }
     }
 
+//    suspend fun addServicePhotos(context: Context, serviceId: String, serviceType: String, photos: List<Photo>) {
+//        try {
+//            servicePhotoCollection
+//                .whereEqualTo("serviceId", serviceId)
+//                .whereEqualTo("serviceType", serviceType)
+//                .get()
+//                .addOnSuccessListener { documents ->
+//                    for (document in documents) {
+//                        servicePhotoCollection.document(document.id).delete()
+//                    }
+//                }
+//                .await()
+//
+//            for (photo in photos) {
+//                if (photo.photoUri != null) {
+//                    try {
+//                        val uri = photo.photoUri
+//                        Log.d("Upload", "URI: $uri")
+//
+//                        val fileName = UUID.randomUUID().toString()
+//                        val imageRef = storageReference.child("images/service_photos/${serviceType.lowercase(Locale.getDefault())}s/$fileName")
+//
+//                        // Check if the URI is a content URI
+//                        if (ContentResolver.SCHEME_CONTENT == uri.scheme) {
+//                            // Content URI, resolve it to a file URI
+//                            val file = createFileFromContentUri(context, uri)
+//                            if (file != null) {
+//                                // Use the file URI for uploading
+//                                imageRef.putFile(file.toUri()).await()
+//                            }
+//                        } else {
+//                            // Use the provided file URI for uploading
+//                            imageRef.putFile(uri).await()
+//                        }
+//
+//                        val photoUrl = imageRef.downloadUrl.await().toString()
+//                        val photoType = photo.photoType ?: "Others"
+//
+//                        val photoData = hashMapOf(
+//                            "serviceId" to serviceId,
+//                            "serviceType" to serviceType,
+//                            "photoUrl" to photoUrl,
+//                            "photoType" to photoType
+//                        )
+//
+//                        servicePhotoCollection.add(photoData).await()
+//
+//                    } catch (e: Exception) {
+//                        e.printStackTrace()
+//                        Log.e("Upload", "Error processing URI: $e")
+//                    }
+//                }
+//            }
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            Log.e("Upload", "Error processing URI: $e")
+//        }
+//    }
 
-    suspend fun addServicePhotos(serviceId: String, serviceType: String, photos: List<Photo>) {
+
+    private suspend fun addServicePhotos(context: Context, serviceId: String, serviceType: String, photos: List<Photo>) {
         try {
-            photos.mapNotNull { it.photoUri }.forEach { uri ->
-                val fileName = UUID.randomUUID().toString()
-                val imageRef = storageReference.child("images/service_photos/${serviceType.lowercase(Locale.getDefault())}s/$fileName")
-                imageRef.putFile(uri).await()
+            servicePhotoCollection
+                .whereEqualTo("serviceId", serviceId)
+                .whereEqualTo("serviceType", serviceType)
+                .get()
+                .addOnSuccessListener { documents ->
+                    for (document in documents) {
+                        servicePhotoCollection.document(document.id).delete()
+                    }
+                }
+                .await()
 
-                val photoUrl = imageRef.downloadUrl.await().toString()
+            for (photo in photos) {
+                if (photo.photoUri != null) {
+                    try {
+                        val uri = photo.photoUri
+                        Log.d("Upload", "URI: $uri")
 
-                val photoType = photos.firstOrNull { it.photoUri == uri }?.photoType ?: "Others"
+                        Log.d("ContentResolver", ContentResolver.SCHEME_CONTENT)
+                        Log.d("UriScheme", uri.scheme ?: "")
 
-                val photoData = hashMapOf(
-                    "serviceId" to serviceId,
-                    "serviceType" to serviceType,
-                    "photoUrl" to photoUrl,
-                    "photoType" to photoType
-                )
+                        if (uri.toString().startsWith("https://firebasestorage.googleapis.com")) {
+                            // Download the file from Firebase Storage
+                            val fileName = UUID.randomUUID().toString()
+                            val imageRef = FirebaseStorage.getInstance().getReferenceFromUrl(uri.toString())
+                            val file = File(context.cacheDir, fileName)
+                            imageRef.getFile(file).await()
 
-                val documentReference = servicePhotoCollection.add(photoData).await()
-                val servicePhotoId = documentReference.id
+                            // Continue with the upload
+                            val newImageRef = storageReference.child("images/service_photos/${serviceType.lowercase(Locale.getDefault())}s/$fileName")
+                            newImageRef.putFile(Uri.fromFile(file)).await()
 
-                addServicePhotosToHistory(servicePhotoId, photoData, "add")
+                            val photoUrl = newImageRef.downloadUrl.await().toString()
+                            val photoType = photo.photoType ?: "Others"
 
+                            val photoData = hashMapOf(
+                                "serviceId" to serviceId,
+                                "serviceType" to serviceType,
+                                "photoUrl" to photoUrl,
+                                "photoType" to photoType
+                            )
 
+                            servicePhotoCollection.add(photoData).await()
+                        } else {
+                            // Use the provided file URI for uploading
+                            val fileName = UUID.randomUUID().toString()
+                            val imageRef = storageReference.child("images/service_photos/${serviceType.lowercase(Locale.getDefault())}s/$fileName")
+
+                            imageRef.putFile(uri).await()
+
+                            val photoUrl = imageRef.downloadUrl.await().toString()
+                            val photoType = photo.photoType ?: "Others"
+
+                            val photoData = hashMapOf(
+                                "serviceId" to serviceId,
+                                "serviceType" to serviceType,
+                                "photoUrl" to photoUrl,
+                                "photoType" to photoType
+                            )
+
+                            servicePhotoCollection.add(photoData).await()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        Log.e("Upload", "Error processing URI: $e")
+                    }
+                }
             }
-
         } catch (e: Exception) {
             e.printStackTrace()
-            // Handle the error case as needed
+            Log.e("Upload", "Error processing URI: $e")
         }
     }
+
+
+    private fun createFileFromContentUri(context: Context, uri: Uri): File? {
+        try {
+            val contentResolver = context.contentResolver
+            val cursor = contentResolver.query(uri, null, null, null, null)
+            return cursor?.use {
+                val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                it.moveToFirst()
+                val fileName = it.getString(nameIndex)
+                val outputDir = context.cacheDir
+                val outputFile = File(outputDir, fileName)
+                try {
+                    contentResolver.openInputStream(uri)?.use { inputStream ->
+                        FileOutputStream(outputFile).use { outputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+                    outputFile
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return null
+        }
+    }
+
+
+
+//    suspend fun addServicePhotos(context: Context, serviceId: String, serviceType: String, photos: List<Photo>) {
+//        try {
+//            servicePhotoCollection
+//                .whereEqualTo("serviceId", serviceId)
+//                .whereEqualTo("serviceType", serviceType)
+//                .get()
+//                .addOnSuccessListener { documents ->
+//                    for (document in documents) {
+//                        servicePhotoCollection.document(document.id).delete()
+//                    }
+//                }
+//                .await()
+//
+//            for (photo in photos) {
+//                if (photo.photoUri != null) {
+//                    try {
+//                        val uri = photo.photoUri
+//                        Log.d("Upload", "URI: $uri")
+//
+//                        val fileName = UUID.randomUUID().toString()
+//                        val imageRef = storageReference.child("images/service_photos/${serviceType.lowercase(Locale.getDefault())}s/$fileName")
+//
+//                        // Check if the URI is a content URI
+//                        if (ContentResolver.SCHEME_CONTENT == uri.scheme) {
+//                            // Content URI, resolve it to a file URI
+//                            val file = createFileFromContentUri(context, uri)
+//                            if (file != null) {
+//                                // Use the file URI for uploading
+//                                imageRef.putFile(file.toUri()).await()
+//                            }
+//                        } else {
+//                            // Use the provided file URI for uploading
+//                            imageRef.putFile(uri).await()
+//                        }
+//
+//                        val photoUrl = imageRef.downloadUrl.await().toString()
+//                        val photoType = photo.photoType ?: "Others"
+//
+//                        val photoData = hashMapOf(
+//                            "serviceId" to serviceId,
+//                            "serviceType" to serviceType,
+//                            "photoUrl" to photoUrl,
+//                            "photoType" to photoType
+//                        )
+//
+//                        servicePhotoCollection.add(photoData).await()
+//
+//                    } catch (e: Exception) {
+//                        e.printStackTrace()
+//                        Log.e("Upload", "Error processing URI: $e")
+//                    }
+//                }
+//            }
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            Log.e("Upload", "Error processing URI: $e")
+//        }
+//    }
+//
+
+
+
 
     suspend fun addServicePhotosToHistory(servicePhotoId: String, photoData: HashMap<String, String>, transaction: String) {
         try {
@@ -844,23 +1537,30 @@ class UserRepository {
         }
     }
 
-
-
-    suspend fun addServiceAmenities(serviceId: String, serviceType: String, amenities: List<String>) {
+    private suspend fun addServiceAmenities(serviceId: String, serviceType: String, amenities: List<Amenity>) {
         try {
+
+            serviceAmenityCollection
+                .whereEqualTo("serviceId", serviceId)
+                .whereEqualTo("serviceType", serviceType)
+                .get()
+                .addOnSuccessListener { documents ->
+                    for (document in documents) {
+                        serviceAmenityCollection.document(document.id).delete()
+                    }
+                }
+                .await()
+
             amenities.forEach { amenity ->
-                val data = hashMapOf(
+                val data: HashMap<String, Any> = hashMapOf(
                     "serviceId" to serviceId,
-                    "amenityName" to amenity,
+                    "amenityName" to amenity.amenityName,
                     "serviceType" to serviceType
                 )
 
-                // Use add() to automatically generate a unique document ID
-                val documentReference = serviceAmenityCollection.add(data).await()
+                 serviceAmenityCollection.add(data).await()
 
-                val documentId = documentReference.id
-
-                addServiceAmenityToHistory(documentId, data, "add")
+              //  addServiceAmenityToHistory(documentId, data, transaction)
 
             }
         } catch (e: Exception) {
@@ -869,20 +1569,15 @@ class UserRepository {
         }
     }
 
-    suspend fun addServiceAmenityToHistory(amenityId: String, amenityData: HashMap<String, String>, transaction: String) {
+    private suspend fun addServiceAmenityToHistory(amenityId: String, amenityData: HashMap<String, Any>, transaction: String) {
         try {
 
-            val historyData = hashMapOf(
-                "amenityId" to amenityId,
-                "transaction" to transaction,
-                "timestamp" to FieldValue.serverTimestamp() // timestamp of the operation
-            )
-
-            // Combine amenity data and history data
-            val combinedData = amenityData + historyData
+            amenityData["amenityId"] = amenityId
+            amenityData["transaction"] = transaction
+            amenityData["timestamp"] = FieldValue.serverTimestamp()
 
             // Add to service_amenity_history collection
-            serviceAmenityHistoryCollection.add(combinedData).await()
+            serviceAmenityHistoryCollection.add(amenityData).await()
 
 
         } catch (e: Exception) {
@@ -892,25 +1587,16 @@ class UserRepository {
     }
 
 
-    suspend fun addStaycationToHistory(staycationId: String, transaction: String) {
+    private suspend fun addStaycationToHistory(staycationId: String, staycationData: HashMap<String, Any>, transaction: String) {
         try {
-            val staycationDocument = staycationCollection.document(staycationId).get().await()
 
-            // Check if the document exists
-            if (staycationDocument.exists()) {
-                // Get the data from the document
-                val staycationData = staycationDocument.data
+            staycationData["staycationId"] = staycationId
+            staycationData["transaction"] = transaction // or "update" or "delete" based on your use case
+            staycationData["transactionTimestamp"] = FieldValue.serverTimestamp()
 
-                // Add additional fields
-                staycationData?.put("staycationId", staycationId)
-                staycationData?.put("transaction", transaction) // or "update" or "delete" based on your use case
-                staycationData?.put("transactionTimestamp", FieldValue.serverTimestamp())
+            // Add the fetched document to the payment_history collection
+            staycationHistoryCollection.add(staycationData).await()
 
-                // Add the fetched document to the payment_history collection
-                staycationHistoryCollection.add(staycationData!!).await()
-            } else {
-                Log.d("", "No document found with the provided paymentId")
-            }
         } catch (e: Exception) {
             e.printStackTrace()
             // Handle the error case as needed
@@ -1218,7 +1904,7 @@ class UserRepository {
         }
     }
 
-    suspend fun getServiceImages(serviceId: String, serviceType: String): List<Photo> {
+    private suspend fun getServiceImages(serviceId: String, serviceType: String): List<Photo> {
         return try {
             val result = servicePhotoCollection
                 .whereEqualTo("serviceId", serviceId)
@@ -1229,13 +1915,39 @@ class UserRepository {
             val serviceImages = mutableListOf<Photo>()
 
             for (document in result.documents) {
+                val photoId = document.id
                 val photoType = document.getString("photoType") ?: ""
                 val photoUrl = document.getString("photoUrl") ?: ""
 
-                serviceImages.add(Photo(photoUrl = photoUrl, photoType = photoType))
+                serviceImages.add(Photo(photoId = photoId, photoUrl = photoUrl, photoType = photoType, photoUri = Uri.parse(photoUrl)))
             }
 
             serviceImages
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList() // Handle the error case as needed
+        }
+    }
+
+    suspend fun getBusinessMenu(businessId: String): List<Photo> {
+        return try {
+            val result = businessMenuCollection
+                .whereEqualTo("businessId", businessId)
+                .get()
+                .await()
+
+            val menuImages = mutableListOf<Photo>()
+
+            for (document in result.documents) {
+                val photoId = document.id
+                val photoType = document.getString("photoType") ?: ""
+                val photoUrl = document.getString("photoUrl") ?: ""
+
+                menuImages.add(Photo(photoId = photoId, photoUrl = photoUrl, photoType = photoType, photoUri = Uri.parse(photoUrl)))
+            }
+
+            menuImages
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -1690,22 +2402,20 @@ class UserRepository {
 
         val touristInfo = getHostInfo(hostId)
         val staycationImages = getServiceImages(staycationId, "Staycation")
-        val staycationTags = getStaycationTags(staycationId)
-        val promotions = getPromotions(staycationId)
+        val staycationTags = getServiceTags(staycationId, "Staycation")
+        val promotions = getPromotions(staycationId, "Staycation")
         val availability = getStaycationAvailability(staycationId)
         val amenities = getAmenities(staycationId, "Staycation")
         val bookings = getStaycationBookings(staycationId)
         return Staycation(
             staycationId = staycationId,
-//            hostFirstName = touristInfo?.firstName ?: "",
-//            hostMiddleName = touristInfo?.middleName ?: "",
-//            hostLastName = touristInfo?.lastName ?: "",
             host = Host(
                 profilePicture = touristInfo?.profilePicture ?: "",
                 firstName = touristInfo?.firstName ?: "",
                 middleName = touristInfo?.middleName ?: "",
                 lastName = touristInfo?.lastName ?: "",
                 touristId = touristInfo?.touristId ?: "",
+                hostId = "HOST-${touristInfo?.touristId}"
             ),
             noOfGuests = noOfGuests,
             noOfBedrooms = noOfBedrooms,
@@ -1757,8 +2467,8 @@ class UserRepository {
 
                 val touristInfo = getHostInfo(hostId)
                 val staycationImages = getServiceImages(staycationId, "Staycation")
-                val staycationTags = getStaycationTags(staycationId)
-                val promotions = getPromotions(staycationId)
+                val staycationTags = getServiceTags(staycationId, "Staycation")
+                val promotions = getPromotions(staycationId, "Staycation")
                 val availability = getStaycationAvailability(staycationId)
                 val amenities = getAmenities(staycationId, "Staycation")
                 val bookings = getStaycationBookings(staycationId)
@@ -1899,24 +2609,25 @@ class UserRepository {
     }
 
 
-    suspend fun getStaycationTags(staycationId: String): List<Tag> {
+    suspend fun getServiceTags(serviceId: String, serviceType: String): List<Tag> {
         return try {
             val result = serviceTagCollection
-                .whereEqualTo("serviceId", staycationId)
+                .whereEqualTo("serviceId", serviceId)
+                .whereEqualTo("serviceType", serviceType)
                 .get()
                 .await()
 
-            val staycationTags = mutableListOf<Tag>()
+            val serviceTags = mutableListOf<Tag>()
 
             for (document in result.documents) {
                 val tagId = document.id
                 val tagName = document.getString("tagName") ?: ""
-                val staycationId = staycationId
+                val serviceId = serviceId
 
-                staycationTags.add(Tag(tagId = tagId, tagName = tagName, serviceId = staycationId))
+                serviceTags.add(Tag(tagId = tagId, tagName = tagName, serviceId = serviceId))
             }
 
-            staycationTags
+            serviceTags
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -1924,68 +2635,19 @@ class UserRepository {
         }
     }
 
-    suspend fun forAddingRecordsFromCSV(
-        user: Tourist,
-        staycationDescription: String = "",
-        staycationLocation: String = "",
-        staycationPrice: Int = 0,
-        staycationTitle: String = "",
-        amenities: List<String> = emptyList(),
-        nearbyAttractions: List<String> = emptyList(),
-        staycationTags: List<String> = emptyList()
-    ): Boolean {
-        return try {
-            val hashedPassword = hashPassword(user.password)
-            val userData = hashMapOf(
-                "fullName" to mapOf(
-                    "firstName" to user.firstName,
-                    "middleName" to user.middleName,
-                    "lastName" to user.lastName
-                ),
-                "username" to user.username,
-                "password" to hashedPassword
-            )
 
-            val touristDocRef = touristCollection.add(userData).await()
-            val touristId = touristDocRef.id
-
-            val hostData = hashMapOf(
-                "touristId" to touristId
-            )
-            hostCollection.document("HOST-$touristId").set(hostData).await()
-
-            val isSuccess = addStaycation(
-                staycationTitle = staycationTitle,
-                staycationDescription = staycationDescription,
-                staycationTags = staycationTags,
-                hostId = "HOST-$touristId",
-                staycationPrice = staycationPrice.toDouble(),
-                amenities = amenities,
-                staycationLocation = staycationLocation,
-                nearbyAttractions = nearbyAttractions
-
-            )
-
-            Log.d("AddStaycation", "$isSuccess")
-
-            true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
-
-    }
-
-    suspend fun getPromotions(staycationId: String): List<Promotion> {
+    private suspend fun getPromotions(serviceId: String, serviceType: String): List<Promotion> {
         return try {
             val result = servicePromotionCollection
-                .whereEqualTo("serviceId", staycationId)
+                .whereEqualTo("serviceId", serviceId)
+                .whereEqualTo("serviceType", serviceType)
                 .get()
                 .await()
 
             val promotions = mutableListOf<Promotion>()
 
             for (document in result.documents) {
+                val servicePromotionId = document.id
                 val promoId = document.getString("promoId") ?: ""
 
                 // Fetch promotion details from the promotion collection using promoId
@@ -1993,12 +2655,12 @@ class UserRepository {
 
                 // Construct Promotion object
                 val promotion = Promotion(
+                    servicePromotionId = servicePromotionId,
                     promoId = promoId,
                     description = promoDetails?.description ?: "",
                     discount = promoDetails?.discount ?: 0.0,
                     promoName = promoDetails?.promoName ?: "",
                     status = promoDetails?.status ?: ""
-                    // Add other fields as needed
                 )
 
                 promotions.add(promotion)
@@ -2043,16 +2705,12 @@ class UserRepository {
             val availability = mutableListOf<StaycationAvailability>()
 
             for (document in result.documents) {
+                val availabilityId = document.id
                 val availableDateTimestamp = document.getTimestamp("availableDate") ?: Timestamp.now()
-                //  val staycationId = document.getString("staycationId") ?: ""
 
-//                // Convert timestamp to Date
-//                val availableDate = availableDateTimestamp?.toDate()
-
-                // Construct StaycationAvailability object
                 val staycationAvailability = StaycationAvailability(
+                    staycationAvailabilityId = availabilityId,
                     availableDate = availableDateTimestamp,
-                    // Add other fields as needed
                 )
 
                 availability.add(staycationAvailability)
@@ -2066,10 +2724,10 @@ class UserRepository {
         }
     }
 
-    suspend fun getAmenities(staycationId: String, serviceType: String): List<Amenity> {
+    suspend fun getAmenities(serviceId: String, serviceType: String): List<Amenity> {
         return try {
             val result = serviceAmenityCollection
-                .whereEqualTo("serviceId", staycationId)
+                .whereEqualTo("serviceId", serviceId)
                 .whereEqualTo("serviceType", serviceType)
                 .get()
                 .await()

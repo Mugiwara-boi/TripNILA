@@ -2,6 +2,8 @@ package com.example.tripnila.data
 
 import java.time.LocalDate
 
+
+
 data class Tour(
 
     val tourId: String = "",

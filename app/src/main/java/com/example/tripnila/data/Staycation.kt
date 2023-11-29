@@ -10,10 +10,10 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 
 
-//    val hostImage: String = "",  /*TODO*/
-//    val hostFirstName: String = "",
-//    val hostMiddleName: String = "",
-//    val hostLastName: String = "",
+data class StaycationAvailability(
+    val staycationAvailabilityId: String = "",
+    val availableDate: Timestamp? = null
+)
 
 data class Staycation(
     val staycationId: String = "",
@@ -48,22 +48,9 @@ data class Staycation(
                 .mapNotNull { it.bookingReview }
                 .filter { it.bookingId != "" }
 
-            return validReviews.map { it.rating }.average()
+            val average = validReviews.map { it.rating }.average()
+            return if (average.isNaN()) 0.0 else average
         }
-
-  //  validReviews.map { it.bookingReview!!.rating }.average()
-
-//    val totalReviews: Int
-//        get() = staycationBookings.count { it.bookingReview != null }
-//    val averageReviewRating: Double
-//        get() {
-//            val validReviews = staycationBookings.filter { it.bookingReview != null }
-//            return if (validReviews.isNotEmpty()) {
-//                validReviews.map { it.bookingReview!!.rating }.average()
-//            } else {
-//                0.0 // or any default value if there are no reviews
-//            }
-//        }
     val pendingBookingsCount: Int
         get() = staycationBookings.count { it.bookingStatus == "Pending" }
     val ongoingBookingsCount: Int
@@ -80,10 +67,7 @@ data class Staycation(
     }
 }
 
-data class StaycationAvailability(
-    val staycationAvailabilityId: String = "",
-    val availableDate: Timestamp? = null
-)
+
 
 data class Amenity(
     val amenityId: String = "",
@@ -114,6 +98,19 @@ data class StaycationBooking(
     val bookingReview: Review? = null, // new
     val staycation: Staycation? = null
 ) {
+
+    fun getDatesBetween(): List<LocalDate> {
+        val dates = mutableListOf<LocalDate>()
+        var start = checkInDate?.toInstant()?.atZone(ZoneId.systemDefault())?.toLocalDate()
+        val end = checkOutDate?.toInstant()?.atZone(ZoneId.systemDefault())?.toLocalDate()
+
+        while (start != null && end != null && !start.isAfter(end)) {
+            dates.add(start)
+            start = start.plusDays(1)
+        }
+        return dates
+    }
+
     fun getDaysDifference(): Long {
         return if (checkInDate != null && checkOutDate != null) {
             val checkIn = Calendar.getInstance().apply {
@@ -175,7 +172,10 @@ data class Tag(
 )
 
 
-
+data class Attraction(
+    val attractionId: String = "",
+    val attractionName: String = "",
+)
 
 
 
@@ -189,6 +189,7 @@ data class ReviewPhoto(
 
 
 data class Promotion(
+    val servicePromotionId: String = "",
     val promoId: String = "",
     val promoName: String = "",
     val description: String = "",

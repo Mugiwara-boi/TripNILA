@@ -30,9 +30,11 @@ import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.BottomNavigationItem
+import com.example.tripnila.data.Tour
 import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.BookingHistoryViewModel
+import com.example.tripnila.model.BusinessManagerViewModel
 import com.example.tripnila.model.DetailViewModel
 import com.example.tripnila.model.HomeViewModel
 import com.example.tripnila.model.HostDashboardViewModel
@@ -42,6 +44,7 @@ import com.example.tripnila.model.PreferenceViewModel
 import com.example.tripnila.model.ProfileViewModel
 import com.example.tripnila.model.SignupViewModel
 import com.example.tripnila.model.StaycationManagerViewModel
+import com.example.tripnila.model.TourManagerViewModel
 import com.example.tripnila.screens.AccountVerificationScreen
 import com.example.tripnila.screens.AddBusinessScreen10
 import com.example.tripnila.screens.AddBusinessScreen4
@@ -121,16 +124,17 @@ enum class HostRoutes {
     AddListing13,
     AddListing14,
     AddListing15,
+
     StaycationManager,
     BusinessManager,
     TourManager,
-
 }
 
 enum class NestedRoutes {
     Main,
     Login,
-    Host
+    Host,
+    Staycation
 }
 
 
@@ -149,6 +153,8 @@ fun Navigation(
     hostTourViewModel: HostTourViewModel,
     addBusinessViewModel: AddBusinessViewModel,
     staycationManagerViewModel: StaycationManagerViewModel,
+    tourManagerViewModel: TourManagerViewModel,
+    businessManagerViewModel: BusinessManagerViewModel
 ) {
 
     NavHost(
@@ -160,7 +166,11 @@ fun Navigation(
             navController = navController, homeViewModel = homeViewModel, detailViewModel = detailViewModel,
             profileViewModel = profileViewModel, loginViewModel = loginViewModel, bookingHistoryViewModel = bookingHistoryViewModel
         )
-        hostGraph(navController = navController, hostDashboardViewModel = hostDashboardViewModel, addListingViewModel = addListingViewModel, hostTourViewModel = hostTourViewModel, addBusinessViewModel = addBusinessViewModel, staycationManagerViewModel = staycationManagerViewModel)
+        hostGraph(
+            navController = navController, hostDashboardViewModel = hostDashboardViewModel, addListingViewModel = addListingViewModel,
+            hostTourViewModel = hostTourViewModel, addBusinessViewModel = addBusinessViewModel, staycationManagerViewModel = staycationManagerViewModel,
+            tourManagerViewModel = tourManagerViewModel, businessManagerViewModel = businessManagerViewModel
+        )
     }
 }
 
@@ -206,6 +216,139 @@ fun NavGraphBuilder.authGraph(
     }
 }
 
+fun NavGraphBuilder.homeGraph(
+    navController: NavHostController,
+    homeViewModel: HomeViewModel,
+    detailViewModel: DetailViewModel,
+    profileViewModel: ProfileViewModel,
+    loginViewModel: LoginViewModel,
+    bookingHistoryViewModel: BookingHistoryViewModel,
+) {
+    navigation(startDestination = HomeRoutes.Home.name, route = NestedRoutes.Main.name) {
+        composable(
+            route = HomeRoutes.Home.name + "/{touristId}",
+            arguments = listOf(navArgument("touristId") {
+                type = NavType.StringType
+                defaultValue = ""
+            })
+        ) {entry ->
+            HomeScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                homeViewModel = homeViewModel,
+                onNavToDetailScreen = { touristId, staycationId ->
+                    navigateToDetail(navController, touristId, staycationId)
+                },
+                navController = navController,
+            )
+        }
+
+        composable(
+            route = HomeRoutes.Detail.name + "/{touristId}/{staycationId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType },
+                navArgument("staycationId") { type = NavType.StringType }
+            )
+        ) {entry ->
+            StaycationDetailsScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                staycationId = entry.arguments?.getString("staycationId") ?: "",
+                detailViewModel = detailViewModel,
+                onNavToBooking = { touristId, staycationId ->
+                    navigateToBooking(navController, touristId, staycationId)
+                },
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = HomeRoutes.Booking.name + "/{touristId}/{staycationId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType },
+                navArgument("staycationId") { type = NavType.StringType }
+            )
+        ) {entry ->
+            StaycationBookingScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                staycationId = entry.arguments?.getString("staycationId") ?: "",
+                detailViewModel = detailViewModel,
+            )
+        }
+
+        composable(
+            route = HomeRoutes.Inbox.name + "/{touristId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType }
+            )
+        ) {entry ->
+            InboxScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                navController = navController
+            )
+        }
+
+        composable(
+            route = HomeRoutes.Itinerary.name + "/{touristId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType }
+            )
+        ) {entry ->
+            ItineraryScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                navController = navController
+            )
+        }
+
+        composable(
+            route = HomeRoutes.BookingHistory.name + "/{touristId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType }
+            )
+        ) {entry ->
+            BookingHistoryScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                bookingHistoryViewModel = bookingHistoryViewModel,
+                navController = navController,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = HomeRoutes.AccountVerification.name + "/{touristId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType }
+            )
+        ) {entry ->
+            AccountVerificationScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                //  navController = navController
+            )
+        }
+
+        composable(
+            route = HomeRoutes.Profile.name + "/{touristId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType }
+            )
+        ) {entry ->
+            ProfileScreen(
+                profileViewModel = profileViewModel,
+                loginViewModel = loginViewModel,
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                navController = navController,
+                onNavToBookingHistory = { touristId -> navigateToBookingHistory(navController, touristId) },
+                onLogout = { navigateToLogin(navController) },
+                onNavToEditProfile = { touristId -> navigateToEditProfile(navController, touristId) },
+                onNavToPreference = { touristId -> navigateToEditPreference(navController, touristId) },
+                onNavToVerifyAccount = { touristId -> navigateToVerifyAccount(navController, touristId) },
+                onNavToHostDashboard = { touristId -> navigateToHost(navController, touristId = touristId)}
+            )
+        }
+
+    }
+}
+
 fun NavGraphBuilder.hostGraph(
     navController: NavHostController,
     hostDashboardViewModel: HostDashboardViewModel,
@@ -213,6 +356,8 @@ fun NavGraphBuilder.hostGraph(
     hostTourViewModel: HostTourViewModel,
     addBusinessViewModel: AddBusinessViewModel,
     staycationManagerViewModel: StaycationManagerViewModel,
+    tourManagerViewModel: TourManagerViewModel,
+    businessManagerViewModel: BusinessManagerViewModel,
 ) {
     navigation(startDestination = HostRoutes.Dashboard.name, route = NestedRoutes.Host.name) {
         composable(
@@ -224,14 +369,14 @@ fun NavGraphBuilder.hostGraph(
         ) {entry ->
             HostDashboardScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
-                onNavToAddListing = { hostId,listingType ->
-                    navigateToAddListing1(navController, hostId, listingType)
+                onNavToAddListing = { serviceId, hostId, listingType ->
+                    navigateToAddListing1(navController, serviceId, hostId, listingType)
                 },
-                onNavToHostTour = { hostId,listingType ->
-                    navigateToAddListing1(navController, hostId, listingType)
+                onNavToHostTour = { serviceId, hostId,listingType ->
+                    navigateToAddListing1(navController, serviceId, hostId, listingType)
                 },
-                onNavToAddBusiness = { hostId,listingType ->
-                    navigateToAddListing1(navController, hostId, listingType)
+                onNavToAddBusiness = { serviceId, hostId, listingType ->
+                    navigateToAddListing1(navController, serviceId, hostId, listingType)
                 },
                 onNavToStaycationManager = { hostId, staycationId ->
                    navigateToStaycationManager(navController, hostId, staycationId)
@@ -246,13 +391,15 @@ fun NavGraphBuilder.hostGraph(
             )
         }
         composable(
-            route = HostRoutes.AddListing1.name + "/{hostId}/{listingType}",
+            route = HostRoutes.AddListing1.name + "/{serviceId}/{hostId}/{listingType}",
             arguments = listOf(
+                navArgument("serviceId") { type = NavType.StringType},
                 navArgument("hostId") { type = NavType.StringType},
-                navArgument("listingType") { type = NavType.StringType }
+                navArgument("listingType") { type = NavType.StringType },
             )
         ) {entry ->
             AddListingScreen1(
+                serviceId = entry.arguments?.getString("serviceId") ?: "",
                 hostId = entry.arguments?.getString("hostId") ?: "",
                 listingType = entry.arguments?.getString("listingType") ?: "",
                 addListingViewModel = addListingViewModel,
@@ -562,6 +709,12 @@ fun NavGraphBuilder.hostGraph(
                 staycationManagerViewModel = staycationManagerViewModel,
                 hostId = entry.arguments?.getString("hostId") ?: "",
                 staycationId = entry.arguments?.getString("staycationId") ?: "",
+                onNavToEditStaycation = { serviceId, hostId, listingType ->
+                    navigateToEditListing(navController, serviceId, hostId, listingType)
+                },
+                onNavToDashboard = { touristId ->
+                   navigateToHost(navController, touristId)
+                },
             )
         }
 
@@ -573,8 +726,15 @@ fun NavGraphBuilder.hostGraph(
             )
         ) {entry ->
             BusinessManagerScreen(
+                businessManagerViewModel = businessManagerViewModel,
                 hostId = entry.arguments?.getString("hostId") ?: "",
                 businessId = entry.arguments?.getString("businessId") ?: "",
+                onNavToEditBusiness = { serviceId, hostId, listingType ->
+                    navigateToEditListing(navController, serviceId, hostId, listingType)
+                },
+                onNavToDashboard = { touristId ->
+                    navigateToHost(navController, touristId)
+                },
             )
         }
 
@@ -586,150 +746,49 @@ fun NavGraphBuilder.hostGraph(
             )
         ) {entry ->
             TourManagerScreen(
+                tourManagerViewModel = tourManagerViewModel,
                 hostId = entry.arguments?.getString("hostId") ?: "",
                 tourId = entry.arguments?.getString("tourId") ?: "",
+                onNavToEditTour = { serviceId, hostId, listingType ->
+                    navigateToEditListing(navController, serviceId, hostId, listingType)
+                },
+                onNavToDashboard = { touristId ->
+                    navigateToHost(navController, touristId)
+                },
             )
         }
+
+//        composable(
+//            route = HostRoutes.EditListing1.name + "/{hostId}/{tourId}",
+//            arguments = listOf(
+//                navArgument("hostId") { type = NavType.StringType},
+//                navArgument("tourId") { type = NavType.StringType},
+//            )
+//        ) {entry ->
+//            TourManagerScreen(
+//                hostId = entry.arguments?.getString("hostId") ?: "",
+//                tourId = entry.arguments?.getString("tourId") ?: "",
+//            )
+//        }
+
 
 
 
     }
 }
 
-fun NavGraphBuilder.homeGraph(
-    navController: NavHostController,
-    homeViewModel: HomeViewModel,
-    detailViewModel: DetailViewModel,
-    profileViewModel: ProfileViewModel,
-    loginViewModel: LoginViewModel,
-    bookingHistoryViewModel: BookingHistoryViewModel,
-) {
-    navigation(startDestination = HomeRoutes.Home.name, route = NestedRoutes.Main.name) {
-        composable(
-            route = HomeRoutes.Home.name + "/{touristId}",
-            arguments = listOf(navArgument("touristId") {
-                type = NavType.StringType
-                defaultValue = ""
-            })
-        ) {entry ->
-            HomeScreen(
-                touristId = entry.arguments?.getString("touristId") ?: "",
-                homeViewModel = homeViewModel,
-                onNavToDetailScreen = { touristId, staycationId ->
-                    navigateToDetail(navController, touristId, staycationId)
-                },
-                navController = navController,
-            )
-        }
 
-        composable(
-            route = HomeRoutes.Detail.name + "/{touristId}/{staycationId}",
-            arguments = listOf(
-                navArgument("touristId") { type = NavType.StringType },
-                navArgument("staycationId") { type = NavType.StringType }
-            )
-        ) {entry ->
-            StaycationDetailsScreen(
-                touristId = entry.arguments?.getString("touristId") ?: "",
-                staycationId = entry.arguments?.getString("staycationId") ?: "",
-                detailViewModel = detailViewModel,
-                onNavToBooking = { touristId, staycationId ->
-                    navigateToBooking(navController, touristId, staycationId)
-                },
-                onBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable(
-            route = HomeRoutes.Booking.name + "/{touristId}/{staycationId}",
-            arguments = listOf(
-                navArgument("touristId") { type = NavType.StringType },
-                navArgument("staycationId") { type = NavType.StringType }
-            )
-        ) {entry ->
-            StaycationBookingScreen(
-                touristId = entry.arguments?.getString("touristId") ?: "",
-                staycationId = entry.arguments?.getString("staycationId") ?: "",
-                detailViewModel = detailViewModel,
-            )
-        }
-
-        composable(
-            route = HomeRoutes.Inbox.name + "/{touristId}",
-            arguments = listOf(
-                navArgument("touristId") { type = NavType.StringType }
-            )
-        ) {entry ->
-            InboxScreen(
-                touristId = entry.arguments?.getString("touristId") ?: "",
-                navController = navController
-            )
-        }
-
-        composable(
-            route = HomeRoutes.Itinerary.name + "/{touristId}",
-            arguments = listOf(
-                navArgument("touristId") { type = NavType.StringType }
-            )
-        ) {entry ->
-            ItineraryScreen(
-                touristId = entry.arguments?.getString("touristId") ?: "",
-                navController = navController
-            )
-        }
-
-        composable(
-            route = HomeRoutes.BookingHistory.name + "/{touristId}",
-            arguments = listOf(
-                navArgument("touristId") { type = NavType.StringType }
-            )
-        ) {entry ->
-            BookingHistoryScreen(
-                touristId = entry.arguments?.getString("touristId") ?: "",
-                bookingHistoryViewModel = bookingHistoryViewModel,
-                navController = navController,
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(
-            route = HomeRoutes.AccountVerification.name + "/{touristId}",
-            arguments = listOf(
-                navArgument("touristId") { type = NavType.StringType }
-            )
-        ) {entry ->
-            AccountVerificationScreen(
-                touristId = entry.arguments?.getString("touristId") ?: "",
-                //  navController = navController
-            )
-        }
-
-        composable(
-            route = HomeRoutes.Profile.name + "/{touristId}",
-            arguments = listOf(
-                navArgument("touristId") { type = NavType.StringType }
-            )
-        ) {entry ->
-            ProfileScreen(
-                profileViewModel = profileViewModel,
-                loginViewModel = loginViewModel,
-                touristId = entry.arguments?.getString("touristId") ?: "",
-                navController = navController,
-                onNavToBookingHistory = { touristId -> navigateToBookingHistory(navController, touristId) },
-                onLogout = { navigateToLogin(navController) },
-                onNavToEditProfile = { touristId -> navigateToEditProfile(navController, touristId) },
-                onNavToPreference = { touristId -> navigateToEditPreference(navController, touristId) },
-                onNavToVerifyAccount = { touristId -> navigateToVerifyAccount(navController, touristId) },
-                onNavToHostDashboard = { touristId -> navigateToHost(navController, touristId = touristId)}
-            )
-        }
-
-    }
-}
 
 // Navigation functions
+
+private fun navigateToEditListing(navController: NavHostController, serviceId: String, hostId: String, listingType: String) {
+    navController.navigate("${HostRoutes.AddListing1.name}/$serviceId/$hostId/$listingType") {
+        launchSingleTop = true
+        popUpTo(0)
+    }
+}
+
+
 
 private fun navigateToStaycationManager(navController: NavHostController, hostId: String, staycationId: String) {
     navController.navigate("${HostRoutes.StaycationManager.name}/$hostId/$staycationId") {
@@ -756,8 +815,8 @@ private fun navigateToBooking(navController: NavHostController, touristId: Strin
     }
 }
 
-private fun navigateToAddListing1(navController: NavHostController, hostId: String, listingType: String) {
-    navController.navigate("${HostRoutes.AddListing1.name}/$hostId/$listingType") {
+private fun navigateToAddListing1(navController: NavHostController, serviceId: String, hostId: String, listingType: String) {
+    navController.navigate("${HostRoutes.AddListing1.name}/$serviceId/$hostId/$listingType") {
         launchSingleTop = true
         popUpTo(0) { inclusive = true }
     }
