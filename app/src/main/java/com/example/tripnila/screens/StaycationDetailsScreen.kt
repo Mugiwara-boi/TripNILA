@@ -145,7 +145,7 @@ fun StaycationDetailsScreen(
         AttractionUiState(
             image = R.drawable.map_image,
             name = "Rainforest Park",
-            tag = "Nature",
+            tag = listOf("Nature"),
             distance = 500,
             price = 1000.00,
             openingTime = "7:30"
@@ -153,7 +153,7 @@ fun StaycationDetailsScreen(
         AttractionUiState(
             image = R.drawable.map_image,
             name = "Pasig Museum",
-            tag = "History",
+            tag = listOf("History"),
             distance = 2700,
             price = 1000.00,
             openingTime = "9:00"
@@ -1231,11 +1231,14 @@ fun AttractionRow(attractionUiState: AttractionUiState, modifier: Modifier = Mod
                     text = attractionUiState.name,
                     fontWeight = FontWeight.Medium,
                 )
-                Tag(
-                    tag = attractionUiState.tag,
-                    modifier = Modifier
-                        .padding(horizontal = 10.dp)
-                )
+                attractionUiState.tag.forEach {
+                    Tag(
+                        tag = it,
+                        modifier = Modifier
+                            .padding(horizontal = 10.dp)
+                    )
+                }
+
             }
             Row {
                 Text(

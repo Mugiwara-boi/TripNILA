@@ -5,14 +5,13 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContentProviderCompat.requireContext
-import androidx.core.net.toUri
 import com.example.tripnila.common.Constants
 import com.example.tripnila.data.Amenity
 import com.example.tripnila.data.Business
+import com.example.tripnila.data.Chat
 import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.Host
+import com.example.tripnila.data.Message
 import com.example.tripnila.data.Offer
 import com.example.tripnila.data.Photo
 import com.example.tripnila.data.Preference
@@ -35,7 +34,6 @@ import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.net.URL
 import java.security.MessageDigest
 import java.time.LocalDate
 import java.time.ZoneId
@@ -89,11 +87,100 @@ class UserRepository {
     private val serviceAmenityHistoryCollection = db.collection("service_amenity_history")
     private val servicePhotoHistoryCollection = db.collection("service_photo_history")
 
+    private val chatCollection = db.collection("chat")
+    private val messageCollection = db.collection("message")
+
     private val storageReference = FirebaseStorage.getInstance().reference
 
 
     private var currentUser: Tourist? = null
     private var staycationList: List<Staycation>? = null
+
+
+    suspend fun getChatByUserIds(userId1: String, userId2: String): Chat? {
+        try {
+            val chatsSnapshot = chatCollection.get().await()
+
+            for (document in chatsSnapshot.documents) {
+                val chatId = document.id
+                val participants = document.get("participants") as List<String>
+
+                // Check if the chat contains both user IDs
+                if (participants.contains(userId1) && participants.contains(userId2)) {
+                    return Chat(chatId, participants)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
+    }
+
+    suspend fun getChats(): List<Chat> {
+        try {
+            val chatsSnapshot = chatCollection.get().await()
+
+            val chatList = mutableListOf<Chat>()
+
+            for (document in chatsSnapshot.documents) {
+                val chatId = document.id
+                val participants = document.get("participants") as List<String>
+                chatList.add(Chat(chatId, participants))
+            }
+
+            return chatList
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+
+    suspend fun getMessages(chatId: String): List<Message> {
+        try {
+            val messagesSnapshot = messageCollection
+                .whereEqualTo("chatId", chatId)
+                .get()
+                .await()
+
+            val messageList = mutableListOf<Message>()
+
+            for (document in messagesSnapshot.documents) {
+                val messageId = document.id
+                val senderId = document.getString("senderId") ?: ""
+                val content = document.getString("content") ?: ""
+                val timestamp = document.getLong("timestamp") ?: 0
+                messageList.add(Message(messageId, chatId, senderId, content, timestamp))
+            }
+
+            return messageList
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+
+    suspend fun sendMessage(chatId: String, senderId: String, content: String): Message? {
+        try {
+            val newMessage = hashMapOf(
+                "chatId" to chatId,
+                "senderId" to senderId,
+                "content" to content,
+                "timestamp" to System.currentTimeMillis()
+            )
+
+            val documentReference = messageCollection.add(newMessage).await()
+
+            val addedMessageSnapshot = documentReference.get().await()
+
+            val messageId = documentReference.id
+            val timestamp = addedMessageSnapshot.getLong("timestamp") ?: 0
+
+            return Message(messageId, chatId, senderId, content, timestamp)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
+    }
 
 
 
@@ -485,6 +572,123 @@ class UserRepository {
         }
 
         return businesses
+    }
+
+    suspend fun getAllTours(): List<Tour> {
+        try {
+
+
+            val result = tourCollection.get().await()
+
+            val tours = mutableListOf<Tour>()
+
+            for (document in result.documents) {
+                val tourId = document.id
+                val hostId = document.getString("hostId") ?: ""
+                val tourContact = document.getString("tourContact") ?: ""
+                val tourDescription = document.getString("tourDescription") ?: ""
+                val tourDuration = document.getString("tourDuration") ?: ""
+                val tourEmail = document.getString("tourEmail") ?: ""
+                val tourFacebook = document.getString("tourFacebook") ?: ""
+                val tourInstagram = document.getString("tourInstagram") ?: ""
+                val tourLanguage = document.getString("tourLanguage") ?: ""
+                val tourLocation = document.getString("tourLocation") ?: ""
+                val tourPrice = document.getDouble("tourPrice") ?: 0.0
+                val tourTitle = document.getString("tourTitle") ?: ""
+                val tourType = document.getString("tourType") ?: ""
+
+                val host = getHostInfo(hostId)
+                val tourImages = getServiceImages(tourId, "Tour")
+
+                val tour = Tour(
+                    tourId = tourId,
+                    host = Host(
+                        firstName = host?.firstName ?: "" ,
+                        middleName = host?.middleName ?: "",
+                        lastName = host?.lastName ?: "",
+                        username = host?.username ?: "",
+                        profilePicture = host?.profilePicture ?: "",
+                        hostId = hostId
+                    ),
+                    tourContact = tourContact,
+                    tourDescription = tourDescription,
+                    tourDuration = tourDuration,
+                    tourEmail = tourEmail,
+                    tourFacebook = tourFacebook,
+                    tourInstagram = tourInstagram,
+                    tourLanguage = tourLanguage,
+                    tourLocation = tourLocation,
+                    tourPrice = tourPrice,
+                    tourTitle = tourTitle,
+                    tourType = tourType,
+                    tourImages = tourImages
+                    // Add other fields as needed
+                )
+
+                tours.add(tour)
+            }
+
+            return tours
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+
+    suspend fun getAllBusinesses(): List<Business> {
+        try {
+
+            val result = businessCollection.get().await()
+
+            val businesses = mutableListOf<Business>()
+
+            for (document in result.documents) {
+                val businessId = document.id
+                val additionalInfo = document.getString("additionalInfo") ?: ""
+                val businessContact = document.getString("businessContact") ?: ""
+                val businessDescription = document.getString("businessDescription") ?: ""
+                val businessEmail = document.getString("businessEmail") ?: ""
+                val businessLocation = document.getString("businessLocation") ?: ""
+                val businessTitle = document.getString("businessTitle") ?: ""
+                val businessType = document.getString("businessType") ?: ""
+                val businessURL = document.getString("businessURL") ?: ""
+                val hostId = document.getString("hostId") ?: ""
+
+                val host = getHostInfo(hostId)
+                val businessImages = getServiceImages(businessId, "Business")
+                val businessMenu = getBusinessMenu(businessId)
+
+
+                val business = Business(
+                    businessId = businessId,
+                    additionalInfo = additionalInfo,
+                    businessContact = businessContact,
+                    businessDescription = businessDescription,
+                    businessEmail = businessEmail,
+                    businessLocation = businessLocation,
+                    businessTitle = businessTitle,
+                    businessType = businessType,
+                    businessURL = businessURL,
+                    host = Host(
+                        firstName = host?.firstName ?: "" ,
+                        middleName = host?.middleName ?: "",
+                        lastName = host?.lastName ?: "",
+                        username = host?.username ?: "",
+                        profilePicture = host?.profilePicture ?: "",
+                        hostId = hostId
+                    ),
+                    businessImages = businessImages,
+                    businessMenu = businessMenu
+                )
+
+                businesses.add(business)
+            }
+
+            return businesses
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
     }
 
 
@@ -1691,6 +1895,66 @@ class UserRepository {
 //        }
 //            StaycationBooking()
 //    }
+
+
+    suspend fun getStaycationBookingForItinerary(touristId: String): List<StaycationBooking> {
+        try {
+            val query = staycationBookingCollection
+                .whereEqualTo("touristId", touristId)
+                .orderBy("bookingStatus")
+                .orderBy("bookingDate")
+
+
+            val result = query.get().await()
+
+            val staycationBookings = mutableListOf<StaycationBooking>()
+
+            for (document in result.documents) {
+
+                val bookingStatus = document.getString("bookingStatus") ?: ""
+
+                if (bookingStatus !in listOf("Cancelled", "Completed")) {
+
+                    val bookingId = document.id
+                    val bookingDate = document.getDate("bookingDate") ?: Date()
+                    val checkInDate = document.getDate("checkInDate") ?: Date()
+                    val checkOutDate = document.getDate("checkOutDate") ?: Date()
+                    val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
+                    val noOfInfants = document.getLong("noOfInfants")?.toInt() ?: 0
+                    val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
+                    val staycationId = document.getString("staycationId") ?: ""
+                    val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+
+                    val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
+
+                    val staycationBooking = StaycationBooking(
+                        staycationBookingId = bookingId,
+                        bookingDate = bookingDate,
+                        bookingStatus = bookingStatus,
+                        checkInDate = checkInDate,
+                        checkOutDate = checkOutDate,
+                        noOfGuests = noOfGuests,
+                        noOfInfants = noOfInfants,
+                        noOfPets = noOfPets,
+                        staycation = staycation,
+                        totalAmount = totalAmount,
+                        tourist = Tourist(touristId = touristId),
+                    )
+
+                    staycationBookings.add(staycationBooking)
+                }
+
+
+            }
+
+            return staycationBookings
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+
+
 
     suspend fun getStaycationBookingsForTourist(touristId: String, startAt: Int, pageSize: Int): List<StaycationBooking> {
         try {

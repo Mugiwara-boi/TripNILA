@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -23,6 +24,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -35,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,19 +65,32 @@ import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.Message
 import com.example.tripnila.model.ChatViewModel
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun ChatScreen(
     chatViewModel: ChatViewModel,
+    chatId: String = "",
     senderTouristId: String,
     receiverTouristId: String,
 ){
 
-    val messages = chatViewModel.messages.collectAsState().value
+    val messages = chatViewModel.messages.collectAsState().value.sortedBy { it.timestamp }
+    val currentUser = chatViewModel.currentUser.collectAsState().value
+    val otherUser = chatViewModel.otherUser.collectAsState().value
 
-    var name = "Joshua"
-    var isActive = true
-    var activeStatus = "Online"
+    LaunchedEffect(senderTouristId) {
+        chatViewModel.setCurrentUser(senderTouristId)
+        chatViewModel.setReceiverInfo(receiverTouristId)
+    }
+
+    LaunchedEffect(otherUser) {
+        if(otherUser.touristId != "") {
+            chatViewModel.getChatByUserIds()
+        }
+    }
 
     Surface(
         modifier = Modifier
@@ -83,12 +99,16 @@ fun ChatScreen(
         Scaffold(
             topBar = {
 
-                ChatTopBar(name = name, isActive = isActive, activeStatus = activeStatus)
+                ChatTopBar(
+                    name =  "${otherUser.firstName} ${otherUser.lastName}",
+                    isActive = false,
+                    activeStatus = "Offline"
+                )
 
             },
             bottomBar = {
                 ChatBottomBar(
-                    chatViewModel = chatViewModel
+                    chatViewModel = chatViewModel,
                 )
             }
         ) {
@@ -121,7 +141,7 @@ fun ChatScreen(
                 items(messages) { message ->
                     ChatBubble(
                         message = message,
-                        isIncoming = false
+                        isIncoming = currentUser.touristId != message.senderId
                     )
                 }
 
@@ -138,6 +158,7 @@ fun ChatBubble(
     isIncoming: Boolean
 
 ){
+    val formatterTimestamp = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(message.timestamp))
 
     val incomingShape = RoundedCornerShape(
         topStart = 8.dp,
@@ -154,28 +175,34 @@ fun ChatBubble(
     )
 
     Column(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp)
+            .padding(top = 10.dp)
     ) {
         Surface(
             color = if (isIncoming) Orange.copy(0.3f) else Orange,
             shape = if (isIncoming) incomingShape else outgoingShape,
             modifier = Modifier
+                .fillMaxWidth(.5f)
                 .align(if (isIncoming) Alignment.Start else Alignment.End)
         ) {
             Column(
-                modifier = Modifier.padding(horizontal = 5.dp, vertical = 5.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 5.dp, vertical = 5.dp)
             ) {
                 Text(
                     text = message.content,
                     fontSize = 14.sp,
-                    color = if (isIncoming) Orange else Color.White,
+                    color = if (isIncoming) Color.Black else Color.White,
                    // textAlign = if (isIncoming) TextAlign.Start else TextAlign.End
                 )
                 Text(
-                    text = message.timestamp.toString(),
-                    fontSize = 8.sp,
-                    color = Color.LightGray,
-                    textAlign = TextAlign.End
+                    text = formatterTimestamp,
+                    fontSize = 9.sp,
+                    color = if (isIncoming) Color.Gray else Color.LightGray,
+                    modifier = Modifier.align(Alignment.End)
                 )
 
             }
@@ -191,14 +218,9 @@ fun ChatBottomBar(
     chatViewModel: ChatViewModel
 ){
 
+    var text by remember { mutableStateOf("") }
+    val localFocusManager = LocalFocusManager.current
 
-//    Box(
-//        modifier = modifier
-//            .fillMaxWidth()
-//            .height(70.dp)
-//            .background(color = Color.White)
-//            .border(0.1.dp, Color.Black)
-//    ) {
     Surface(
         color = Color.White,
         tonalElevation = 10.dp,
@@ -218,8 +240,55 @@ fun ChatBottomBar(
             verticalAlignment = Alignment.CenterVertically
         ){
 
+
+            BasicTextField(
+                value = text,
+                onValueChange = {
+                    text = it
+                },
+                textStyle = TextStyle(fontSize = 12.sp, color = Color(0xFF6B6B6B)),
+                modifier = modifier
+                    .fillMaxWidth(.88f)
+                    //.height(40.dp)
+                    .border(1.dp, Orange, shape = RoundedCornerShape(10.dp))
+                ,
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Default
+                ),
+                decorationBox = { innerTextField ->
+                    Box(
+                        modifier = Modifier
+                            .padding(15.dp)
+                            .fillMaxWidth()
+                        // .fillMaxHeight()
+                    ){
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (text.isEmpty()) {
+                                Text(
+                                    text = "Type your message here...",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = Color(0xFF6B6B6B),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                        innerTextField()
+                    }
+                }
+            )
             FloatingActionButton(
-                onClick = { /*TODO*/ },
+                onClick = {
+                    if (text.isNotEmpty()) {
+                        chatViewModel.sendMessage(text)
+                        text = ""
+                        localFocusManager.clearFocus()
+                    }
+
+                },
                 shape = CircleShape,
                 containerColor = Orange,
                 contentColor = Color.White,
@@ -227,18 +296,16 @@ fun ChatBottomBar(
                     defaultElevation = 10.dp
                 ),
                 modifier = Modifier
-                    .padding(end = 10.dp)
+                    .padding(start = 10.dp)
                     .size(30.dp)
 
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Add",
+                    imageVector = Icons.Filled.Send,
+                    contentDescription = "Send",
+                    modifier = Modifier.size(18.dp),
                 )
             }
-            ChatTextField(
-                chatViewModel = chatViewModel
-            )
         }
 
     }
@@ -317,7 +384,7 @@ fun ChatTopBar(
 
 @Composable
 fun ChatTextField(
-    chatViewModel: ChatViewModel,
+    onValueChange: (String) -> Unit ,
     modifier: Modifier = Modifier
 ){
 
@@ -329,6 +396,7 @@ fun ChatTextField(
         value = text,
         onValueChange = {
             text = it
+            onValueChange(it)
         },
         textStyle = TextStyle(fontSize = 12.sp, color = Color(0xFF6B6B6B)),
         modifier = modifier
@@ -337,15 +405,15 @@ fun ChatTextField(
             .border(1.dp, Orange, shape = RoundedCornerShape(10.dp))
         ,
         keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Done
+            imeAction = ImeAction.Default
         ),
-        keyboardActions = KeyboardActions {
-            localFocusManager.clearFocus()
-            if (text.isNotEmpty()) {
-                chatViewModel.sendMessage(text)
-                text = ""
-            }
-        },
+//        keyboardActions = KeyboardActions {
+////            localFocusManager.clearFocus()
+////            if (text.isNotEmpty()) {
+////                chatViewModel.sendMessage(text)
+////                text = ""
+////            }
+//        },
         decorationBox = { innerTextField ->
             Box(
                 modifier = Modifier
@@ -354,7 +422,6 @@ fun ChatTextField(
                    // .fillMaxHeight()
             ){
                 Row(
-                   // modifier =Modifier.fillMaxHeight(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (text.isEmpty()) {
@@ -367,11 +434,6 @@ fun ChatTextField(
                         )
                     }
                     Spacer(modifier = Modifier.weight(1f))
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.emoji),
-                        tint = Orange,
-                        contentDescription = "contentDescription"
-                    )
                 }
                 innerTextField()
             }

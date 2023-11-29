@@ -39,6 +39,7 @@ import com.example.tripnila.model.DetailViewModel
 import com.example.tripnila.model.HomeViewModel
 import com.example.tripnila.model.HostDashboardViewModel
 import com.example.tripnila.model.HostTourViewModel
+import com.example.tripnila.model.ItineraryViewModel
 import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.PreferenceViewModel
 import com.example.tripnila.model.ProfileViewModel
@@ -154,7 +155,8 @@ fun Navigation(
     addBusinessViewModel: AddBusinessViewModel,
     staycationManagerViewModel: StaycationManagerViewModel,
     tourManagerViewModel: TourManagerViewModel,
-    businessManagerViewModel: BusinessManagerViewModel
+    businessManagerViewModel: BusinessManagerViewModel,
+    itineraryViewModel: ItineraryViewModel
 ) {
 
     NavHost(
@@ -164,7 +166,8 @@ fun Navigation(
         authGraph(navController = navController, loginViewModel = loginViewModel, signupViewModel = signupViewModel, preferenceViewModel = preferenceViewModel)
         homeGraph(
             navController = navController, homeViewModel = homeViewModel, detailViewModel = detailViewModel,
-            profileViewModel = profileViewModel, loginViewModel = loginViewModel, bookingHistoryViewModel = bookingHistoryViewModel
+            profileViewModel = profileViewModel, loginViewModel = loginViewModel, bookingHistoryViewModel = bookingHistoryViewModel,
+            itineraryViewModel = itineraryViewModel
         )
         hostGraph(
             navController = navController, hostDashboardViewModel = hostDashboardViewModel, addListingViewModel = addListingViewModel,
@@ -223,6 +226,7 @@ fun NavGraphBuilder.homeGraph(
     profileViewModel: ProfileViewModel,
     loginViewModel: LoginViewModel,
     bookingHistoryViewModel: BookingHistoryViewModel,
+    itineraryViewModel: ItineraryViewModel,
 ) {
     navigation(startDestination = HomeRoutes.Home.name, route = NestedRoutes.Main.name) {
         composable(
@@ -296,6 +300,7 @@ fun NavGraphBuilder.homeGraph(
         ) {entry ->
             ItineraryScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
+                itineraryViewModel = itineraryViewModel,
                 navController = navController
             )
         }
