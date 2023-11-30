@@ -1,6 +1,7 @@
 package com.example.tripnila.screens
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -75,6 +76,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.modifier.modifierLocalConsumer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
@@ -92,6 +94,7 @@ import com.example.tripnila.common.AppConfirmAndPayDivider
 import com.example.tripnila.common.AppYourTripRow
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.PaymentMethod
+import com.example.tripnila.data.PaymentSingleton
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.model.BookingHistoryViewModel
 import com.example.tripnila.model.DetailViewModel
@@ -117,7 +120,7 @@ fun StaycationBookingScreen(
     //var totalOccupancyLimit = staycation?.value?.noOfGuests
     var infantOccupancyLimit = 5 // /*TODO*/
     var petOccupancyLimit = 0 // /*TODO*/
-
+    val context = LocalContext.current
 
     val dateRangePickerState = rememberDateRangePickerState()
 
@@ -276,7 +279,12 @@ fun StaycationBookingScreen(
                     BookingFilledButton(
                         buttonText = "Confirm and pay",
                         onClick = {
-                            openAlertDialog.value = true
+                            //openAlertDialog.value = true
+                            PaymentSingleton.ViewModelHolder.detailViewModel = detailViewModel
+                            val intent = Intent(context, PaymentScreen::class.java).apply {
+                                putExtra("touristId", touristId)
+                            }
+                            context.startActivity(intent)
                         },
                         modifier = Modifier
                             .padding(horizontal = 10.dp)

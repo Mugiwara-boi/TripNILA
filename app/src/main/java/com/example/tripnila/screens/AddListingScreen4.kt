@@ -107,7 +107,7 @@ fun AddListingScreen4(
                                 .width(267.dp)
                                 .padding(bottom = 10.dp)
                         )
-                        WebViewPage("https://www.google.com/maps/@14.5976056,120.9908505,13z?entry=ttu")
+                        //WebViewPage("https://www.google.com/maps/@14.5976056,120.9908505,13z?entry=ttu")
                     }
 
 

@@ -39,6 +39,7 @@ android {
     }
     buildFeatures {
         compose = true
+        viewBinding = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.3"
@@ -77,4 +78,6 @@ dependencies {
     implementation ("androidx.paging:paging-compose:1.0.0-alpha16")
     implementation("io.coil-kt:coil-compose:2.1.0")
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
+
+    implementation("com.paypal.checkout:android-sdk:1.2.0")
 }
