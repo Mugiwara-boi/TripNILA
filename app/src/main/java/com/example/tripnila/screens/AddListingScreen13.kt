@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -71,7 +72,7 @@ fun AddListingScreen13(
     onNavToBack: () -> Unit,
 ){
 
-
+    val context = LocalContext.current
     val dateRangePickerState = rememberDateRangePickerState()
 
     LaunchedEffect(
@@ -121,6 +122,7 @@ fun AddListingScreen13(
                 AddListingBottomBookingBar(
                     leftButtonText = "Back",
                     onNext = {
+                        addListingViewModel?.setTag(context,"Swimming pool, Karaoke, Grill, Gaming Console")
                         onNavToNext(listingType)
                     },
                     onCancel = {

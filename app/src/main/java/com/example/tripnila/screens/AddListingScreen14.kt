@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +49,8 @@ import com.example.tripnila.common.Orange
 import com.example.tripnila.model.AddListingViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import org.tensorflow.lite.support.label.Category
+import org.tensorflow.lite.task.text.nlclassifier.NLClassifier
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,6 +115,7 @@ fun AddListingScreen14(
                     onCancel = {
                         onNavToBack()
                     },
+                    //publishes the listing on this step
                     isRightButtonLoading = addListingViewModel?.isLoadingAddListing?.collectAsState()?.value == true,
                     enableRightButton = addListingViewModel?.isAgreeToPrivacyPolicy?.collectAsState()?.value == true && addListingViewModel?.isAgreeToNonDiscrimination?.collectAsState()?.value == true
                 )
@@ -359,6 +363,7 @@ private fun AddListingPreview(){
 
 
 }
+
 
 @Preview
 @Composable

@@ -78,7 +78,12 @@ import com.example.tripnila.ui.theme.MyApplicationTheme
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.ml.modeldownloader.CustomModel
+import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions
+import com.google.firebase.ml.modeldownloader.DownloadType
+import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader
 import kotlinx.coroutines.launch
+import org.tensorflow.lite.Interpreter
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.ZoneId
@@ -95,6 +100,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             MyApplicationTheme {
 
@@ -110,6 +116,7 @@ class MainActivity : ComponentActivity() {
                 val bookingHistoryViewModel = viewModel(modelClass = BookingHistoryViewModel::class.java)
                 val hostDashboardViewModel = viewModel(modelClass = HostDashboardViewModel::class.java)
                 val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
+                //downloadCustomModel()
 
                 Navigation(
                     loginViewModel = loginViewModel,
@@ -126,7 +133,23 @@ class MainActivity : ComponentActivity() {
 
         }
     }
+    private fun downloadCustomModel() {
+        val conditions = CustomModelDownloadConditions.Builder()
+            .requireWifi()  // You can adjust this according to your requirements
+            .build()
 
+        FirebaseModelDownloader.getInstance()
+            .getModel("Tag-Classifier", DownloadType.LOCAL_MODEL_UPDATE_IN_BACKGROUND, conditions)
+            .addOnSuccessListener { model: CustomModel? ->
+                // Download complete. Handle the model as needed.
+                val modelFile = model?.file
+                if (modelFile != null) {
+                    // Instantiate a TensorFlow Lite interpreter with the downloaded model file
+                    val interpreter = Interpreter(modelFile)
+                    // Use the interpreter for your machine learning tasks
+                }
+            }
+    }
     private fun formatDateRange(startDate: LocalDate, endDate: LocalDate): String {
         val startDay = startDate.dayOfMonth
         val endDay = endDate.dayOfMonth

@@ -1350,7 +1350,28 @@ class UserRepository {
             emptyList() // Handle the error case as needed
         }
     }
+    suspend fun fetchAmenitiesForService(serviceId: String) {
+         serviceAmenityCollection
+            .whereEqualTo("serviceId", serviceId) // Filtering by serviceId
+            .get()
+            .addOnSuccessListener { documents ->
+                val amenityNamesList = mutableListOf<String>()
+                for (document in documents) {
+                    val amenityName = document.getString("amenityName")
+                    if (amenityName != null) {
+                        amenityNamesList.add(amenityName)
+                    }
 
+                }
+                val mergedAmenities = amenityNamesList.joinToString(separator = ", ")
+                // Here, 'amenityNamesList' contains all amenity names for the given serviceId
+                // You can use or display this list as needed in your app
+            }
+            .addOnFailureListener { exception ->
+                // Handle failure
+                Log.w("Firestore", "Error getting amenities for service $serviceId", exception)
+            }
+    }
     suspend fun getStaycationBookings(staycationId: String): List<StaycationBooking> {
         return try {
             val result = staycationBookingCollection

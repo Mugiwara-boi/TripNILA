@@ -1,20 +1,32 @@
 package com.example.tripnila.model
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Amenity
+import com.example.tripnila.data.Tag
 import com.example.tripnila.data.Host
 import com.example.tripnila.data.Photo
 import com.example.tripnila.data.Promotion
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.data.StaycationAvailability
 import com.example.tripnila.repository.UserRepository
+import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.support.label.Category
+import org.tensorflow.lite.task.text.nlclassifier.BertNLClassifier
+import org.tensorflow.lite.task.text.nlclassifier.NLClassifier
+import org.tensorflow.lite.support.metadata.MetadataExtractor
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+
 import java.util.Date
 
 class AddListingViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
@@ -226,6 +238,28 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
     fun setNoOfGuests(count: Int) {
         _staycation.value = _staycation.value.copy(noOfGuests = count)
         Log.d("Guests", "${_staycation.value.noOfGuests}")
+    }
+
+    fun setTag(context: Context, inputText: String){
+        val modelPath = "model.tflite"
+
+// Create a classifier instance
+
+        val classifier = NLClassifier.createFromFile(context, modelPath)
+
+    // Tokenize the input text
+            val categories: List<Category> = classifier.classify(inputText)
+
+    // Output the top categories
+            val topCategories = categories.take(5)
+
+            for ((index, category) in topCategories.withIndex()) {
+                val tag = "Top ${index + 1}: ${category.label}"
+                val newTag = Tag(tagName = tag )
+                _staycation.value = _staycation.value.copy(staycationTags = _staycation.value.staycationTags + newTag)
+                Log.d("Staycation", "${_staycation.value.staycationTags.map { it.tagName }}")
+            }
+
     }
 
 }
