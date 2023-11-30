@@ -1,11 +1,15 @@
 package com.example.tripnila.screens
 
+import android.view.ViewGroup
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.example.tripnila.R
 import com.example.tripnila.data.PropertyDescription
 import com.example.tripnila.model.AddBusinessViewModel
@@ -102,6 +107,7 @@ fun AddListingScreen4(
                                 .width(267.dp)
                                 .padding(bottom = 10.dp)
                         )
+                        WebViewPage("https://www.google.com/maps/@14.5976056,120.9908505,13z?entry=ttu")
                     }
 
 
@@ -112,4 +118,73 @@ fun AddListingScreen4(
             }
         }
     }
+}
+@Composable
+fun WebViewPage(initialUrl: String) {
+    // variable to hold the current URL displayed in the WebView
+    var currentUrl by remember { mutableStateOf(initialUrl) }
+
+    // Column composable to arrange UI elements vertically
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        // Text composable displaying instructions or information
+        Text(
+            text = "Zoom and Hover Map to Business vicinity, long press to add marker",
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(16.dp)
+        )
+
+        // AndroidView composable to embed a WebView in the Compose UI
+        AndroidView(
+            factory = { context ->
+                WebView(context).apply {
+                    // Configure WebView settings
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        0
+                    )
+                    settings.javaScriptEnabled = true
+                    settings.setSupportZoom(true)
+
+                    // Set a WebViewClient to update currentUrl when a page finishes loading
+                    webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            super.onPageFinished(view, url)
+                            currentUrl = url.orEmpty()
+                        }
+                    }
+
+                    // Load the initial URL
+                    loadUrl(initialUrl)
+                }
+            },
+            // Set modifiers
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(500.dp)
+        )
+
+        // Extract latitude and longitude from the current URL
+        val (latitude, longitude) = extractLatLngFromUrl(currentUrl)
+
+    }
+}
+
+// Function to extract latitude and longitude from a URL using a regular expression
+fun extractLatLngFromUrl(url: String): Pair<String, String> {
+    // Define a regular expression pattern for extracting latitude and longitude
+    val pattern = Regex("@([-+]?\\d*\\.?\\d+),([-+]?\\d*\\.?\\d+),?")
+
+    // Find a match in the URL using the pattern
+    val matchResult = pattern.find(url)
+
+    // Destructure the match result into latitude and longitude components
+    val (lat, lng) = matchResult?.destructured?.let { (latitude, longitude) ->
+        latitude to longitude
+    } ?: "" to ""
+
+    // Return a Pair containing the extracted latitude and longitude
+    return lat to lng
 }
