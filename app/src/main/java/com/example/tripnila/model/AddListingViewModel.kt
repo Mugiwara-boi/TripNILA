@@ -1,8 +1,10 @@
 package com.example.tripnila.model
 
 import android.content.Context
+import android.location.Geocoder
 import android.net.Uri
 import android.util.Log
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Amenity
@@ -13,15 +15,19 @@ import com.example.tripnila.data.Staycation
 import com.example.tripnila.data.StaycationAvailability
 import com.example.tripnila.repository.UserRepository
 import com.google.firebase.Timestamp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Date
+import java.util.Locale
 
 class AddListingViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
 
@@ -148,6 +154,14 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
         _staycation.value = _staycation.value.copy(staycationLocation = location)
         Log.d("Staycation", "$_staycation")
     }
+    fun setStaycationLat(lat: Double) {
+        _staycation.value = _staycation.value.copy(staycationLat = lat)
+        Log.d("Staycation", "$_staycation")
+    }
+    fun setStaycationLng(lng: Double) {
+        _staycation.value = _staycation.value.copy(staycationLng = lng)
+        Log.d("Staycation", "$_staycation")
+    }
 
     fun setStaycationSpace(space: String) {
         _staycation.value = _staycation.value.copy(staycationSpace = space)
@@ -230,6 +244,23 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
             Log.d("Staycation", "${_staycation.value}")
         }
     }
+    /*
+    private fun getAddressFromLatLng(latitude: Double, longitude: Double) {
+        val geocoder = Geocoder(this, Locale.getDefault())
+
+        GlobalScope.launch(Dispatchers.IO) {
+            try {
+                val addresses = geocoder.getFromLocation(latitude, longitude, 1)
+
+                if (addresses != null) {
+                    val address = addresses[0]?.getAddressLine(0)
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+    }
+     */
 
     suspend fun addNewListing(context: Context) {
         viewModelScope.launch {
@@ -250,6 +281,8 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
                     noOfGuests = _staycation.value.noOfGuests,
                     staycationDescription = _staycation.value.staycationDescription,
                     staycationLocation = _staycation.value.staycationLocation,
+                    staycationLat = _staycation.value.staycationLat,
+                    staycationLng = _staycation.value.staycationLng,
                     staycationPrice = _staycation.value.staycationPrice,
                     staycationSpace = _staycation.value.staycationSpace,
                     staycationTitle = _staycation.value.staycationTitle,

@@ -209,6 +209,8 @@ class UserRepository {
                 val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
                 val staycationDescription = document.getString("staycationDescription") ?: ""
                 val staycationLocation = document.getString("staycationLocation") ?: ""
+                val staycationLat = document.getDouble("staycationLat") ?: 0.0
+                val staycationLng = document.getDouble("staycationLng") ?: 0.0
                 val staycationPrice = document.getDouble("staycationPrice") ?: 0.0
                 val staycationSpace = document.getString("staycationSpace") ?: ""
                 val staycationTitle = document.getString("staycationTitle") ?: ""
@@ -229,6 +231,8 @@ class UserRepository {
                     noOfGuests = noOfGuests,
                     staycationDescription = staycationDescription,
                     staycationLocation = staycationLocation,
+                    staycationLat = staycationLat,
+                    staycationLng = staycationLng,
                     staycationPrice = staycationPrice,
                     staycationSpace = staycationSpace,
                     staycationTitle = staycationTitle,
@@ -1176,6 +1180,8 @@ class UserRepository {
         noOfGuests: Int = 1,
         staycationDescription: String = "",
         staycationLocation: String = "",
+        staycationLat: Double = 0.0,
+        staycationLng: Double = 0.0,
         staycationPrice: Double = 0.0,
         staycationSpace: String = "",
         staycationTitle: String = "",
@@ -1216,6 +1222,8 @@ class UserRepository {
                 "noOfGuests" to noOfGuests,
                 "staycationDescription" to staycationDescription,
                 "staycationLocation" to staycationLocation,
+                "staycationLat" to staycationLat,
+                "staycationLng" to staycationLng,
                 "staycationPrice" to staycationPrice,
                 "staycationSpace" to staycationSpace,
                 "staycationTitle" to staycationTitle,
@@ -2095,6 +2103,8 @@ class UserRepository {
                 val noOfGuests = staycationDocument.getLong("noOfGuests")?.toInt() ?: 0
                 val staycationDescription = staycationDocument.getString("staycationDescription") ?: ""
                 val staycationLocation = staycationDocument.getString("staycationLocation") ?: ""
+                val staycationLat = staycationDocument.getDouble("staycationLat") ?: 0.0
+                val staycationLng = staycationDocument.getDouble("staycationLng") ?: 0.0
                 val staycationPrice = staycationDocument.getDouble("staycationPrice") ?: 0.0
                 val staycationSpace = staycationDocument.getString("staycationSpace") ?: ""
                 val staycationTitle = staycationDocument.getString("staycationTitle") ?: ""
@@ -2115,6 +2125,8 @@ class UserRepository {
                     noOfGuests = noOfGuests,
                     staycationDescription = staycationDescription,
                     staycationLocation = staycationLocation,
+                    staycationLat = staycationLat,
+                    staycationLng = staycationLng,
                     staycationPrice = staycationPrice,
                     staycationSpace = staycationSpace,
                     staycationTitle = staycationTitle,
@@ -2712,6 +2724,8 @@ class UserRepository {
         val noOfBathrooms = document.getLong("noOfBathrooms")?.toInt() ?: 0
         val staycationDescription = document.getString("staycationDescription") ?: ""
         val staycationLocation = document.getString("staycationLocation") ?: ""
+        val staycationLat = document.getDouble("staycationLat") ?: 0.0
+        val staycationLng = document.getDouble("staycationLng") ?: 0.0
         val staycationPrice = document.getDouble("staycationPrice") ?: 0.0
         val staycationSpace = document.getString("staycationSpace") ?: ""
         val staycationTitle = document.getString("staycationTitle") ?: ""
@@ -2743,6 +2757,8 @@ class UserRepository {
             noOfBathrooms = noOfBathrooms,
             staycationDescription = staycationDescription,
             staycationLocation = staycationLocation,
+            staycationLat = staycationLat,
+            staycationLng = staycationLng,
             staycationPrice = staycationPrice,
             staycationSpace = staycationSpace,
             staycationTitle = staycationTitle,
@@ -2777,7 +2793,9 @@ class UserRepository {
                 val noOfBathrooms = document.getLong("noOfBathrooms")?.toInt() ?: 0
                 val staycationDescription = document.getString("staycationDescription") ?: ""
                 val staycationLocation = document.getString("staycationLocation") ?: ""
-                val staycationPrice = document.getDouble("staycationPrice") ?: 0.0
+                val staycationLat = document.getDouble("staycationLat") ?: 0.0
+                val staycationLng = document.getDouble("staycationLng") ?: 0.0
+                val staycationPrice = document.getDouble("staycationPrice") ?: 0.00
                 val staycationSpace = document.getString("staycationSpace") ?: ""
                 val staycationTitle = document.getString("staycationTitle") ?: ""
                 val staycationType = document.getString("staycationType") ?: ""
@@ -2808,6 +2826,8 @@ class UserRepository {
                     noOfBathrooms = noOfBathrooms,
                     staycationDescription = staycationDescription,
                     staycationLocation = staycationLocation,
+                    staycationLat = staycationLat,
+                    staycationLng = staycationLng,
                     staycationPrice = staycationPrice,
                     staycationSpace = staycationSpace,
                     staycationTitle = staycationTitle,

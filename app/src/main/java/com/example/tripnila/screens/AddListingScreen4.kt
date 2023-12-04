@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +38,10 @@ import com.example.tripnila.data.PropertyDescription
 import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.HostTourViewModel
+import com.example.tripnila.ui.LocationPermissionScreen
+import com.example.tripnila.ui.MapScreen
+import com.example.tripnila.ui.theme.GoogleMapsTheme
+import com.example.tripnila.utils.checkForPermission
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,7 +53,10 @@ fun AddListingScreen4(
     onNavToNext: (String) -> Unit,
     onNavToBack: () -> Unit,
 ){
-
+    val context = LocalContext.current
+    var staycationLat by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationLat) }
+    var staycationLng by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationLng) }
+    var staycationLocation by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationLocation) }
     val header = if (listingType == "Staycation") {
         "Where is it located?"
     } else if (listingType == "Business"){
@@ -66,6 +75,7 @@ fun AddListingScreen4(
                 AddListingBottomBookingBar(
                     leftButtonText = "Back",
                     onNext = {
+
                         onNavToNext(listingType)
                     },
                     onCancel = {
@@ -107,7 +117,24 @@ fun AddListingScreen4(
                                 .width(267.dp)
                                 .padding(bottom = 10.dp)
                         )
-                        //WebViewPage("https://www.google.com/maps/@14.5976056,120.9908505,13z?entry=ttu")
+                        GoogleMapsTheme {
+                            Surface(
+                                modifier = Modifier.fillMaxSize().height(500.dp),
+                                color = MaterialTheme.colorScheme.background
+                            ) {
+                                var hasLocationPermission by remember {
+                                    mutableStateOf(checkForPermission(context))
+                                }
+
+                                if (hasLocationPermission) {
+                                    MapScreen(context)
+                                } else {
+                                    LocationPermissionScreen {
+                                        hasLocationPermission = true
+                                    }
+                                }
+                            }
+                        }
                     }
 
 

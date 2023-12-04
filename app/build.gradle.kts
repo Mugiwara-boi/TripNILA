@@ -62,7 +62,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-text-android:1.5.0")
-    implementation("com.google.firebase:firebase-auth:22.2.0")
+    implementation("com.google.firebase:firebase-auth:22.3.0")
     implementation("com.google.firebase:firebase-firestore:24.9.1")
     implementation("com.google.firebase:firebase-storage:20.3.0")
     testImplementation("junit:junit:4.13.2")
@@ -80,4 +80,14 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
 
     implementation("com.paypal.checkout:android-sdk:1.2.0")
+
+    // maps compose
+    implementation ("com.google.maps.android:maps-compose:2.11.5")
+
+    // google map services
+    implementation ("com.google.android.gms:play-services-maps:18.2.0")
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+
+    // google maps utils
+    implementation ("com.google.maps.android:android-maps-utils:3.4.0")
 }

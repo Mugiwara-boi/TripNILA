@@ -24,6 +24,8 @@ data class Staycation(
     val staycationType: String = "",
     val staycationSpace: String = "",
     val staycationLocation: String = "",
+    val staycationLat: Double = 0.000000,
+    val staycationLng: Double = 0.000000,
     val noOfGuests: Int = 0,
     val noOfBedrooms: Int = 0,
     val noOfBeds: Int = 0,
