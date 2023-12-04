@@ -156,7 +156,8 @@ fun ItineraryPopulatedScreen(
             tag = listOf("Nature"),
             distance = 500,
             price = 1000.00,
-            openingTime = "7:30 am"
+            openingTime = "7:30 am",
+            itineraryTime = "7:30 am"
         ),
         AttractionUiState(
             image = R.drawable.map_image,
@@ -164,7 +165,8 @@ fun ItineraryPopulatedScreen(
             tag = listOf("History"),
             distance = 2700,
             price = 1000.00,
-            openingTime = "9:00 pm"
+            openingTime = "9:00 am",
+            itineraryTime = "10:00 am"
         ),
     )
 
@@ -630,79 +632,93 @@ fun AttractionCard(
 
     val borderColor = if (selected) Orange else Color(0xff999999)
 
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        border = BorderStroke(1.dp, borderColor),
-        shape = RoundedCornerShape(10.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
-        ),
+
+
+    Column(
         modifier = modifier
             .fillMaxWidth()
     ) {
-        Row (
+        Text(
+            text = attraction?.itineraryTime ?: "",
+            color = Color(0xff999999),
+            style = TextStyle(
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium),
+            modifier = Modifier.padding(start = 5.dp, bottom = 5.dp)
+        )
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            ),
+            border = BorderStroke(1.dp, borderColor),
+            shape = RoundedCornerShape(10.dp),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 10.dp
+            ),
             modifier = Modifier
-                .wrapContentHeight(Alignment.CenterVertically)
-                .padding(// = 10.dp,
-                    top = 5.dp,
-                    bottom = 5.dp
-                ),
-            verticalAlignment = Alignment.CenterVertically
-
+                .fillMaxWidth()
         ) {
-            Checkbox(
-                checked = selected,
-                onCheckedChange = { onSelectedChange(it) },
-                colors = CheckboxDefaults.colors(
-                    checkedColor = Orange //Color(0xFF333333)
-                )
-            )
-            Column(
-                modifier = Modifier.wrapContentHeight(Alignment.CenterVertically)
+            Row(
+                modifier = Modifier
+                    .wrapContentHeight(Alignment.CenterVertically)
+                    .padding(// = 10.dp,
+                        top = 5.dp,
+                        bottom = 5.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+
             ) {
-                Row {
-                    Text(
-                        text = attraction?.name ?: "Pinaglabanan Memorial Shrine",
-                        style = TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                Checkbox(
+                    checked = selected,
+                    onCheckedChange = { onSelectedChange(it) },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = Orange //Color(0xFF333333)
                     )
-                    val maxTagsToShow = 3
-                    attraction?.tag?.take(maxTagsToShow)?.forEachIndexed { _, tag ->
-                        Tag(tag = tag )
+                )
+                Column(
+                    modifier = Modifier.wrapContentHeight(Alignment.CenterVertically)
+                ) {
+                    Row {
+                        Text(
+                            text = attraction?.name ?: "Pinaglabanan Memorial Shrine",
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                        val maxTagsToShow = 3
+                        attraction?.tag?.take(maxTagsToShow)?.forEachIndexed { _, tag ->
+                            Tag(tag = tag)
+                        }
+
+                        if ((attraction?.tag?.size ?: 0) > maxTagsToShow) {
+                            Tag(tag = "+${attraction?.tag?.size?.minus(maxTagsToShow)}")
+                        }
                     }
 
-                    if ((attraction?.tag?.size ?: 0) > maxTagsToShow) {
-                        Tag(tag = "+${attraction?.tag?.size?.minus(maxTagsToShow)}")
-                    }
+                    Text(
+                        text = attraction?.distance.toString() +
+                                " meters • ₱ " + String.format("%.2f", attraction?.price ?: 0.0) +
+                                " • Opens at " + attraction?.openingTime,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp,
+                        color = Color(0xFF999999)
+                    )
+
                 }
 
-                Text(
-                    text = attraction?.distance.toString() +
-                            " meters • ₱ " + String.format("%.2f", attraction?.price ?: 0.0) +
-                            " • Opens at " + attraction?.openingTime,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF999999)
-                )
 
-            }
+                Spacer(modifier = Modifier.weight(1f))
 
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Image(painter = painterResource(id = R.drawable.direction), contentDescription = null)
-            IconButton(
-                onClick = { /*TODO*/ },
-                modifier = Modifier.size(35.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.KeyboardArrowRight,
+                Image(
+                    painter = painterResource(id = R.drawable.direction),
                     contentDescription = null,
-                    tint = Color(0xffD8D8D8),
-                    modifier = Modifier.size(35.dp)
+                    modifier = Modifier
+                        .padding(end = 10.dp)
+                        .size(30.dp)
+                        .clickable {
+
+                        }
                 )
             }
         }

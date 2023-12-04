@@ -44,6 +44,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -68,6 +69,7 @@ import androidx.paging.CombinedLoadStates
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 import com.example.tripnila.common.TouristBottomNavigationBar
@@ -89,12 +91,12 @@ fun HomeScreen(
         homeViewModel?.getUserPreference(touristId)
     }
 
-    val userPreferences = homeViewModel?.preferences?.collectAsState()?.value
+  //  val userPreferences = homeViewModel?.preferences?.collectAsState()?.value
 
-    var searchText = remember{ mutableStateOf("") }
-    var isActive = remember { mutableStateOf(false) }
+    val searchText = remember{ mutableStateOf("") }
+    val isActive = remember { mutableStateOf(false) }
     var selectedItemIndex by rememberSaveable {
-        mutableStateOf(0)
+        mutableIntStateOf(0)
     }
 
     val selectedTab = homeViewModel?.selectedTab?.collectAsState()
@@ -112,16 +114,14 @@ fun HomeScreen(
     ) {
         Scaffold(
             bottomBar = {
-                navController?.let {
-                    TouristBottomNavigationBar(
-                        touristId = touristId,
-                        navController = it,
-                        selectedItemIndex = selectedItemIndex,
-                        onItemSelected = { newIndex ->
-                            selectedItemIndex = newIndex
-                        }
-                    )
-                }
+                TouristBottomNavigationBar(
+                    touristId = touristId,
+                    navController = navController,
+                    selectedItemIndex = selectedItemIndex,
+                    onItemSelected = { newIndex ->
+                        selectedItemIndex = newIndex
+                    }
+                )
             }
         ) {
             Column(
@@ -186,9 +186,9 @@ fun HomeScreen(
 
                 val staycations = homeViewModel?.getStaycationsByTab(selectedTab?.value ?: "For You")?.collectAsLazyPagingItems()
 
-                staycations?.let { staycations ->
+                staycations?.let { staycation ->
                     StaggeredGridListing(
-                        staycationList = staycations,
+                        staycationList = staycation,
                         onItemClick = { staycationId ->
                             onNavToDetailScreen(touristId, staycationId)
                         }
@@ -254,7 +254,7 @@ fun StaggeredGridListing(
     onItemClick: (String) -> Unit
 ) {
 
-    val loadState = staycationList?.loadState
+    val loadState = staycationList.loadState
 
     Column(
         Modifier.fillMaxWidth()
@@ -271,8 +271,8 @@ fun StaggeredGridListing(
                 val staycation = staycationList[index]
 
                 if (staycation != null) {
-                    var cardHeight = (165..200).random()
-                    var imageHeight = cardHeight - 62
+                    val cardHeight = (160..190).random()
+                    val imageHeight = cardHeight - 70
 
                     // Step 2: Create a Composable for a single grid item
                     StaycationListingCard(
@@ -288,7 +288,7 @@ fun StaggeredGridListing(
 
         }
 
-        if (loadState?.refresh is LoadState.Loading) {
+        if (loadState.refresh is LoadState.Loading) {
 
             CircularProgressIndicator(
                 modifier = Modifier
@@ -310,30 +310,47 @@ fun StaycationListingCard(
     imageHeight: Dp,
     onItemClick: () -> Unit
 ){
+
+    val staycationImage = staycation.staycationImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png"
+
     Card(
         modifier = Modifier
             //.height(165.dp)
             .height(cardHeight)
-            .width(171.dp)
+            .fillMaxWidth()
+            // .width(171.dp)
             .clickable { onItemClick.invoke() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        )
+
     ) {
         Column {
             Box {
-                Image(
+                AsyncImage(
+                    model = staycationImage,
+                    contentDescription = "",
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        //.height(103.dp)
+                        .fillMaxWidth()
                         .height(imageHeight)
-                        .fillMaxWidth(),
-                    painter = painterResource(id = R.drawable.image_placeholder),
-                    contentDescription = "Staycation Unit",
-                    contentScale = ContentScale.Crop
+
                 )
-                FavoriteButton(
-                    Modifier
-                        .offset(x = (-7).dp, y = (-9).dp)
-                        .width(14.dp)
-                )
+//                Image(
+//                    modifier = Modifier
+//                        //.height(103.dp)
+//                        .height(imageHeight)
+//                        .fillMaxWidth(),
+//                    painter = painterResource(id = R.drawable.image_placeholder),
+//                    contentDescription = "Staycation Unit",
+//                    contentScale = ContentScale.Crop
+//                )
+//                FavoriteButton(
+//                    Modifier
+//                        .offset(x = (-7).dp, y = (-9).dp)
+//                        .width(14.dp)
+//                )
             }
             Column(
                 modifier = Modifier
@@ -342,7 +359,7 @@ fun StaycationListingCard(
                 Row {
                     Text(
                         modifier = Modifier
-                            .fillMaxWidth(0.6f),
+                            .fillMaxWidth(0.55f),
                        // text = "Staycation hosted by " + staycation.hostFirstName,
                         text = "Staycation hosted by " + staycation.host.firstName,
                         fontWeight = FontWeight.Medium,

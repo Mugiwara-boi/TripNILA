@@ -85,7 +85,6 @@ import com.example.tripnila.R
 import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.AttractionUiState
 import com.example.tripnila.data.ItineraryUiState
-import com.example.tripnila.data.Staycation
 import com.example.tripnila.model.ItineraryViewModel
 import java.time.LocalDate
 import java.time.ZoneId
@@ -100,13 +99,13 @@ fun ItineraryScreen(
   //  onNavToPopulatedItinerary: (String) -> Unit
 ){
 
-    var selectedItemIndex by rememberSaveable { mutableStateOf(1) }
+    var selectedItemIndex by rememberSaveable { mutableIntStateOf(1) }
     var isDialogOpen by remember { mutableStateOf(false) }
     val selectedStaycationBooking = itineraryViewModel.selectedStaycationBooking.collectAsState().value
     val tours = itineraryViewModel.tours.collectAsState().value
     val businesses = itineraryViewModel.businesses.collectAsState().value
 
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     var selectedItems by remember { mutableStateOf(emptyList<ItineraryUiState>()) }
 
@@ -129,7 +128,8 @@ fun ItineraryScreen(
             tag = listOf("Nature"),
             distance = 500,
             price = 1000.00,
-            openingTime = "7:30 am"
+            openingTime = "7:30 am",
+            itineraryTime = "7:30 am"
         ),
         AttractionUiState(
             image = R.drawable.map_image,
@@ -137,7 +137,8 @@ fun ItineraryScreen(
             tag = listOf("History"),
             distance = 2700,
             price = 1000.00,
-            openingTime = "9:00 pm"
+            openingTime = "9:00 am",
+            itineraryTime = "10:00 am"
         ),
     )
 
@@ -442,10 +443,10 @@ fun ItineraryScreen(
                                 title = itineraryItem.title,
                                 location = itineraryItem.location,
                                 onSelect = {
-                                    if (it) {
-                                        selectedItems = selectedItems + itineraryItem
+                                    selectedItems = if (it) {
+                                        selectedItems + itineraryItem
                                     } else {
-                                        selectedItems = selectedItems - itineraryItem
+                                        selectedItems - itineraryItem
                                     }
                                 },
                                 isSelected = itineraryItem in selectedItems
@@ -470,10 +471,10 @@ fun ItineraryScreen(
                                 title = itineraryItem.title,
                                 location = itineraryItem.location,
                                 onSelect = {
-                                    if (it) {
-                                        selectedItems = selectedItems + itineraryItem
+                                    selectedItems = if (it) {
+                                        selectedItems + itineraryItem
                                     } else {
-                                        selectedItems = selectedItems - itineraryItem
+                                        selectedItems - itineraryItem
                                     }
                                 },
                                 isSelected = itineraryItem in selectedItems
@@ -606,7 +607,7 @@ fun BudgetCard(
                 colors = CheckboxDefaults.colors(
                     checkedColor = Orange
                 ),
-                modifier = Modifier.offset(y = -5.dp)
+                modifier = Modifier.offset(y = (-5).dp)
             )
             Text(
                 text = "No entrance fee",
@@ -653,12 +654,13 @@ fun ActivitiesCard(modifier: Modifier = Modifier){
 
 @Composable
 fun YourTripCard(
+    modifier: Modifier = Modifier,
     attractions: List <AttractionUiState>? = null,
     onClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+
 ){
 
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
     var selectedItems by remember { mutableStateOf(emptyList<AttractionUiState>()) }
     val tabs = listOf("Day 1", "Day 2", "Day 3")
 
@@ -711,7 +713,10 @@ fun YourTripCard(
                     DayTab(
                         tabLabel = tabLabel,
                         isSelected = index == selectedTabIndex,
-                        onTabSelected = { selectedTabIndex = index },
+                        onTabSelected = {
+                            //FILTER BY TAB
+                            selectedTabIndex = index
+                        },
                     )
                 }
                 FloatingActionButton(
@@ -739,9 +744,20 @@ fun YourTripCard(
                     )
                 }
             }
+            Card(
+                border = BorderStroke(2.dp, Color(0xff666666).copy(alpha = 0.4f)),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier
+                    .padding(horizontal = 9.dp)
+                    .padding(bottom = 10.dp)
+                    .fillMaxWidth()
+                    .height(200.dp)
+            ) {
+                // MAP PLACEHOLDER
+            }
 
 
-            attractions?.forEach { attraction ->
+            attractions.forEach { attraction ->
                 AttractionCard(
                     attraction = attraction,
                     onSelectedChange = {
@@ -782,7 +798,7 @@ fun DayTab(
         modifier = modifier.height(22.dp)
     ) {
         Text(
-            text = "$tabLabel",
+            text = tabLabel,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             color = if (isSelected) Color.White else Color.Black,

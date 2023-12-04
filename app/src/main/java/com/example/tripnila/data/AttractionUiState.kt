@@ -7,4 +7,5 @@ data class AttractionUiState(
     val distance: Int,
     val price: Double,
     val openingTime: String,
+    val itineraryTime: String? = null,
 )
