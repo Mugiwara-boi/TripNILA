@@ -127,7 +127,9 @@ fun AddListingScreen4(
                                 }
 
                                 if (hasLocationPermission) {
-                                    MapScreen(context)
+                                    if (addListingViewModel != null) {
+                                        MapScreen(context,addListingViewModel)
+                                    }
                                 } else {
                                     LocationPermissionScreen {
                                         hasLocationPermission = true

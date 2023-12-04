@@ -49,10 +49,10 @@ import java.util.Locale
 
 @Composable
 fun MyMap(
+    addListingViewModel: AddListingViewModel? = null,
     context: Context,
     latLng: LatLng,
     changeIcon: Boolean = false,
-    addListingViewModel: AddListingViewModel? = null,
     mapProperties: MapProperties = MapProperties(),
     onChangeMarkerIcon: () -> Unit,
     onChangeMapType: (mapType: MapType) -> Unit,

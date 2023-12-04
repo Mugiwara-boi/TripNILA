@@ -7,13 +7,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.MyMap
 import com.example.tripnila.utils.getCurrentLocation
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.MapProperties
 
 @Composable
-fun MapScreen(context: Context) {
+fun MapScreen(context: Context, addListingViewModel: AddListingViewModel) {
     var showMap by remember { mutableStateOf(false) }
     var location by remember { mutableStateOf(LatLng(0.0, 0.0)) }
     var mapProperties by remember { mutableStateOf(MapProperties()) }
@@ -27,6 +28,7 @@ fun MapScreen(context: Context) {
 
     if (showMap) {
         MyMap(
+            addListingViewModel = addListingViewModel,
             context = context,
             latLng = location,
             mapProperties = mapProperties,
