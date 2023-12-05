@@ -13,6 +13,7 @@ import com.example.tripnila.data.Photo
 import com.example.tripnila.data.Promotion
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.data.StaycationAvailability
+import com.example.tripnila.data.Tag
 import com.example.tripnila.repository.UserRepository
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.Dispatchers
@@ -61,10 +62,6 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
         Log.d("Staycation", "${_staycation.value.staycationType}")
     }
 
-//    fun setAvailableDates(availability: List<StaycationAvailability>) {
-//        _staycation.value = _staycation.value.copy(availableDates = availability)
-//    }
-
     fun addAvailableDate(localDate: LocalDate){
         val newStaycationAvailability = StaycationAvailability(
             availableDate = Timestamp(Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant()))
@@ -101,7 +98,17 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
     fun addStaycationAmenity(amenity: String) {
         val newAmenity = Amenity(amenityName = amenity)
         _staycation.value = _staycation.value.copy(amenities = _staycation.value.amenities + newAmenity)
-        Log.d("Staycation", "${_staycation.value.amenities.map { it.amenityName }}")
+
+        var tagName = ""
+
+        when (amenity) {
+            "Pool" -> tagName = "Swimming"
+            "Gym equipment" -> tagName = "Sports"
+        }
+        
+        val newTag = Tag(tagName = tagName)
+        _staycation.value = _staycation.value.copy(staycationTags = _staycation.value.staycationTags + newTag)
+      //  Log.d("Staycation", "${_staycation.value.amenities.map { it.amenityName }}")
     }
 
     fun removeStaycationAmenity(amenity: String) {

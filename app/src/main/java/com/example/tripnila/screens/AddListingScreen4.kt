@@ -120,6 +120,7 @@ fun AddListingScreen4(
                                 .width(267.dp)
                                 .padding(bottom = 10.dp)
                         )
+
                         GoogleMapsTheme {
                             Surface(
                                 modifier = Modifier.fillMaxSize().height(500.dp),
@@ -199,7 +200,7 @@ fun WebViewPage(initialUrl: String) {
         )
 
         // Extract latitude and longitude from the current URL
-        val (latitude, longitude) = extractLatLngFromUrl(currentUrl)
+      //  val (latitude, longitude) = extractLatLngFromUrl(currentUrl)
 
     }
 }
