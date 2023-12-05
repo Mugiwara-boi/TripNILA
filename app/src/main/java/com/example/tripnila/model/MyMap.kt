@@ -49,6 +49,10 @@ import java.util.Locale
 
 @Composable
 fun MyMap(
+    listingType: String = "",
+    addBusinessViewModel: AddBusinessViewModel? = null,
+    hostTourViewModel: HostTourViewModel?= null,
+    locationViewModel: LocationViewModel? = null,
     addListingViewModel: AddListingViewModel? = null,
     context: Context,
     latLng: LatLng,
@@ -61,6 +65,11 @@ fun MyMap(
 
     var staycationLat by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationLat) }
     var staycationLng by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationLng) }
+    var businessLat by remember { mutableStateOf(addBusinessViewModel?.business?.value?.businessLat) }
+    var businessLng by remember { mutableStateOf(addBusinessViewModel?.business?.value?.businessLng) }
+    var tourLat by remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourLat) }
+    var tourLng by remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourLng) }
+
     var staycationId by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationId) }
     var staycationLocation by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationLocation) }
     var distanceText by remember { mutableStateOf<String?> (null) }
@@ -90,20 +99,31 @@ fun MyMap(
                 markerLatLng = clickedLatLng
                 staycationLat = markerLatLng.latitude
                 staycationLng = markerLatLng.longitude
-                addListingViewModel?.setStaycationLat(staycationLat!!)
-                addListingViewModel?.setStaycationLng(staycationLng!!)
-                /*getSavedLocationFromFirebase(documentId) { savedLocation ->
-                    // Use the retrieved LatLng value here
-                    if (savedLocation != null) {
-                        val distance = calculateDistanceBetweenMarkers(markerLatLng, savedLocation)
-                        val formatdistance = String.format("%.2f", distance)
-                        //saveDistanceToFirestore(distance)
-                        distanceText = "Distance: $formatdistance m"
-                    } else {
-                        // Handle case when LatLng couldn't be retrieved or doesn't exist
+                businessLat = markerLatLng.latitude
+                businessLng = markerLatLng.longitude
+                tourLat = markerLatLng.latitude
+                tourLng = markerLatLng.longitude
+                when (listingType) {
+                    "Staycation" -> {
+                        addListingViewModel?.setStaycationLat(staycationLat!!)
+                        addListingViewModel?.setStaycationLng(staycationLng!!)
+                        locationViewModel?.getAddressFromLatLng(staycationLat!!, staycationLng!!)
+                            ?.let { addListingViewModel?.setStaycationLocation(it) }
                     }
-                }*/
+                    "Business" -> {
+                        addBusinessViewModel?.setBusinessLat(businessLat!!)
+                        addBusinessViewModel?.setBusinessLng(businessLng!!)
+                        locationViewModel?.getAddressFromLatLng(businessLat!!, businessLng!!)
+                            ?.let { addBusinessViewModel?.setBusinessLocation(it) }
+                    }
+                    else -> {
+                        hostTourViewModel?.setTourLat(tourLat!!)
+                        hostTourViewModel?.setTourLng(tourLng!!)
+                        locationViewModel?.getAddressFromLatLng(tourLat!!, tourLng!!)
+                            ?.let { hostTourViewModel?.setTourLocation(it) }
 
+                    }
+                }
             }
         ) {
             MarkerInfoWindowContent(
@@ -126,28 +146,6 @@ fun MyMap(
                     Text(text = "Lat: $staycationLat Lng: $staycationLng id: $staycationId")
                 }
             }
-            /*
-                Marker(
-                    state = MarkerState(position = markerLatLng),
-                    title = "Location",
-                    snippet = "Marker in current location",
-                    icon = if (changeIcon) {
-                        bitmapDescriptor(context, R.drawable.ic_shopping_cart_24)
-                    } else null
-                )
-
-            if (distanceText != null) {
-                Box(
-                    modifier = Modifier
-                        .offset { IntOffset(0, (-48).dp.roundToPx()) } // Adjust the offset as needed
-                        .background(Color.White)
-                        .padding(8.dp)
-                ) {
-                    Text(text = distanceText!!)
-                }
-            }
-            */
-
 
         }
         Column(
@@ -187,34 +185,6 @@ fun MyMap(
     }
 }
 
-
-fun getSavedLocationFromFirebase(documentId: String, onComplete: (LatLng?) -> Unit) {
-    val db = FirebaseFirestore.getInstance()
-
-    // Reference the "locations" collection and retrieve the specified document
-    db.collection("markers").document(documentId)
-        .get()
-        .addOnSuccessListener { documentSnapshot: DocumentSnapshot? ->
-            if (documentSnapshot != null && documentSnapshot.exists()) {
-                // Extract LatLng values from the document
-                val latitude = documentSnapshot.getDouble("lat")
-                val longitude = documentSnapshot.getDouble("lng")
-
-                // Check if both latitude and longitude exist in the document
-                if (latitude != null && longitude != null) {
-                    val retrievedLatLng = LatLng(latitude, longitude)
-                    onComplete(retrievedLatLng) // Pass the retrieved LatLng to the callback
-                } else {
-                    onComplete(null) // Return null if LatLng is incomplete or missing
-                }
-            } else {
-                onComplete(null) // Return null if document doesn't exist
-            }
-        }
-        .addOnFailureListener {
-            onComplete(null) // Return null if there's an error fetching the document
-        }
-}
 fun calculateDistanceBetweenMarkers(marker1: LatLng, marker2: LatLng): Float {
     val location1 = Location("Marker 1")
     location1.latitude = marker1.latitude
@@ -239,26 +209,6 @@ fun saveDistanceToFirestore(distance: Float) {
     distancesCollection.add(data)
         .addOnSuccessListener { documentReference ->
             // Handle successful addition to Firestore
-        }
-        .addOnFailureListener { e ->
-            // Handle failures
-        }
-}
-
-fun saveLatLngToFirestore(listingID: String, latLng: LatLng) {
-    val db = FirebaseFirestore.getInstance()
-
-    // Replace "markers" with your desired collection name
-    val markersCollection = db.collection("markers")
-
-    // Use the listingID as the document ID and set the LatLng values
-    markersCollection.document(listingID)
-        .set(mapOf(
-            "staycationLat" to latLng.latitude,
-            "stayationLng" to latLng.longitude,
-        ))
-        .addOnSuccessListener {
-            // Successful addition
         }
         .addOnFailureListener { e ->
             // Handle failures

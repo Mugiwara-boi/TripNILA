@@ -54,7 +54,18 @@ class HostTourViewModel(private val repository: UserRepository = UserRepository(
     fun setDuration(duration: String) {
         _tour.value = _tour.value.copy(tourDuration = duration)
     }
-
+    fun setTourLat(lat: Double) {
+        _tour.value = _tour.value.copy(tourLat = lat)
+        Log.d("", "$_tour")
+    }
+    fun setTourLng(lng: Double) {
+        _tour.value = _tour.value.copy(tourLng = lng)
+        Log.d("", "$_tour")
+    }
+    fun setTourLocation(location: String) {
+        _tour.value = _tour.value.copy(tourLocation = location)
+        Log.d("", "$_tour")
+    }
     fun setLanguage(language: String) {
         _tour.value = _tour.value.copy(tourLanguage = language)
     }
@@ -163,6 +174,8 @@ class HostTourViewModel(private val repository: UserRepository = UserRepository(
                     tourEmail = _tour.value.tourEmail,
                     tourFacebook = _tour.value.tourFacebook,
                     tourInstagram = _tour.value.tourInstagram,
+                    tourLat = _tour.value.tourLat,
+                    tourLng = _tour.value.tourLng,
                     tourLocation = _tour.value.tourLocation,
                     tourPrice = _tour.value.tourPrice,
                     offers = _tour.value.offers,

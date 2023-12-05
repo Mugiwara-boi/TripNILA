@@ -74,6 +74,8 @@ import com.example.tripnila.model.HomeViewModel
 import com.example.tripnila.model.HostDashboardViewModel
 import com.example.tripnila.model.HostTourViewModel
 import com.example.tripnila.model.ItineraryViewModel
+import com.example.tripnila.model.LocationViewModel
+import com.example.tripnila.model.LocationViewModelFactory
 import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.Person
 import com.example.tripnila.model.PersonViewModel
@@ -110,7 +112,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyApplicationTheme {
 
-
+                val locationViewModelFactory = LocationViewModelFactory(context = this)
                 val loginViewModel = viewModel(modelClass = LoginViewModel::class.java)
                 val signupViewModel = viewModel(modelClass = SignupViewModel::class.java)
                 val preferenceViewModel = viewModel(modelClass = PreferenceViewModel::class.java)
@@ -120,6 +122,10 @@ class MainActivity : ComponentActivity() {
                 val bookingHistoryViewModel = viewModel(modelClass = BookingHistoryViewModel::class.java)
                 val hostDashboardViewModel = viewModel(modelClass = HostDashboardViewModel::class.java)
                 val addListingViewModel = viewModel(modelClass = AddListingViewModel::class.java)
+                val locationViewModel = viewModel(
+                    factory = locationViewModelFactory,
+                    modelClass = LocationViewModel::class.java
+                )
                 val hostTourViewModel = viewModel(modelClass = HostTourViewModel::class.java)
                 val addBusinessViewModel = viewModel(modelClass = AddBusinessViewModel::class.java)
                 val staycationManagerViewModel = viewModel(modelClass = StaycationManagerViewModel::class.java)
@@ -139,6 +145,7 @@ class MainActivity : ComponentActivity() {
                     bookingHistoryViewModel = bookingHistoryViewModel,
                     hostDashboardViewModel = hostDashboardViewModel,
                     addListingViewModel = addListingViewModel,
+                    locationViewModelFactory = locationViewModelFactory,
                     hostTourViewModel = hostTourViewModel,
                     addBusinessViewModel = addBusinessViewModel,
                     staycationManagerViewModel = staycationManagerViewModel,

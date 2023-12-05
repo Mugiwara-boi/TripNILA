@@ -71,7 +71,18 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
     fun setUrl(url: String) {
         _business.value = _business.value.copy(businessURL = url)
     }
-
+    fun setBusinessLat(lat: Double) {
+        _business.value = _business.value.copy(businessLat = lat)
+        Log.d("", "$_business")
+    }
+    fun setBusinessLng(lng: Double) {
+        _business.value = _business.value.copy(businessLng = lng)
+        Log.d("", "$_business")
+    }
+    fun setBusinessLocation(location: String) {
+        _business.value = _business.value.copy(businessLocation = location)
+        Log.d("", "$_business")
+    }
 
     fun setCoverPhoto(uri: Uri){
         val newCoverPhoto = Photo(photoUri = uri, photoType = "Cover")
@@ -162,6 +173,8 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
                     context = context,
                     hostId = _business.value.host.hostId,
                     businessDescription = _business.value.businessDescription,
+                    businessLat = _business.value.businessLat,
+                    businessLng = _business.value.businessLng,
                     businessLocation = _business.value.businessLocation,
                     businessTitle = _business.value.businessTitle,
                     businessType = _business.value.businessType,

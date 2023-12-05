@@ -236,6 +236,7 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
     }
 
 
+
     fun getSelectedStaycation(staycationId: String) {
         viewModelScope.launch {
             val staycation = repository.getStaycationById(staycationId)

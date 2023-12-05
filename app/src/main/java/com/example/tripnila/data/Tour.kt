@@ -12,6 +12,8 @@ data class Tour(
     val tourTitle: String = "",
     val tourDescription: String = "",
     val tourType: String = "",
+    val tourLat: Double = 0.0,
+    val tourLng: Double = 0.0,
     val tourLocation: String = "",
     val tourDuration: String = "",
     val tourLanguage: String = "",

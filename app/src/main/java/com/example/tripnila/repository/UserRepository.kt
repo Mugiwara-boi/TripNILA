@@ -322,6 +322,8 @@ class UserRepository {
                 val businessContact = businessDocument.getString("businessContact") ?: ""
                 val businessDescription = businessDocument.getString("businessDescription") ?: ""
                 val businessEmail = businessDocument.getString("businessEmail") ?: ""
+                val businessLat = businessDocument.getDouble("businessLat") ?: 0.0
+                val businessLng = businessDocument.getDouble("businessLng") ?: 0.0
                 val businessLocation = businessDocument.getString("businessLocation") ?: ""
                 val businessTitle = businessDocument.getString("businessTitle") ?: ""
                 val businessType = businessDocument.getString("businessType") ?: ""
@@ -340,6 +342,8 @@ class UserRepository {
                     businessContact = businessContact,
                     businessDescription = businessDescription,
                     businessEmail = businessEmail,
+                    businessLat = businessLat,
+                    businessLng = businessLng,
                     businessLocation = businessLocation,
                     businessTitle = businessTitle,
                     businessType = businessType,
@@ -382,6 +386,8 @@ class UserRepository {
                 val tourFacebook = tourDocument.getString("tourFacebook") ?: ""
                 val tourInstagram = tourDocument.getString("tourInstagram") ?: ""
                 val tourLanguage = tourDocument.getString("tourLanguage") ?: ""
+                val tourLat = tourDocument.getDouble("tourLat") ?: 0.0
+                val tourLng = tourDocument.getDouble("tourLng") ?: 0.0
                 val tourLocation = tourDocument.getString("tourLocation") ?: ""
                 val tourPrice = tourDocument.getDouble("tourPrice") ?: 0.0
                 val tourTitle = tourDocument.getString("tourTitle") ?: ""
@@ -404,6 +410,8 @@ class UserRepository {
                     tourFacebook = tourFacebook,
                     tourInstagram = tourInstagram,
                     tourLanguage = tourLanguage,
+                    tourLat = tourLat,
+                    tourLng = tourLng,
                     tourLocation = tourLocation,
                     tourPrice = tourPrice,
                     tourTitle = tourTitle,
@@ -485,6 +493,8 @@ class UserRepository {
                 val tourFacebook = document.getString("tourFacebook") ?: ""
                 val tourInstagram = document.getString("tourInstagram") ?: ""
                 val tourLanguage = document.getString("tourLanguage") ?: ""
+                val tourLat = document.getDouble("tourLat") ?: 0.0
+                val tourLng = document.getDouble("tourLng") ?: 0.0
                 val tourLocation = document.getString("tourLocation") ?: ""
                 val tourPrice = document.getDouble("tourPrice") ?: 0.0
                 val tourTitle = document.getString("tourTitle") ?: ""
@@ -501,6 +511,8 @@ class UserRepository {
                     tourFacebook = tourFacebook,
                     tourInstagram = tourInstagram,
                     tourLanguage = tourLanguage,
+                    tourLat = tourLat,
+                    tourLng = tourLng,
                     tourLocation = tourLocation,
                     tourPrice = tourPrice,
                     tourTitle = tourTitle,
@@ -541,6 +553,8 @@ class UserRepository {
                 val businessContact = document.getString("businessContact") ?: ""
                 val businessDescription = document.getString("businessDescription") ?: ""
                 val businessEmail = document.getString("businessEmail") ?: ""
+                val businessLat = document.getDouble("businessLat") ?: 0.0
+                val businessLng = document.getDouble("businessLng") ?: 0.0
                 val businessLocation = document.getString("businessLocation") ?: ""
                 val businessTitle = document.getString("businessTitle") ?: ""
                 val businessType = document.getString("businessType") ?: ""
@@ -554,6 +568,8 @@ class UserRepository {
                     businessContact = businessContact,
                     businessDescription = businessDescription,
                     businessEmail = businessEmail,
+                    businessLat = businessLat,
+                    businessLng = businessLng,
                     businessLocation = businessLocation,
                     businessTitle = businessTitle,
                     businessType = businessType,
@@ -596,6 +612,8 @@ class UserRepository {
                 val tourFacebook = document.getString("tourFacebook") ?: ""
                 val tourInstagram = document.getString("tourInstagram") ?: ""
                 val tourLanguage = document.getString("tourLanguage") ?: ""
+                val tourLat = document.getDouble("tourLat") ?: 0.0
+                val tourLng = document.getDouble("tourLng") ?: 0.0
                 val tourLocation = document.getString("tourLocation") ?: ""
                 val tourPrice = document.getDouble("tourPrice") ?: 0.0
                 val tourTitle = document.getString("tourTitle") ?: ""
@@ -621,6 +639,8 @@ class UserRepository {
                     tourFacebook = tourFacebook,
                     tourInstagram = tourInstagram,
                     tourLanguage = tourLanguage,
+                    tourLat = tourLat,
+                    tourLng = tourLng,
                     tourLocation = tourLocation,
                     tourPrice = tourPrice,
                     tourTitle = tourTitle,
@@ -652,6 +672,8 @@ class UserRepository {
                 val businessContact = document.getString("businessContact") ?: ""
                 val businessDescription = document.getString("businessDescription") ?: ""
                 val businessEmail = document.getString("businessEmail") ?: ""
+                val businessLat = document.getDouble("businessLat") ?: 0.0
+                val businessLng = document.getDouble("businessLng") ?: 0.0
                 val businessLocation = document.getString("businessLocation") ?: ""
                 val businessTitle = document.getString("businessTitle") ?: ""
                 val businessType = document.getString("businessType") ?: ""
@@ -669,6 +691,8 @@ class UserRepository {
                     businessContact = businessContact,
                     businessDescription = businessDescription,
                     businessEmail = businessEmail,
+                    businessLat = businessLat,
+                    businessLng = businessLng,
                     businessLocation = businessLocation,
                     businessTitle = businessTitle,
                     businessType = businessType,
@@ -711,6 +735,8 @@ class UserRepository {
         tourEmail: String = "",
         tourFacebook: String = "",
         tourInstagram: String = "",
+        tourLat: Double = 0.0,
+        tourLng: Double = 0.0,
         tourLocation: String = "",
         offers: List<Offer> = emptyList(),
         tourImages: List<Photo> = emptyList(),
@@ -742,6 +768,8 @@ class UserRepository {
                 "tourTitle" to tourTitle,
                 "tourDescription" to tourDescription,
                 "tourType" to tourType,
+                "tourLat" to tourLat,
+                "tourLng" to tourLng,
                 "tourLocation" to tourLocation,
                 "tourDuration" to tourDuration,
                 "tourLanguage" to tourLanguage,
@@ -906,6 +934,8 @@ class UserRepository {
         businessId: String = "",
         hostId: String = "",
         businessDescription: String = "",
+        businessLat: Double = 0.0,
+        businessLng: Double = 0.0,
         businessLocation: String = "",
         businessTitle: String = "",
         businessType: String = "",
@@ -952,6 +982,8 @@ class UserRepository {
                 "hostId" to hostId,
                 "additionalInfo" to additionalInfo,
                 "businessDescription" to businessDescription,
+                "businessLat" to businessLat,
+                "businessLng" to businessLng,
                 "businessLocation" to businessLocation,
                 "businessEmail" to businessEmail,
                 "businessContact" to businessContact,

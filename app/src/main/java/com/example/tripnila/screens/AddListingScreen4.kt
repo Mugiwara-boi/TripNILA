@@ -38,6 +38,8 @@ import com.example.tripnila.data.PropertyDescription
 import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.HostTourViewModel
+import com.example.tripnila.model.LocationViewModel
+import com.example.tripnila.model.LocationViewModelFactory
 import com.example.tripnila.ui.LocationPermissionScreen
 import com.example.tripnila.ui.MapScreen
 import com.example.tripnila.ui.theme.GoogleMapsTheme
@@ -47,6 +49,7 @@ import com.example.tripnila.utils.checkForPermission
 @Composable
 fun AddListingScreen4(
     listingType: String = "",
+    locationViewModelFactory: LocationViewModelFactory,
     addListingViewModel: AddListingViewModel? = null,
     hostTourViewModel: HostTourViewModel? = null,
     addBusinessViewModel: AddBusinessViewModel? = null,
@@ -127,8 +130,8 @@ fun AddListingScreen4(
                                 }
 
                                 if (hasLocationPermission) {
-                                    if (addListingViewModel != null) {
-                                        MapScreen(context,addListingViewModel)
+                                    if (addListingViewModel != null && addBusinessViewModel != null && hostTourViewModel != null) {
+                                        MapScreen(listingType,context,addListingViewModel, locationViewModelFactory, addBusinessViewModel, hostTourViewModel)
                                     }
                                 } else {
                                     LocationPermissionScreen {

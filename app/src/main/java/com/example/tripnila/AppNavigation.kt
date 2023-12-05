@@ -40,6 +40,8 @@ import com.example.tripnila.model.HomeViewModel
 import com.example.tripnila.model.HostDashboardViewModel
 import com.example.tripnila.model.HostTourViewModel
 import com.example.tripnila.model.ItineraryViewModel
+import com.example.tripnila.model.LocationViewModel
+import com.example.tripnila.model.LocationViewModelFactory
 import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.PreferenceViewModel
 import com.example.tripnila.model.ProfileViewModel
@@ -151,6 +153,7 @@ fun Navigation(
     bookingHistoryViewModel: BookingHistoryViewModel,
     hostDashboardViewModel: HostDashboardViewModel,
     addListingViewModel: AddListingViewModel,
+    locationViewModelFactory: LocationViewModelFactory,
     hostTourViewModel: HostTourViewModel,
     addBusinessViewModel: AddBusinessViewModel,
     staycationManagerViewModel: StaycationManagerViewModel,
@@ -170,7 +173,7 @@ fun Navigation(
             itineraryViewModel = itineraryViewModel
         )
         hostGraph(
-            navController = navController, hostDashboardViewModel = hostDashboardViewModel, addListingViewModel = addListingViewModel,
+            navController = navController, hostDashboardViewModel = hostDashboardViewModel, addListingViewModel = addListingViewModel, locationViewModelFactory = locationViewModelFactory,
             hostTourViewModel = hostTourViewModel, addBusinessViewModel = addBusinessViewModel, staycationManagerViewModel = staycationManagerViewModel,
             tourManagerViewModel = tourManagerViewModel, businessManagerViewModel = businessManagerViewModel
         )
@@ -358,6 +361,7 @@ fun NavGraphBuilder.hostGraph(
     navController: NavHostController,
     hostDashboardViewModel: HostDashboardViewModel,
     addListingViewModel: AddListingViewModel,
+    locationViewModelFactory: LocationViewModelFactory,
     hostTourViewModel: HostTourViewModel,
     addBusinessViewModel: AddBusinessViewModel,
     staycationManagerViewModel: StaycationManagerViewModel,
@@ -453,6 +457,7 @@ fun NavGraphBuilder.hostGraph(
             AddListingScreen4(
                 listingType = entry.arguments?.getString("listingType") ?: "",
                 addListingViewModel = addListingViewModel,
+                locationViewModelFactory = locationViewModelFactory,
                 hostTourViewModel = hostTourViewModel,
                 addBusinessViewModel = addBusinessViewModel,
             //    onNavToNext = { listingType -> navigateToAddListing5(navController, listingType) },
