@@ -31,8 +31,6 @@ class StaycationBookingPagingSource(
 
             val snapshot = currentPage.get().await()
 
-          //  val staycationBookings = snapshot.toObjects(StaycationBooking::class.java)
-
             val staycationBookings = mutableListOf<StaycationBooking>()
 
             for (document in snapshot.documents) {

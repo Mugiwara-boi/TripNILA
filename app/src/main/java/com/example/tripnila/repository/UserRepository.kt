@@ -5,11 +5,16 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.PagingSource
+import androidx.paging.PagingState
 import com.example.tripnila.common.Constants
 import com.example.tripnila.data.Amenity
 import com.example.tripnila.data.Business
 import com.example.tripnila.data.Chat
 import com.example.tripnila.data.DailySchedule
+import com.example.tripnila.data.HomePagingItem
 import com.example.tripnila.data.Host
 import com.example.tripnila.data.Message
 import com.example.tripnila.data.Offer
@@ -29,6 +34,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import java.io.File
@@ -41,8 +47,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.SortedSet
 import java.util.TimeZone
 import java.util.UUID
+import java.util.concurrent.Flow
 import java.util.concurrent.TimeUnit
 import kotlin.experimental.and
 import kotlin.math.min
@@ -60,7 +68,7 @@ class UserRepository {
     private val serviceAmenityCollection = db.collection("service_amenity")
     private val promotionCollection = db.collection("promotion")
     private val servicePromotionCollection = db.collection("service_promotion")
-    private val serviceTagCollection = db.collection("service_tag")
+    val serviceTagCollection = db.collection("service_tag")
     private val servicePhotoCollection = db.collection("service_photo")
     private val staycationNearbyAttractionCollection = db.collection("staycation_nearby_attraction")
     private val reviewCollection = db.collection("review")
@@ -69,6 +77,7 @@ class UserRepository {
     private val paymentCollection = db.collection("payment")
     private val touristProfileCollection = db.collection("tourist_profile")
     private val reviewPhotoCollection = db.collection("review_photo")
+    private val serviceCollection = db.collection("service")
 
     private val businessCollection = db.collection("business")
     private val businessMenuCollection = db.collection("business_menu")
@@ -95,6 +104,8 @@ class UserRepository {
 
     private var currentUser: Tourist? = null
     private var staycationList: List<Staycation>? = null
+    private val processedServiceIds = mutableSetOf<String>()
+
 
 
     suspend fun getChatByUserIds(userId1: String, userId2: String): Chat? {
@@ -182,7 +193,12 @@ class UserRepository {
         return null
     }
 
-
+//    fun getHotels(): Flow<PagingData<Staycation>> {
+//        val query = FirebaseFirestore.getInstance().collection("staycation")
+//        return Pager(PagingConfig(pageSize = 20)) {
+//            FirestorePagingSource(query)
+//        }.flow
+//    }
 
 
     suspend fun getStaycationsByHostId(host: Host): List<Staycation> {
@@ -788,6 +804,8 @@ class UserRepository {
 
             tourCollection.document(newId.toString()).set(tour).await()
 
+            addDocumentToService(newId.toString(), "Tour")
+
             addTourToHistory(newId.toString(), transaction)
 
             addTourOffers(newId.toString(), offers)
@@ -1000,6 +1018,8 @@ class UserRepository {
 
             businessCollection.document(newId.toString()).set(business).await()
 
+            addDocumentToService(newId.toString(), "Business")
+
             addBusinessToHistory(newId.toString(), transaction)
 
             addServiceAmenities(newId.toString(), "Business", amenities)
@@ -1199,6 +1219,20 @@ class UserRepository {
         }
     }
 
+    private suspend fun addDocumentToService(serviceId: String, serviceType: String) {
+        try {
+            val serviceData = hashMapOf(
+                "serviceId" to serviceId,
+                "serviceType" to serviceType
+            )
+
+            serviceCollection.add(serviceData).await()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+
 
     suspend fun addStaycation(
         staycationId: String = "",
@@ -1272,7 +1306,11 @@ class UserRepository {
             staycationCollection.document(newId.toString()).set(staycationData).await()
 
 
+            addDocumentToService(newId.toString(), "Staycation")
+
             addStaycationToHistory(newId.toString(), staycationData, transaction)
+
+
 
             addServiceAmenities(newId.toString(), "Staycation", amenities)
 
@@ -2544,7 +2582,6 @@ class UserRepository {
 
         } catch (e: Exception) {
             e.printStackTrace()
-            // Handle the error case as needed
         }
     }
 
@@ -2624,54 +2661,648 @@ class UserRepository {
     }
     fun getCurrentUser(): Tourist? { return currentUser }
 
-    private suspend fun getServiceIdsByTags(tagNames: List<String>): List<Tag> {
+   // val fetchedServiceIds = mutableSetOf<String>()
+
+//    private suspend fun getServiceIdsByTags(tagNames: List<String>, pageNumber: Int, pageSize: Int): List<Tag> {
+//        return try {
+//            val result = mutableListOf<Tag>()
+//
+//            var query = serviceTagCollection
+//                .whereIn("tagName", tagNames)
+//                .orderBy("serviceId")
+//                .limit(pageSize.toLong())
+//
+//            // If it's not the first page, start after the last document of the previous page
+//            if (pageNumber > 0) {
+//                val lastDocumentSnapshot = serviceTagCollection
+//                    .whereIn("tagName", tagNames)
+//                    .orderBy("serviceId")
+//                    .limit((pageNumber * pageSize).toLong())
+//                    .get()
+//                    .await()
+//                    .documents
+//                    .lastOrNull()
+//
+//                if (lastDocumentSnapshot != null) {
+//                    query = query.startAfter(lastDocumentSnapshot)
+//                }
+//            }
+//
+//            val querySnapshot = query.get().await()
+//
+//            querySnapshot.documents.forEach { document ->
+//                val tagId = document.id
+//                val tagName = document.getString("tagName") ?: ""
+//                val serviceId = document.getString("serviceId") ?: ""
+//
+//                if (!fetchedServiceIds.contains(serviceId)) {
+//                    val tag = Tag(tagId = tagId, tagName = tagName, serviceId = serviceId)
+//                    result.add(tag)
+//                    fetchedServiceIds.add(serviceId)
+//
+//                    Log.d("FirestoreTag", "Tag: $tagName, ServiceId: $serviceId")
+//                }
+//            }
+//
+//            result
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            emptyList() // Handle the error case as needed
+//        }
+//    }
+
+
+//    private suspend fun getServiceIdsByTags(tagNames: List<String>, pageNumber: Int, pageSize: Int): List<Tag> {
+//        return try {
+//            val result = mutableListOf<Tag>()
+//
+//            var query = serviceTagCollection
+//                .whereIn("tagName", tagNames)
+//                .orderBy("serviceId")
+//                .limit(pageSize.toLong())
+//
+//            // If it's not the first page, start after the last document of the previous page
+//            if (pageNumber > 0) {
+//                val lastDocumentSnapshot = serviceTagCollection
+//                    .whereIn("tagName", tagNames)
+//                    .orderBy("serviceId")
+//                    .limit((pageNumber * pageSize).toLong())
+//                    .get()
+//                    .await()
+//                    .documents
+//                    .lastOrNull()
+//
+//                if (lastDocumentSnapshot != null) {
+//                    query = query.startAfter(lastDocumentSnapshot)
+//                }
+//            }
+//
+//            val querySnapshot = query.get().await()
+//
+//            querySnapshot.documents.forEach { document ->
+//                val tagId = document.id
+//                val tagName = document.getString("tagName") ?: ""
+//                val serviceId = document.getString("serviceId") ?: ""
+//
+//                val tag = Tag(tagId = tagId, tagName = tagName, serviceId = serviceId)
+//                result.add(tag)
+//
+//                Log.d("FirestoreTag", "Tag: $tagName, ServiceId: $serviceId")
+//            }
+//
+//            result
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            emptyList() // Handle the error case as needed
+//        }
+//    }
+
+    private suspend fun getServiceIdsByTags(
+        tagNames: List<String>,
+        pageNumber: Int,
+        pageSize: Int,
+        serviceIdSet: SortedSet<String>
+    ): List<Tag> {
         return try {
-            val result = serviceTagCollection
+
+            // val startIndex = pageNumber * pageSize
+
+            // startIndex = [0, 18, 24, 30, 36]
+
+            val initialLoadSize = pageSize * 3
+            val startIndex = if (pageNumber == 0) {
+                0
+            } else {
+                ((pageNumber - 1) * pageSize) + initialLoadSize
+            }
+
+            val result = mutableListOf<Tag>()
+
+            Log.d("Page Number(Start): ", pageNumber.toString())
+            Log.d("Start Index(Start): ", startIndex.toString())
+            Log.d("Page Size(Start): ", pageSize.toString())
+
+            var query = serviceTagCollection
                 .whereIn("tagName", tagNames)
+                .orderBy("serviceId")
+
+            // Log initial result size and content
+            Log.d("Result Size(Start): ", result.size.toString())
+            Log.d("Result (Start): ", result.map { it.serviceId }.toString())
+
+            // If it's not the first page, start after the last document of the previous page
+            if (pageNumber > 0) {
+                val lastDocumentSnapshot = serviceTagCollection
+                    .whereIn("tagName", tagNames)
+                    .orderBy("serviceId")
+                    .limit(startIndex.toLong())
+                    .get()
+                    .await()
+                    .documents
+                    .lastOrNull()
+
+                if (lastDocumentSnapshot != null) {
+                    query = query.startAfter(lastDocumentSnapshot)
+                    Log.d("Start after document: ", lastDocumentSnapshot.toString())
+                }
+            }
+
+            val querySnapshot = query
+                .limit(pageSize.toLong() + 1) // Fetch one extra to check if there's a next page
                 .get()
                 .await()
 
-            val tags = mutableListOf<Tag>()
+            if (querySnapshot.isEmpty) {
+                Log.d("Query Snapshot", "Empty")
+            } else {
+                Log.d("Query Snapshot", "Not Empty")
+            }
 
-            for (document in result.documents) {
+            querySnapshot.documents.forEach { document ->
                 val tagId = document.id
                 val tagName = document.getString("tagName") ?: ""
                 val serviceId = document.getString("serviceId") ?: ""
 
-                tags.add(Tag(tagId = tagId, tagName = tagName, serviceId = serviceId))
-            }
+                Log.d("NOTE", "STARTED")
+                Log.d("ProcessedServiceIds", processedServiceIds.toString())
+                Log.d("ServiceIdSet", serviceIdSet.toString())
+                Log.d("ServiceId", serviceId)
 
-            tags
-        } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList() // Handle the error case as needed
-        }
-    }
+                if (serviceIdSet.contains(serviceId) && serviceId !in processedServiceIds) {
+                    val tag = Tag(tagId = tagId, tagName = tagName, serviceId = serviceId)
+                    result.add(tag)
+                    processedServiceIds.add(serviceId)
 
-    suspend fun getAllStaycationsByTags(tags: List<String>, page: Int): List<Staycation> {
-        return try {
-            val pageSize = Constants.PAGE_SIZE
-            // Fetch serviceIds with the specified tags
-            val serviceIds = getServiceIdsByTags(tags)
-
-            // Fetch staycations with document id (staycationId) equal to the serviceId
-            val staycationList = mutableListOf<Staycation>()
-
-            val startIdx = page * pageSize
-            val endIdx = startIdx + pageSize
-
-            for (i in startIdx until min(endIdx, serviceIds.size)) {
-                val serviceId = serviceIds[i].serviceId
-                val document = db.collection("staycation").document(serviceId).get().await()
-
-                if (document.exists()) {
-                    val staycationId = document.id
-                    val staycation = createStaycationFromDocument(document, staycationId)
-                    staycationList.add(staycation)
+                    // Log added tag and related information
+                    Log.d("SEPARATOR", "---------------------------------------")
+                    Log.d("FirestoreTag", "Tag: $tagName, ServiceId: $serviceId")
+                    Log.d("ProcessedServiceIds", processedServiceIds.toString())
+                  //  Log.d("ServiceIdSet", serviceIdSet.toString())
                 }
             }
 
-            staycationList
+            // If there are more documents than the requested page size, remove the extra one
+            if (result.size > pageSize) {
+                result.removeAt(result.size - 1)
+            }
+
+            // Log final result size and content
+            Log.d("Page Number(Last): ", pageNumber.toString())
+            Log.d("Start Index(Last): ", startIndex.toString())
+            Log.d("Page Size(Last): ", pageSize.toString())
+            Log.d("Result Size(Last): ", result.size.toString())
+            Log.d("Result (Last): ", result.map { it.serviceId }.toString())
+
+            result
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList() // Handle the error case as needed
+        }
+    }
+
+
+
+    //  PAGING BUT DUPLICATED
+//    private suspend fun getServiceIdsByTags(
+//        tagNames: List<String>,
+//        pageNumber: Int,
+//        pageSize: Int,
+//        serviceIdSet: SortedSet<String>
+//    ): List<Tag> {
+//        return try {
+//
+//            val startIndex = pageNumber * pageSize
+//            val result = mutableListOf<Tag>()
+//
+//            var query = serviceTagCollection
+//                .whereIn("tagName", tagNames)
+//                .orderBy("serviceId")
+//
+//            Log.d("Page Number(Start): ", pageNumber.toString())
+//            Log.d("Start Index(Start): ", startIndex.toString())
+//            Log.d("Page Size(Start): ", pageSize.toString())
+//            Log.d("Result Size(Start): ", result.size.toString())
+//            Log.d("Result (Start): ", result.map { it.serviceId }.toString())
+//
+//            // If it's not the first page, start after the last document of the previous page
+//            if (pageNumber > 0) {
+//                val lastDocumentSnapshot = serviceTagCollection
+//                    .whereIn("tagName", tagNames)
+//                    .orderBy("serviceId")
+//                    .limit(startIndex.toLong())
+//                    .get()
+//                    .await()
+//                    .documents
+//                    .lastOrNull()
+//
+//                if (lastDocumentSnapshot != null) {
+//                    query = query.startAfter(lastDocumentSnapshot)
+//                }
+//            }
+//
+//            val querySnapshot = query
+//                .limit(pageSize.toLong() + 1) //  + 1       // Fetch one extra to check if there's a next page
+//                .get()
+//                .await()
+//
+//            querySnapshot.documents.forEach { document ->
+//                val tagId = document.id
+//                val tagName = document.getString("tagName") ?: ""
+//                val serviceId = document.getString("serviceId") ?: ""
+//
+//                if (serviceIdSet.contains(serviceId) && serviceId !in processedServiceIds) {
+//                    val tag = Tag(tagId = tagId, tagName = tagName, serviceId = serviceId)
+//                    result.add(tag)
+//                    processedServiceIds.add(serviceId)
+//                    Log.d("FirestoreTag", "Tag: $tagName, ServiceId: $serviceId")
+//                    Log.d("ProcessedServiceIds", processedServiceIds.toString())
+//                    Log.d("ServiceIdSet", serviceIdSet.toString())
+//                }
+//
+//            }
+//
+//            // If there are more documents than the requested page size, remove the extra one
+//            if (result.size > pageSize) {
+//                result.removeAt(result.size - 1)
+//
+//            }
+//
+//            Log.d("Page Number(Last): ", pageNumber.toString())
+//            Log.d("Start Index(Last): ", startIndex.toString())
+//            Log.d("Page Size(Last): ", pageSize.toString())
+//            Log.d("Result Size(Last): ", result.size.toString())
+//            Log.d("Result (Last): ", result.map { it.serviceId }.toString())
+//
+//            result
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            emptyList() // Handle the error case as needed
+//        }
+//    }
+
+
+
+//    private suspend fun getServiceIdsByTags(
+//        tagNames: List<String>,
+//        pageNumber: Int,
+//        pageSize: Int,
+//        serviceIdSet: SortedSet<String>
+//    ): List<Tag> {
+//        return try {
+//            val startIndex = pageNumber * pageSize
+//
+//            val result = mutableListOf<Tag>()
+//
+//            // Split the serviceIdSet into smaller batches
+//            val batches = serviceIdSet.chunked(3) // Adjust the batch size as needed
+//
+//            Log.d("Batches", batches.toString())
+//
+//            for (batch in batches) {
+//                var query = serviceTagCollection
+//                    .whereIn("tagName", tagNames)
+//                    .whereIn("serviceId", batch)
+//                    .orderBy("serviceId")
+//                    .limit(pageSize.toLong() + 1)
+//
+//                // If it's not the first page, start after the last document of the previous page
+//                if (pageNumber > 0) {
+//                    val lastDocumentSnapshot = serviceTagCollection
+//                        .whereIn("tagName", tagNames)
+//                        .whereIn("serviceId", batch)
+//                        .orderBy("serviceId")
+//                        .limit(startIndex.toLong())
+//                        .get()
+//                        .await()
+//                        .documents
+//                        .lastOrNull()
+//
+//                    if (lastDocumentSnapshot != null) {
+//                        query = query.startAfter(lastDocumentSnapshot)
+//                    }
+//                }
+//
+//                val querySnapshot = query.get().await()
+//
+//                querySnapshot.documents.forEach { document ->
+//                    val tagId = document.id
+//                    val tagName = document.getString("tagName") ?: ""
+//                    val serviceId = document.getString("serviceId") ?: ""
+//
+//                    val tag = Tag(tagId = tagId, tagName = tagName, serviceId = serviceId)
+//                    result.add(tag)
+//                    Log.d("FirestoreTag", "Tag: $tagName, ServiceId: $serviceId")
+//                }
+//
+//                // If there are more documents than the requested page size, remove the extra one
+//                if (result.size > pageSize) {
+//                    result.removeAt(result.size - 1)
+//                }
+//            }
+//
+//            Log.d("Page Number(Last): ", pageNumber.toString())
+//            Log.d("Start Index(Last): ", startIndex.toString())
+//            Log.d("Page Size(Last): ", pageSize.toString())
+//            Log.d("Result Size(Last): ", result.size.toString())
+//
+//            result
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            emptyList() // Handle the error case as needed
+//        }
+//    }
+//
+//
+
+
+
+
+
+
+//    private suspend fun getServiceIdsByTags(tagNames: List<String>): List<Tag> {
+//        return try {
+//            val result = serviceTagCollection
+//                .whereIn("tagName", tagNames)
+//                .get()
+//                .await()
+//
+//            val tags = mutableListOf<Tag>()
+//
+//            for (document in result.documents) {
+//                val tagId = document.id
+//                val tagName = document.getString("tagName") ?: ""
+//                val serviceId = document.getString("serviceId") ?: ""
+//
+//                tags.add(Tag(tagId = tagId, tagName = tagName, serviceId = serviceId))
+//            }
+//
+//            tags
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            emptyList() // Handle the error case as needed
+//        }
+//    }
+
+//    suspend fun getAllStaycationsByTags(tags: List<String>, page: Int): List<Staycation> {
+//        return try {
+//            val pageSize = Constants.PAGE_SIZE
+//            // Fetch serviceIds with the specified tags
+//            val serviceIds = getServiceIdsByTags(tags)
+//
+//            // Fetch staycations with document id (staycationId) equal to the serviceId
+//            val staycationList = mutableListOf<Staycation>()
+//
+//            val startIdx = page * pageSize
+//            val endIdx = startIdx + pageSize
+//
+//            for (i in startIdx until min(endIdx, serviceIds.size)) {
+//                val serviceId = serviceIds[i].serviceId
+//                val document = db.collection("staycation").document(serviceId).get().await()
+//
+//                if (document.exists()) {
+//                    val staycationId = document.id
+//                    val staycation = createStaycationFromDocument(document, staycationId)
+//                    staycationList.add(staycation)
+//                }
+//            }
+//
+//            staycationList
+//
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            emptyList() // Handle the error case as needed
+//        }
+//    }
+
+    suspend fun getAllUniqueServiceId(): SortedSet<String> {
+        val uniqueServiceIds = sortedSetOf<String>()
+        val querySnapshot = serviceTagCollection
+            .orderBy("serviceId")
+            .get()
+            .await()
+
+        for (document in querySnapshot.documents) {
+            val serviceId = document.getString("serviceId") ?: ""
+            val serviceType = document.getString("serviceType")
+
+            if (serviceType != "Business") {
+                uniqueServiceIds.add(serviceId)
+            }
+        }
+
+        return uniqueServiceIds
+    }
+
+
+
+
+    suspend fun getAllServicesByTagsWithPaging(tags: List<String>, pageNumber: Int, pageSize: Int, serviceIdSet: SortedSet<String>): List<HomePagingItem> {
+
+        val serviceIds = getServiceIdsByTags(tags, pageNumber, pageSize, serviceIdSet)
+
+        val itemsList = mutableListOf<HomePagingItem>()
+
+        for (serviceId in serviceIds) {
+            // Fetch staycation document
+            val staycationDoc = staycationCollection.document(serviceId.serviceId).get().await()
+            val staycationImage = getServiceImages(serviceId.serviceId, "Staycation")
+
+            // Check if staycation document is not empty before creating HomePagingItem
+            if (staycationDoc.exists()) {
+                val staycation = HomePagingItem(
+                    serviceId = serviceId.serviceId,
+                    serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
+                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                    serviceTitle = staycationDoc.getString("staycationTitle") ?: "",
+                    averageReviewRating = staycationDoc.getDouble("averageReviewRating") ?: 0.0,
+                    location = staycationDoc.getString("staycationLocation") ?: "",
+                    price = staycationDoc.getDouble("staycationPrice") ?: 0.0
+                )
+                itemsList.add(staycation)
+            }
+
+            // Fetch tour document
+            val tourDoc = tourCollection.document(serviceId.serviceId).get().await()
+            val tourImage = getServiceImages(serviceId.serviceId, "Tour")
+
+            // Check if tour document is not empty before creating HomePagingItem
+            if (tourDoc.exists()) {
+                val tour = HomePagingItem(
+                    serviceId = serviceId.serviceId,
+                    serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
+                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                    serviceTitle = tourDoc.getString("tourTitle") ?: "",
+                    averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
+                    location = tourDoc.getString("tourLocation") ?: "",
+                    price = tourDoc.getDouble("tourPrice") ?: 0.0,
+                    tourDuration = tourDoc.getString("tourDuration")?.toInt()
+                )
+                itemsList.add(tour)
+            }
+        }
+
+        return itemsList
+    }
+
+//    suspend fun getAllServicesByTags(tags: List<String>): List<HomePagingItem> {
+//        return try {
+//            val serviceIds = getServiceIdsByTags(tags)
+//            Log.d("Service IDs: ", serviceIds.count().toString())
+//
+//            val itemsList = mutableListOf<HomePagingItem>()
+//
+//            for (serviceId in serviceIds) {
+//                // Fetch staycation document
+//                val staycationDoc = staycationCollection.document(serviceId.serviceId).get().await()
+//                val staycationImage = getServiceImages(serviceId.serviceId, "Staycation")
+//
+//                // Check if staycation document is not empty before creating HomePagingItem
+//                if (staycationDoc.exists()) {
+//                    val staycation = HomePagingItem(
+//                        serviceId = serviceId.serviceId,
+//                        serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
+//                            ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+//                        serviceTitle = staycationDoc.getString("staycationTitle") ?: "",
+//                        averageReviewRating = staycationDoc.getDouble("averageReviewRating") ?: 0.0,
+//                        location = staycationDoc.getString("staycationLocation") ?: "",
+//                        price = staycationDoc.getDouble("staycationPrice") ?: 0.0
+//                    )
+//                    itemsList.add(staycation)
+//                }
+//
+//                // Fetch tour document
+//                val tourDoc = tourCollection.document(serviceId.serviceId).get().await()
+//                val tourImage = getServiceImages(serviceId.serviceId, "Tour")
+//
+//                // Check if tour document is not empty before creating HomePagingItem
+//                if (tourDoc.exists()) {
+//                    val tour = HomePagingItem(
+//                        serviceId = serviceId.serviceId,
+//                        serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
+//                            ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+//                        serviceTitle = tourDoc.getString("tourTitle") ?: "",
+//                        averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
+//                        location = tourDoc.getString("tourLocation") ?: "",
+//                        price = tourDoc.getDouble("tourPrice") ?: 0.0,
+//                        tourDuration = tourDoc.getString("tourDuration")?.toInt()
+//                    )
+//                    itemsList.add(tour)
+//                }
+//            }
+//
+//            itemsList
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            emptyList() // Handle the error case as needed
+//        }
+//    }
+
+
+//    suspend fun getAllServicesByTags(tags: List<String>): List<HomePagingItem> {
+//        return try {
+//
+//            val serviceIds = getServiceIdsByTags(tags)
+//
+//            Log.d("Service IDs: ", serviceIds.count().toString())
+//
+//            val itemsList = mutableListOf<HomePagingItem>()
+//
+//            for (serviceId in serviceIds) {
+//                // Fetch staycation document
+//                val staycationDoc = staycationCollection.document(serviceId.serviceId).get().await()
+//                val staycationImage = getServiceImages(serviceId.serviceId, "Staycation")
+//
+//                // Check if staycation document is not empty before creating HomePagingItem
+//                if (!staycationDoc.exists()) continue
+//
+//                val staycation = HomePagingItem(
+//                    serviceId = serviceId.serviceId,
+//                    serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
+//                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+//                    serviceTitle = staycationDoc.getString("staycationTitle") ?: "",
+//                    averageReviewRating = staycationDoc.getDouble("averageReviewRating") ?: 0.0,
+//                    location = staycationDoc.getString("staycationLocation") ?: "",
+//                    price = staycationDoc.getDouble("staycationPrice") ?: 0.0
+//                )
+//                itemsList.add(staycation)
+//
+//                // Fetch tour document
+//                val tourDoc = tourCollection.document(serviceId.serviceId).get().await()
+//                val tourImage = getServiceImages(serviceId.serviceId, "Tour")
+//
+//                // Check if tour document is not empty before creating HomePagingItem
+//                if (!tourDoc.exists()) continue
+//
+//                val tour = HomePagingItem(
+//                    serviceId = serviceId.serviceId,
+//                    serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
+//                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+//                    serviceTitle = tourDoc.getString("tourTitle") ?: "",
+//                    averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
+//                    location = tourDoc.getString("tourLocation") ?: "",
+//                    price = tourDoc.getDouble("tourPrice") ?: 0.0,
+//                    tourDuration = tourDoc.getString("tourDuration")?.toInt()
+//                )
+//                itemsList.add(tour)
+//            }
+//
+//            itemsList
+//
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            emptyList() // Handle the error case as needed
+//        }
+//    }
+
+    suspend fun getAllServicesByTag(tag: String): List<HomePagingItem> {
+        return try {
+            val serviceIds = getServiceIdsByTag(tag)
+
+            Log.d("Service IDs: ", serviceIds.count().toString())
+
+            val itemsList = mutableListOf<HomePagingItem>()
+
+            for (serviceId in serviceIds) {
+                // Fetch staycation document
+                val staycationDoc = staycationCollection.document(serviceId.serviceId).get().await()
+                val staycationImage = getServiceImages(serviceId.serviceId, "Staycation")
+
+                // Check if staycation document is not empty before creating HomePagingItem
+                if (!staycationDoc.exists()) continue
+
+                val staycation = HomePagingItem(
+                    serviceId = serviceId.serviceId,
+                    serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
+                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                    serviceTitle = staycationDoc.getString("staycationTitle") ?: "",
+                    averageReviewRating = staycationDoc.getDouble("averageReviewRating") ?: 0.0,
+                    location = staycationDoc.getString("staycationLocation") ?: "",
+                    price = staycationDoc.getDouble("staycationPrice") ?: 0.0
+                )
+                itemsList.add(staycation)
+
+                // Fetch tour document
+                val tourDoc = tourCollection.document(serviceId.serviceId).get().await()
+                val tourImage = getServiceImages(serviceId.serviceId, "Tour")
+
+                // Check if tour document is not empty before creating HomePagingItem
+                if (!tourDoc.exists()) continue
+
+                val tour = HomePagingItem(
+                    serviceId = serviceId.serviceId,
+                    serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
+                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                    serviceTitle = tourDoc.getString("tourTitle") ?: "",
+                    averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
+                    location = tourDoc.getString("tourLocation") ?: "",
+                    price = tourDoc.getDouble("tourPrice") ?: 0.0,
+                    tourDuration = tourDoc.getString("tourDuration")?.toInt()
+                )
+                itemsList.add(tour)
+            }
+
+            Log.d("Services Fetched", "$itemsList")
+            itemsList
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -2680,7 +3311,8 @@ class UserRepository {
     }
 
 
-    suspend fun getServiceIdsByTag(tagName: String): List<Tag> {
+
+    private suspend fun getServiceIdsByTag(tagName: String): List<Tag> {
         return try {
             val result = serviceTagCollection
                 .whereEqualTo("tagName", tagName)
@@ -2808,6 +3440,33 @@ class UserRepository {
         )
     }
 
+    suspend fun getServiceForHome(): List<HomePagingItem> {
+        val serviceDocs = serviceCollection
+           // .limit(20)
+            .get()
+            .await()
+
+        val staycationList = mutableListOf<HomePagingItem>()
+
+        for (doc in serviceDocs) {
+            val serviceId = doc.getString("serviceId") ?: ""
+            val staycationDoc = staycationCollection.document(serviceId).get().await()
+
+            val staycation = HomePagingItem(
+                serviceId = serviceId,
+                serviceTitle = staycationDoc.getString("serviceTitle") ?: "",
+                averageReviewRating = staycationDoc.getDouble("averageReviewRating") ?: 0.0,
+                location = staycationDoc.getString("location") ?: "",
+                price = staycationDoc.getDouble("price") ?: 0.0,
+                tourDuration = staycationDoc.getLong("tourDuration")?.toInt()
+            )
+
+            staycationList.add(staycation)
+        }
+
+        return staycationList
+    }
+
     suspend fun getAllStaycations(tab: String): List<Staycation> {
         return try {
             val result = db.collection("staycation")
@@ -2886,7 +3545,7 @@ class UserRepository {
         }
     }
 
-    suspend fun getStaycationBookings(staycationId: String): List<StaycationBooking> {
+    private suspend fun getStaycationBookings(staycationId: String): List<StaycationBooking> {
         return try {
             val result = staycationBookingCollection
                 .whereEqualTo("staycationId", staycationId)
@@ -2981,7 +3640,7 @@ class UserRepository {
     }
 
 
-    suspend fun getServiceTags(serviceId: String, serviceType: String): List<Tag> {
+    private suspend fun getServiceTags(serviceId: String, serviceType: String): List<Tag> {
         return try {
             val result = serviceTagCollection
                 .whereEqualTo("serviceId", serviceId)
@@ -3067,7 +3726,7 @@ class UserRepository {
         }
     }
 
-    suspend fun getStaycationAvailability(staycationId: String): List<StaycationAvailability> {
+    private suspend fun getStaycationAvailability(staycationId: String): List<StaycationAvailability> {
         return try {
             val result = staycationAvailabilityCollection
                 .whereEqualTo("staycationId", staycationId)
@@ -3096,7 +3755,7 @@ class UserRepository {
         }
     }
 
-    suspend fun getAmenities(serviceId: String, serviceType: String): List<Amenity> {
+    private suspend fun getAmenities(serviceId: String, serviceType: String): List<Amenity> {
         return try {
             val result = serviceAmenityCollection
                 .whereEqualTo("serviceId", serviceId)

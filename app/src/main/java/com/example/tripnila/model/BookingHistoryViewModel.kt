@@ -39,10 +39,6 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
         ).flow.cachedIn(viewModelScope)
     }
 
-//    fun refreshData(touristId: String) {
-//        StaycationBookingPagingSource(repository, touristId).invalidate()
-//    }
-
     private val _selectedImageUris = MutableStateFlow<List<Uri>>(emptyList())
     val selectedImageUris: StateFlow<List<Uri>> = _selectedImageUris
 

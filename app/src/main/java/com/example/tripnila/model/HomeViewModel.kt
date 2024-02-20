@@ -1,43 +1,49 @@
 package com.example.tripnila.model
 
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
-import androidx.paging.PagingSource
 import androidx.paging.cachedIn
-import androidx.paging.compose.collectAsLazyPagingItems
-import com.example.tripnila.data.Filter
+import androidx.paging.compose.LazyPagingItems
+import com.example.tripnila.data.HomePagingItem
 import com.example.tripnila.data.Preference
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.repository.UserRepository
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
+import java.util.SortedSet
 
 class HomeViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
 
     private val _selectedTab = MutableStateFlow("For You") // Default tab
     val selectedTab: StateFlow<String> get() = _selectedTab
 
-    private val _preferences = MutableStateFlow<List<Preference>>(emptyList()) // Initialize with an empty Host
+    private val _serviceIdSet = MutableStateFlow<SortedSet<String>>(sortedSetOf())
+    val serviceIdSet = _serviceIdSet.asStateFlow()
+
+    private val _preferences =
+        MutableStateFlow<List<Preference>>(emptyList()) // Initialize with an empty Host
     val preferences = _preferences.asStateFlow()
 
 
     fun selectTab(tab: String) {
         _selectedTab.value = tab
+
+        Log.d("Selected Tab (VM)", _selectedTab.value)
     }
 
     fun getUserPreference(touristId: String) {
@@ -46,36 +52,274 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 val preferences = repository.getTouristPreferences(touristId)
                 _preferences.value = preferences
 
+//                // temp
+                val preferencesList = listOf(
+                    Preference("Sports"),
+                    Preference("Food Trip"),
+                    Preference("Shop"),
+                    Preference("Nature"),
+                    Preference("Gaming"),
+                    Preference("Karaoke"),
+                    Preference("History"),
+                    Preference("Clubs"),
+                    Preference("Sightseeing"),
+                    Preference("Swimming")
+                )
+                _preferences.value = preferencesList
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
 
-    fun getStaycationsByTab(tab: String): Flow<PagingData<Staycation>> {
-        val pagingConfig = PagingConfig(
-            pageSize = 10, // Adjust as needed
-            enablePlaceholders = false
-        )
-
-        return if (tab == "For You") {
-            val tabs = _preferences.value.map { it.preference }
-
-            Pager(
-                config = pagingConfig,
-                pagingSourceFactory = { ForYouPagingSource(repository, tabs) }
-            ).flow.cachedIn(viewModelScope)
-
-        } else {
-            Pager(
-                config = pagingConfig,
-                pagingSourceFactory = { StaycationPagingSource(repository, tab) }
-            ).flow.cachedIn(viewModelScope)
+    fun getUniqueServiceIds() {
+        viewModelScope.launch {
+            try {
+                val uniqueServiceIds = repository.getAllUniqueServiceId().toSortedSet()
+                _serviceIdSet.value = uniqueServiceIds
+                Log.d("Service IDs", _serviceIdSet.value.toString())
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
+    }
 
+    // TEMP
+    private val _itemsForYou =
+        MutableStateFlow<List<HomePagingItem>>(emptyList())
+    val itemsForYou = _itemsForYou.asStateFlow()
+
+    private val _itemsSports =
+        MutableStateFlow<List<HomePagingItem>>(emptyList())
+    val itemsSports = _itemsSports.asStateFlow()
+
+    private val _itemsFoodTrip =
+        MutableStateFlow<List<HomePagingItem>>(emptyList())
+    val itemsFoodTrip = _itemsFoodTrip.asStateFlow()
+
+    private val _itemsShop =
+        MutableStateFlow<List<HomePagingItem>>(emptyList())
+    val itemsShop = _itemsShop.asStateFlow()
+
+    private val _itemsNature =
+        MutableStateFlow<List<HomePagingItem>>(emptyList())
+    val itemsNature = _itemsNature.asStateFlow()
+
+    private val _itemsGaming =
+        MutableStateFlow<List<HomePagingItem>>(emptyList())
+    val itemsGaming = _itemsGaming.asStateFlow()
+
+    private val _itemsKaraoke =
+        MutableStateFlow<List<HomePagingItem>>(emptyList())
+    val itemsKaraoke = _itemsKaraoke.asStateFlow()
+
+    private val _itemsHistory =
+        MutableStateFlow<List<HomePagingItem>>(emptyList())
+    val itemsHistory = _itemsHistory.asStateFlow()
+
+    private val _itemsClubs =
+        MutableStateFlow<List<HomePagingItem>>(emptyList())
+    val itemsClubs = _itemsClubs.asStateFlow()
+
+    private val _itemsSightseeing =
+        MutableStateFlow<List<HomePagingItem>>(emptyList())
+    val itemsSightseeing = _itemsSightseeing.asStateFlow()
+
+    private val _itemsSwimming =
+        MutableStateFlow<List<HomePagingItem>>(emptyList())
+    val itemsSwimming = _itemsSwimming.asStateFlow()
+
+    val pagingData: Flow<PagingData<HomePagingItem>> = Pager(PagingConfig(pageSize = 6)) {
+        HomePagingSource(
+            repository,
+            _preferences.value.map { it.preference },
+            _serviceIdSet.value,
+        ) // Initial tags
+    }.flow.cachedIn(viewModelScope)
+
+    fun getServicesByTab(tab: String) {
+        viewModelScope.launch {
+            try {
+
+                Log.d("Current Tab(VM Fun):", _selectedTab.value)
+
+                when (_selectedTab.value) {
+//                    "For You" -> {
+//                        val tabs = _preferences.value.map { it.preference }
+//                        _itemsForYou.value = repository.getAllServicesByTags(tabs)
+//                        _itemsForYou.value = _itemsForYou.value.distinctBy { it.serviceId }
+//                    }
+                    "Sports" -> { _itemsSports.value = repository.getAllServicesByTag(_selectedTab.value) }
+                    "Food Trip" -> { _itemsFoodTrip.value = repository.getAllServicesByTag(_selectedTab.value) }
+                    "Shop" -> { _itemsShop.value = repository.getAllServicesByTag(_selectedTab.value) }
+                    "Nature" -> { _itemsNature.value = repository.getAllServicesByTag(_selectedTab.value) }
+                    "Gaming" -> { _itemsGaming.value = repository.getAllServicesByTag(_selectedTab.value) }
+                    "Karaoke" -> { _itemsKaraoke.value = repository.getAllServicesByTag(_selectedTab.value) }
+                    "History" -> { _itemsHistory.value = repository.getAllServicesByTag(_selectedTab.value) }
+                    "Clubs" -> { _itemsClubs.value = repository.getAllServicesByTag(_selectedTab.value) }
+                    "Sightseeing" -> { _itemsSightseeing.value = repository.getAllServicesByTag(_selectedTab.value) }
+                    "Swimming" -> { _itemsSwimming.value = repository.getAllServicesByTag(_selectedTab.value) }
+                    else -> {
+                        Log.d("getServicesByTab Error", "${_preferences.value}")
+                    }
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
 }
+
+//    fun fetchServicesByTab(touristId: String): Flow<PagingData<HomePagingItem>> {
+//        return flow {
+////            val preferences = repository.getTouristPreferences(touristId)
+////            _preferences.value = preferences
+//
+//            val preferencesList = listOf(
+//                Preference("Sports"),
+//                Preference("Food Trip"),
+//                Preference("Shop"),
+//                Preference("Nature"),
+//                Preference("Gaming"),
+//                Preference("Karaoke"),
+//                Preference("History"),
+//                Preference("Clubs"),
+//                Preference("Sightseeing"),
+//                Preference("Swimming")
+//            )
+//            _preferences.value = preferencesList
+//
+//            val pagingConfig = PagingConfig(
+//                pageSize = 5, // Adjust as needed
+//                enablePlaceholders = false
+//            )
+//
+//            val pagingDataFlow = Pager(
+//                config = pagingConfig,
+//                pagingSourceFactory = { HomePagingSource(repository, _preferences.value.map { it.preference }) }
+//            ).flow
+//
+//            emitAll(pagingDataFlow)
+//        }.cachedIn(viewModelScope)
+//    }
+
+//    fun fetchServicesByTab(touristId: String): Flow<PagingData<HomePagingItem>> {
+//        viewModelScope.launch {
+//            val preferences = repository.getTouristPreferences(touristId)
+//            _preferences.value = preferences
+//
+//            val pagingConfig = PagingConfig(
+//                pageSize = 10, // Adjust as needed
+//                enablePlaceholders = false
+//            )
+//
+//            return@launch Pager(
+//                config = pagingConfig,
+//                pagingSourceFactory = { HomePagingSource(repository, _preferences.value.map { it.preference }) }
+//            ).flow.cachedIn(viewModelScope)
+//        }
+//
+//
+//    }
+
+//    fun getServicesByTab(tab: String) {
+//        viewModelScope.launch {
+//            try {
+//
+//                Log.d("Current Tab(VM Fun):", _selectedTab.value)
+//
+//                when (_selectedTab.value) {
+//                    "For You" -> {
+//                        val tabs = _preferences.value.map { it.preference }
+//                        _itemsForYou.value = repository.getAllServicesByTags(tabs)
+//                        _itemsForYou.value = _itemsForYou.value.distinctBy { it.serviceId }
+//                    }
+//                    "Sports" -> { _itemsSports.value = repository.getAllServicesByTag(_selectedTab.value) }
+//                    "Food Trip" -> { _itemsFoodTrip.value = repository.getAllServicesByTag(_selectedTab.value) }
+//                    "Shop" -> { _itemsShop.value = repository.getAllServicesByTag(_selectedTab.value) }
+//                    "Nature" -> { _itemsNature.value = repository.getAllServicesByTag(_selectedTab.value) }
+//                    "Gaming" -> { _itemsGaming.value = repository.getAllServicesByTag(_selectedTab.value) }
+//                    "Karaoke" -> { _itemsKaraoke.value = repository.getAllServicesByTag(_selectedTab.value) }
+//                    "History" -> { _itemsHistory.value = repository.getAllServicesByTag(_selectedTab.value) }
+//                    "Clubs" -> { _itemsClubs.value = repository.getAllServicesByTag(_selectedTab.value) }
+//                    "Sightseeing" -> { _itemsSightseeing.value = repository.getAllServicesByTag(_selectedTab.value) }
+//                    "Swimming" -> { _itemsSwimming.value = repository.getAllServicesByTag(_selectedTab.value) }
+//                    else -> {
+//                        Log.d("getServicesByTab Error", "${_preferences.value}")
+//                    }
+//                }
+//
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//            }
+//        }
+//    }
+
+//    fun getServicesByTab(tab: String) {
+//        viewModelScope.launch {
+//            try {
+//                if (_selectedTab.value == "For You") {
+//                    val tabs = _preferences.value.map { it.preference }
+//                    Log.d("getServicesByTab function", "For You")
+//                    Log.d("preferences", "${_preferences.value}")
+//
+//                    _itemsForYou.value = repository.getAllServicesByTags(tabs)
+//                } else {
+//                    Log.d("getServicesByTab function", "${_preferences.value}")
+//
+//                    _items.value = repository.getAllServicesByTag(tab)
+//                }
+//
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//            }
+//        }
+//    }
+
+//fun getStaycationsByTab(tab: String): Flow<PagingData<Staycation>> {
+//    val pagingConfig = PagingConfig(
+//        pageSize = 10, // Adjust as needed
+//        enablePlaceholders = false
+//    )
+//
+//    return if (tab == "For You") {
+//        val tabs = _preferences.value.map { it.preference }
+//
+//        Pager(
+//            config = pagingConfig,
+//            pagingSourceFactory = { ForYouPagingSource(repository, tabs) }
+//        ).flow.cachedIn(viewModelScope)
+//
+//    } else {
+//        Pager(
+//            config = pagingConfig,
+//            pagingSourceFactory = { StaycationPagingSource(repository, tab) }
+//        ).flow.cachedIn(viewModelScope)
+//    }
+//
+//}
+
+//    suspend fun getServicesByTab(tab: String): List<HomePagingItem> {
+//        return try {
+//            if (_selectedTab.value == "For You") {
+//                val tabs = _preferences.value.map { it.preference }
+//                Log.d("getServicesByTab function", "For You")
+//                Log.d("preferences", "${_preferences.value}")
+//
+//                _items.value = repository.getAllServicesByTags(tabs)
+//            } else {
+//                Log.d("getServicesByTab function", "${_preferences.value}")
+//
+//                repository.getAllServicesByTag(tab)
+//            }
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            emptyList() // Return an empty list or handle the error case as needed
+//        }
+//    }
 
 
 //    private var currentFilter: Filter by mutableStateOf(Filter()) // Initial empty filter

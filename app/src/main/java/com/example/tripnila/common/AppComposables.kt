@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -101,14 +100,10 @@ import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
 import com.example.tripnila.data.BottomNavigationItem
 import com.example.tripnila.data.ReviewUiState
-import com.example.tripnila.screens.AppOutlinedButtonWithBadge
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -765,7 +760,7 @@ fun TouristBottomNavigationBar(
     ) {
         items.forEachIndexed { index, item ->
             NavigationBarItem(
-                selected = currentDestination?.hierarchy?.any { it.route == "${item.title}" } == true,
+                selected = currentDestination?.hierarchy?.any { it.route == item.title } == true,
                 onClick = {
                     navController.navigate(route = "${item.title}/$touristId") {
                         popUpTo(navController.graph.findStartDestination().id) {
@@ -774,7 +769,7 @@ fun TouristBottomNavigationBar(
                         launchSingleTop = true
                         restoreState = true
                     }
-                    onItemSelected(index)
+                  //  onItemSelected(index)
 
                     Log.d("Navigation", "Navigating to ${item.title} with touristId: $touristId")
 //                    navController.navigate(route = "${item.title}/{touristId}") {
@@ -798,7 +793,8 @@ fun TouristBottomNavigationBar(
                                 painterResource(id = item.selectedIcon)
                             } else painterResource(id = item.unselectedIcon),
                             contentDescription = item.title,
-                            tint = if (index == selectedItemIndex) Orange else Color.Gray
+                            tint = if (index == selectedItemIndex) Orange else Color.Gray,
+                            modifier = Modifier.size(30.dp)
                         )
                     }
                 }
@@ -835,10 +831,10 @@ fun Tag(tag: String, modifier: Modifier = Modifier){
 
 @Composable
 fun AppReviewsCard(
+    modifier: Modifier = Modifier,
     totalReviews: Int = 254,
     averageRating: Double = 4.7,
     reviews: List<ReviewUiState>,
-    modifier: Modifier = Modifier
 ){
 
     Box(
@@ -903,7 +899,6 @@ fun AppReviewsCard(
     }
 }
 
-@OptIn(ExperimentalCoilApi::class)
 @Composable
 fun ReviewCard(review: ReviewUiState, modifier: Modifier = Modifier) {
     OutlinedCard(
@@ -1141,12 +1136,12 @@ fun AppExpandingText(
 
 @Composable
 fun AppLocationCard(
+    modifier: Modifier = Modifier,
     header: String = "Location",
     location: String,
     locationImage: Int,
     locationDescription: String,
-    withEditButton: Boolean = false,
-    modifier: Modifier = Modifier
+    withEditButton: Boolean = false
 ){
     Box(
         modifier = modifier
@@ -1321,12 +1316,12 @@ fun AppConfirmAndPayDivider(
 
 @Composable
 fun AppYourTripRow(
+    modifier: Modifier = Modifier,
     forCancelBooking: Boolean = false,
     rowLabel: String,
     rowText: String,
     fontColor: Color = Color(0xFF999999),
-    onClickEdit: (() -> Unit?)? = null,
-    modifier: Modifier = Modifier
+    onClickEdit: (() -> Unit?)? = null
 ){
     Row(
         modifier = modifier
