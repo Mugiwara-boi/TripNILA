@@ -48,20 +48,20 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 _touristId.value = touristId
                 Log.d("HostId", "HOST-${_touristId.value}")
                 Log.d("TouristId", _touristId.value)
-//                // temp
-                val preferencesList = listOf(
-                    Preference("Sports"),
-                    Preference("Food Trip"),
-                    Preference("Shop"),
-                    Preference("Nature"),
-                    Preference("Gaming"),
-                    Preference("Karaoke"),
-                    Preference("History"),
-                    Preference("Clubs"),
-                    Preference("Sightseeing"),
-                    Preference("Swimming")
-                )
-                _preferences.value = preferencesList
+////                // temp
+//                val preferencesList = listOf(
+//                    Preference("Sports"),
+//                    Preference("Food Trip"),
+//                    Preference("Shop"),
+//                    Preference("Nature"),
+//                    Preference("Gaming"),
+//                    Preference("Karaoke"),
+//                    Preference("History"),
+//                    Preference("Clubs"),
+//                    Preference("Sightseeing"),
+//                    Preference("Swimming")
+//                )
+//                _preferences.value = preferencesList
 
             } catch (e: Exception) {
                 e.printStackTrace()
