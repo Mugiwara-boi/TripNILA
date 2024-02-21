@@ -14,6 +14,7 @@ data class HomePagingItem(
     val averageReviewRating: Double,
     val location: String,
     val price: Double,
-    val tourDuration: Int? = null
+    val tourDuration: Int? = null,
+    val hostId: String = ""
 )
 

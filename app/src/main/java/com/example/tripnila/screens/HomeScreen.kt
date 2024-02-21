@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -193,10 +195,18 @@ fun HomeScreen(
 
                     if (serviceIdSet.isNotEmpty()) {
 
-
-
                         val lazyPagingItems = when (selectedTab) {
-                            "For You" -> homeViewModel.pagingData.collectAsLazyPagingItems()
+                            "For You" -> homeViewModel.forYouPagingData.collectAsLazyPagingItems()
+                            "Sports" -> homeViewModel.sportsPagingData.collectAsLazyPagingItems()
+                            "Food Trip" -> homeViewModel.foodTripPagingData.collectAsLazyPagingItems()
+                            "Shop" -> homeViewModel.shopPagingData.collectAsLazyPagingItems()
+                            "Nature" -> homeViewModel.naturePagingData.collectAsLazyPagingItems()
+                            "Gaming" -> homeViewModel.gamingPagingData.collectAsLazyPagingItems()
+                            "Karaoke" -> homeViewModel.karaokePagingData.collectAsLazyPagingItems()
+                            "History" -> homeViewModel.historyPagingData.collectAsLazyPagingItems()
+                            "Clubs" -> homeViewModel.clubsPagingData.collectAsLazyPagingItems()
+                            "Sightseeing" -> homeViewModel.sightseeingPagingData.collectAsLazyPagingItems()
+                            "Swimming" -> homeViewModel.swimmingPagingData.collectAsLazyPagingItems()
                             else -> null
                         }
 
@@ -431,7 +441,7 @@ fun ServiceListingCard(
                     Text(
                         modifier = Modifier
                             .fillMaxWidth(0.55f),
-                        text = service.serviceId,
+                        text = service.serviceTitle,
                         fontWeight = FontWeight.Medium,
                         fontSize = 11.sp,
                         lineHeight = 11.sp,
@@ -459,12 +469,22 @@ fun ServiceListingCard(
                     fontSize = 9.sp,
                     color = Color(0xFF727272)
                 )
-                Text(
-                    text = "₱ ${"%.2f".format(service.price)}/night",
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 9.sp,
-                    color = Color(0xFF727272)
-                )
+                if (service.tourDuration != null ) {
+                    Text(
+                        text = "₱ ${"%.2f".format(service.price)}/head   •   ${service.tourDuration} hours",
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 9.sp,
+                        color = Color(0xFF727272)
+                    )
+                } else {
+                    Text(
+                        text = "₱ ${"%.2f".format(service.price)}/night",
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 9.sp,
+                        color = Color(0xFF727272)
+                    )
+                }
+
             }
 
 

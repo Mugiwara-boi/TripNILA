@@ -3074,6 +3074,7 @@ class UserRepository {
 //        }
 //    }
 
+
     suspend fun getAllUniqueServiceId(): SortedSet<String> {
         val uniqueServiceIds = sortedSetOf<String>()
         val querySnapshot = serviceTagCollection
@@ -3093,10 +3094,123 @@ class UserRepository {
         return uniqueServiceIds
     }
 
+    suspend fun getAllServicesByTagWithPaging(hostId: String, tag: String, pageNumber: Int, pageSize: Int): List<HomePagingItem> {
+
+        val serviceIds = getServiceIdsByTag(tag, pageNumber, pageSize)
+
+        val itemsList = mutableListOf<HomePagingItem>()
+
+        for (serviceId in serviceIds) {
+            // Fetch staycation document
+            val staycationDoc = staycationCollection.document(serviceId.serviceId).get().await()
+            val staycationImage = getServiceImages(serviceId.serviceId, "Staycation")
+
+            // Check if staycation document is not empty before creating HomePagingItem
+            if (staycationDoc.exists() && staycationDoc.getString("hostId") != hostId) {
+                val staycation = HomePagingItem(
+                    serviceId = serviceId.serviceId,
+                    serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
+                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                    serviceTitle = staycationDoc.getString("staycationTitle") ?: "",
+                    averageReviewRating = staycationDoc.getDouble("averageReviewRating") ?: 0.0,
+                    location = staycationDoc.getString("staycationLocation") ?: "",
+                    price = staycationDoc.getDouble("staycationPrice") ?: 0.0,
+                    hostId = staycationDoc.getString("hostId") ?: ""
+                )
+                itemsList.add(staycation)
+            }
+
+            // Fetch tour document
+            val tourDoc = tourCollection.document(serviceId.serviceId).get().await()
+            val tourImage = getServiceImages(serviceId.serviceId, "Tour")
+
+            // Check if tour document is not empty before creating HomePagingItem
+            if (tourDoc.exists() && tourDoc.getString("hostId") != hostId) {
+                val tour = HomePagingItem(
+                    serviceId = serviceId.serviceId,
+                    serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
+                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                    serviceTitle = tourDoc.getString("tourTitle") ?: "",
+                    averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
+                    location = tourDoc.getString("tourLocation") ?: "",
+                    price = tourDoc.getDouble("tourPrice") ?: 0.0,
+                    tourDuration = tourDoc.getString("tourDuration")?.toInt(),
+                    hostId = tourDoc.getString("hostId") ?: ""
+                )
+                itemsList.add(tour)
+            }
+        }
+
+        return itemsList
+    }
+
+    private suspend fun getServiceIdsByTag(
+        tagName: String,
+        pageNumber: Int,
+        pageSize: Int
+    ): List<Tag> {
+        return try {
+
+            val initialLoadSize = pageSize * 3
+            val startIndex = if (pageNumber == 0) {
+                0
+            } else {
+                ((pageNumber - 1) * pageSize) + initialLoadSize
+            }
+
+            val result = mutableListOf<Tag>()
+
+            var query = serviceTagCollection
+                .whereEqualTo("tagName", tagName)
+                .orderBy("serviceId")
+
+            // If it's not the first page, start after the last document of the previous page
+            if (pageNumber > 0) {
+                val lastDocumentSnapshot = serviceTagCollection
+                    .whereEqualTo("tagName", tagName)
+                    .orderBy("serviceId")
+                    .limit(startIndex.toLong())
+                    .get()
+                    .await()
+                    .documents
+                    .lastOrNull()
+
+                if (lastDocumentSnapshot != null) {
+                    query = query.startAfter(lastDocumentSnapshot)
+                }
+            }
+
+            val querySnapshot = query
+                .limit(pageSize.toLong() + 1) // Fetch one extra to check if there's a next page
+                .get()
+                .await()
+
+            querySnapshot.documents.forEach { document ->
+                val tagId = document.id
+                val tagName = document.getString("tagName") ?: ""
+                val serviceId = document.getString("serviceId") ?: ""
+
+                val tag = Tag(tagId = tagId, tagName = tagName, serviceId = serviceId)
+                result.add(tag)
+            }
+
+            // If there are more documents than the requested page size, remove the extra one
+            if (result.size > pageSize) {
+                result.removeAt(result.size - 1)
+            }
+
+            Log.d("Result", result.map { it.tagName }.toString())
+
+            result
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList() // Handle the error case as needed
+        }
+    }
 
 
 
-    suspend fun getAllServicesByTagsWithPaging(tags: List<String>, pageNumber: Int, pageSize: Int, serviceIdSet: SortedSet<String>): List<HomePagingItem> {
+    suspend fun getAllServicesByTagsWithPaging(hostId: String, tags: List<String>, pageNumber: Int, pageSize: Int, serviceIdSet: SortedSet<String>): List<HomePagingItem> {
 
         val serviceIds = getServiceIdsByTags(tags, pageNumber, pageSize, serviceIdSet)
 
@@ -3108,7 +3222,7 @@ class UserRepository {
             val staycationImage = getServiceImages(serviceId.serviceId, "Staycation")
 
             // Check if staycation document is not empty before creating HomePagingItem
-            if (staycationDoc.exists()) {
+            if (staycationDoc.exists() && staycationDoc.getString("hostId") != hostId) {
                 val staycation = HomePagingItem(
                     serviceId = serviceId.serviceId,
                     serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
@@ -3116,7 +3230,8 @@ class UserRepository {
                     serviceTitle = staycationDoc.getString("staycationTitle") ?: "",
                     averageReviewRating = staycationDoc.getDouble("averageReviewRating") ?: 0.0,
                     location = staycationDoc.getString("staycationLocation") ?: "",
-                    price = staycationDoc.getDouble("staycationPrice") ?: 0.0
+                    price = staycationDoc.getDouble("staycationPrice") ?: 0.0,
+                    hostId = staycationDoc.getString("hostId") ?: ""
                 )
                 itemsList.add(staycation)
             }
@@ -3126,7 +3241,7 @@ class UserRepository {
             val tourImage = getServiceImages(serviceId.serviceId, "Tour")
 
             // Check if tour document is not empty before creating HomePagingItem
-            if (tourDoc.exists()) {
+            if (tourDoc.exists() && tourDoc.getString("hostId") != hostId) {
                 val tour = HomePagingItem(
                     serviceId = serviceId.serviceId,
                     serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
@@ -3135,7 +3250,8 @@ class UserRepository {
                     averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
                     location = tourDoc.getString("tourLocation") ?: "",
                     price = tourDoc.getDouble("tourPrice") ?: 0.0,
-                    tourDuration = tourDoc.getString("tourDuration")?.toInt()
+                    tourDuration = tourDoc.getString("tourDuration")?.toInt(),
+                    hostId = tourDoc.getString("hostId") ?: ""
                 )
                 itemsList.add(tour)
             }
@@ -3254,117 +3370,118 @@ class UserRepository {
 //        }
 //    }
 
-    suspend fun getAllServicesByTag(tag: String): List<HomePagingItem> {
-        return try {
-            val serviceIds = getServiceIdsByTag(tag)
+    // WORKING WITHOUT PAGING
+//    suspend fun getAllServicesByTag(tag: String): List<HomePagingItem> {
+//        return try {
+//            val serviceIds = getServiceIdsByTag(tag)
+//
+//            Log.d("Service IDs: ", serviceIds.count().toString())
+//
+//            val itemsList = mutableListOf<HomePagingItem>()
+//
+//            for (serviceId in serviceIds) {
+//                // Fetch staycation document
+//                val staycationDoc = staycationCollection.document(serviceId.serviceId).get().await()
+//                val staycationImage = getServiceImages(serviceId.serviceId, "Staycation")
+//
+//                // Check if staycation document is not empty before creating HomePagingItem
+//                if (!staycationDoc.exists()) continue
+//
+//                val staycation = HomePagingItem(
+//                    serviceId = serviceId.serviceId,
+//                    serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
+//                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+//                    serviceTitle = staycationDoc.getString("staycationTitle") ?: "",
+//                    averageReviewRating = staycationDoc.getDouble("averageReviewRating") ?: 0.0,
+//                    location = staycationDoc.getString("staycationLocation") ?: "",
+//                    price = staycationDoc.getDouble("staycationPrice") ?: 0.0
+//                )
+//                itemsList.add(staycation)
+//
+//                // Fetch tour document
+//                val tourDoc = tourCollection.document(serviceId.serviceId).get().await()
+//                val tourImage = getServiceImages(serviceId.serviceId, "Tour")
+//
+//                // Check if tour document is not empty before creating HomePagingItem
+//                if (!tourDoc.exists()) continue
+//
+//                val tour = HomePagingItem(
+//                    serviceId = serviceId.serviceId,
+//                    serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
+//                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+//                    serviceTitle = tourDoc.getString("tourTitle") ?: "",
+//                    averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
+//                    location = tourDoc.getString("tourLocation") ?: "",
+//                    price = tourDoc.getDouble("tourPrice") ?: 0.0,
+//                    tourDuration = tourDoc.getString("tourDuration")?.toInt()
+//                )
+//                itemsList.add(tour)
+//            }
+//
+//            Log.d("Services Fetched", "$itemsList")
+//            itemsList
+//
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            emptyList() // Handle the error case as needed
+//        }
+//    }
 
-            Log.d("Service IDs: ", serviceIds.count().toString())
-
-            val itemsList = mutableListOf<HomePagingItem>()
-
-            for (serviceId in serviceIds) {
-                // Fetch staycation document
-                val staycationDoc = staycationCollection.document(serviceId.serviceId).get().await()
-                val staycationImage = getServiceImages(serviceId.serviceId, "Staycation")
-
-                // Check if staycation document is not empty before creating HomePagingItem
-                if (!staycationDoc.exists()) continue
-
-                val staycation = HomePagingItem(
-                    serviceId = serviceId.serviceId,
-                    serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
-                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
-                    serviceTitle = staycationDoc.getString("staycationTitle") ?: "",
-                    averageReviewRating = staycationDoc.getDouble("averageReviewRating") ?: 0.0,
-                    location = staycationDoc.getString("staycationLocation") ?: "",
-                    price = staycationDoc.getDouble("staycationPrice") ?: 0.0
-                )
-                itemsList.add(staycation)
-
-                // Fetch tour document
-                val tourDoc = tourCollection.document(serviceId.serviceId).get().await()
-                val tourImage = getServiceImages(serviceId.serviceId, "Tour")
-
-                // Check if tour document is not empty before creating HomePagingItem
-                if (!tourDoc.exists()) continue
-
-                val tour = HomePagingItem(
-                    serviceId = serviceId.serviceId,
-                    serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
-                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
-                    serviceTitle = tourDoc.getString("tourTitle") ?: "",
-                    averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
-                    location = tourDoc.getString("tourLocation") ?: "",
-                    price = tourDoc.getDouble("tourPrice") ?: 0.0,
-                    tourDuration = tourDoc.getString("tourDuration")?.toInt()
-                )
-                itemsList.add(tour)
-            }
-
-            Log.d("Services Fetched", "$itemsList")
-            itemsList
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList() // Handle the error case as needed
-        }
-    }
 
 
+//    private suspend fun getServiceIdsByTag(tagName: String): List<Tag> {
+//        return try {
+//            val result = serviceTagCollection
+//                .whereEqualTo("tagName", tagName)
+//                .get()
+//                .await()
+//
+//            val tags = mutableListOf<Tag>()
+//
+//            for (document in result.documents) {
+//                val tagId = document.id
+//                val serviceId = document.getString("serviceId") ?: ""
+//
+//                tags.add(Tag(tagId = tagId, tagName = tagName, serviceId = serviceId))
+//            }
+//
+//            tags
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            emptyList() // Handle the error case as needed
+//        }
+//    }
 
-    private suspend fun getServiceIdsByTag(tagName: String): List<Tag> {
-        return try {
-            val result = serviceTagCollection
-                .whereEqualTo("tagName", tagName)
-                .get()
-                .await()
-
-            val tags = mutableListOf<Tag>()
-
-            for (document in result.documents) {
-                val tagId = document.id
-                val serviceId = document.getString("serviceId") ?: ""
-
-                tags.add(Tag(tagId = tagId, tagName = tagName, serviceId = serviceId))
-            }
-
-            tags
-        } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList() // Handle the error case as needed
-        }
-    }
-
-    suspend fun getAllStaycationsByTag(tab: String, page: Int): List<Staycation> {
-        return try {
-            val pageSize = Constants.PAGE_SIZE
-            // Fetch serviceIds with the specified tag
-            val serviceIds = getServiceIdsByTag(tab)
-
-            // Fetch staycations with document id (staycationId) equal to the serviceId
-            val staycationList = mutableListOf<Staycation>()
-
-            val startIdx = page * pageSize
-            val endIdx = startIdx + pageSize
-
-            for (i in startIdx until min(endIdx, serviceIds.size)) {
-                val serviceId = serviceIds[i].serviceId
-                val document = db.collection("staycation").document(serviceId).get().await()
-
-                if (document.exists()) {
-                    val staycationId = document.id
-                    val staycation = createStaycationFromDocument(document, staycationId)
-                    staycationList.add(staycation)
-                }
-            }
-
-            staycationList
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList() // Handle the error case as needed
-        }
-    }
+//    suspend fun getAllStaycationsByTag(tab: String, page: Int): List<Staycation> {
+//        return try {
+//            val pageSize = Constants.PAGE_SIZE
+//            // Fetch serviceIds with the specified tag
+//            val serviceIds = getServiceIdsByTag(tab)
+//
+//            // Fetch staycations with document id (staycationId) equal to the serviceId
+//            val staycationList = mutableListOf<Staycation>()
+//
+//            val startIdx = page * pageSize
+//            val endIdx = startIdx + pageSize
+//
+//            for (i in startIdx until min(endIdx, serviceIds.size)) {
+//                val serviceId = serviceIds[i].serviceId
+//                val document = db.collection("staycation").document(serviceId).get().await()
+//
+//                if (document.exists()) {
+//                    val staycationId = document.id
+//                    val staycation = createStaycationFromDocument(document, staycationId)
+//                    staycationList.add(staycation)
+//                }
+//            }
+//
+//            staycationList
+//
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            emptyList() // Handle the error case as needed
+//        }
+//    }
 
     suspend fun getStaycationById(staycationId: String): Staycation? {
 
