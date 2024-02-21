@@ -22,6 +22,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +45,7 @@ import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.Inbox
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InboxScreen(
     touristId: String = "",
@@ -191,15 +193,52 @@ fun InboxItem(inbox: Inbox, modifier: Modifier = Modifier){
     }
     Divider(color = Color(0xFF999999))
 }
+//
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun AppTopBar(
+//    headerText: String,
+//    color: Color = Color(0xFF999999),
+//    modifier: Modifier = Modifier){
+//
+//    TopAppBar(
+////        colors = topAppBarColors(
+////            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+////        ),
+//        title = {
+//            Text(
+//                text = headerText,
+//                fontSize = 24.sp,
+//                fontWeight = FontWeight.Medium
+//            )
+//        },
+//        modifier = modifier
+//            .drawWithContent {
+//                drawContent()
+//                drawLine(
+//                    color = color,
+//                    start = Offset(0f, size.height),
+//                    end = Offset(size.width, size.height),
+//                    strokeWidth = 2f
+//                )
+//            }
+//
+//    )
+//
+//}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppTopBar(headerText: String, color: Color = Color(0xFF999999), modifier: Modifier = Modifier){
+fun AppTopBar(
+    modifier: Modifier = Modifier,
+    headerText: String,
+    color: Color = Color(0xFF999999),
+    scrollBehavior: TopAppBarScrollBehavior? = null
+){
+
+    //val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(state = rememberTopAppBarState())
 
     TopAppBar(
-//        colors = topAppBarColors(
-//            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-//        ),
         title = {
             Text(
                 text = headerText,
@@ -207,6 +246,7 @@ fun AppTopBar(headerText: String, color: Color = Color(0xFF999999), modifier: Mo
                 fontWeight = FontWeight.Medium
             )
         },
+        scrollBehavior = scrollBehavior,
         modifier = modifier
             .drawWithContent {
                 drawContent()
@@ -221,6 +261,7 @@ fun AppTopBar(headerText: String, color: Color = Color(0xFF999999), modifier: Mo
     )
 
 }
+
 
 @Preview
 @Composable

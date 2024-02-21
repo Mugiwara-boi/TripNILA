@@ -74,6 +74,7 @@ import com.example.tripnila.screens.BusinessManagerScreen
 import com.example.tripnila.screens.HomeScreen
 import com.example.tripnila.screens.HostDashboardScreen
 import com.example.tripnila.screens.InboxScreen
+import com.example.tripnila.screens.InsightsScreen
 import com.example.tripnila.screens.ItineraryScreen
 import com.example.tripnila.screens.LoginScreen
 import com.example.tripnila.screens.PreferenceScreen
@@ -127,6 +128,8 @@ enum class HostRoutes {
     AddListing13,
     AddListing14,
     AddListing15,
+
+    Insights,
 
     StaycationManager,
     BusinessManager,
@@ -397,6 +400,9 @@ fun NavGraphBuilder.hostGraph(
                     navigateToTourManager(navController, hostId, tourId)
                 },
                 hostDashboardViewModel = hostDashboardViewModel,
+                onNavToInsights = { hostId ->
+                    navigateToInsights(navController,hostId)
+                }
             )
         }
         composable(
@@ -768,6 +774,27 @@ fun NavGraphBuilder.hostGraph(
             )
         }
 
+
+        composable(
+            route = HostRoutes.Insights.name + "/{hostId}",
+            arguments = listOf(
+                navArgument("hostId") { type = NavType.StringType},
+            )
+        ) { entry ->
+            InsightsScreen(
+                hostId = entry.arguments?.getString("hostId") ?: "",
+                onBack = {
+                    navController.popBackStack()
+                }
+//                onNavToEditTour = { serviceId, hostId, listingType ->
+//                    navigateToEditListing(navController, serviceId, hostId, listingType)
+//                },
+//                onNavToDashboard = { touristId ->
+//                    navigateToHost(navController, touristId)
+//                },
+            )
+        }
+
 //        composable(
 //            route = HostRoutes.EditListing1.name + "/{hostId}/{tourId}",
 //            arguments = listOf(
@@ -818,6 +845,11 @@ private fun navigateToTourManager(navController: NavHostController, hostId: Stri
     }
 }
 
+private fun navigateToInsights(navController: NavHostController, hostId: String) {
+    navController.navigate("${HostRoutes.Insights.name}/$hostId") {
+        launchSingleTop = true
+    }
+}
 
 private fun navigateToBooking(navController: NavHostController, touristId: String, staycationId: String) {
     navController.navigate("${HomeRoutes.Booking.name}/$touristId/$staycationId") {

@@ -70,6 +70,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HostDashboardScreen(
     touristId: String,
@@ -80,6 +81,7 @@ fun HostDashboardScreen(
     onNavToStaycationManager: (String, String) -> Unit,
     onNavToBusinessManager: (String, String) -> Unit,
     onNavToTourManager: (String, String) -> Unit,
+    onNavToInsights: (String) -> Unit,
 ){
 
     Log.d("TouristId", "$touristId")
@@ -205,7 +207,9 @@ fun HostDashboardScreen(
                             HostOptionButton(
                                 buttonIcon = R.drawable.insights,
                                 buttonLabel = "Insights",
-                                onClick = {}
+                                onClick = {
+                                    host?.hostId?.let { hostId -> onNavToInsights(hostId) }
+                                }
                             )
                         }
                     }

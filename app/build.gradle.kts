@@ -91,4 +91,11 @@ dependencies {
 
     // google maps utils
     implementation ("com.google.maps.android:android-maps-utils:3.4.0")
+
+    // CHART
+    implementation("com.patrykandpatrick.vico:compose:1.13.1")
+    implementation("com.patrykandpatrick.vico:compose-m2:1.13.1")
+    implementation("com.patrykandpatrick.vico:compose-m3:1.13.1")
+    implementation("com.patrykandpatrick.vico:core:1.13.1")
+    implementation("com.patrykandpatrick.vico:views:1.13.1")
 }

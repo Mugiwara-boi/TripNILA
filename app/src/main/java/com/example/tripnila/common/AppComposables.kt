@@ -1363,7 +1363,65 @@ fun AppYourTripRow(
 }
 
 @Composable
-fun AppDropDownFilter(options: List<String>, modifier: Modifier = Modifier) {
+fun AppDropDownFilterWithCallback(
+    modifier: Modifier = Modifier,
+    options: List<String>,
+    fontSize: TextUnit = 12.sp,
+    selectedCategory: String,
+    onCategorySelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val icon = if (expanded)
+        Icons.Filled.KeyboardArrowUp
+    else
+        Icons.Filled.KeyboardArrowDown
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier,
+    ) {
+        Text(
+            text = selectedCategory,
+            fontSize = fontSize,
+            fontWeight = FontWeight.Medium,
+        )
+        IconButton(
+            modifier = Modifier.size(20.dp),
+            onClick = { expanded = true }
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = "",
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .background(Color.White)
+        ) {
+            options.forEach { label ->
+                DropdownMenuItem(
+                    text = { Text(text = label) },
+                    colors = MenuDefaults.itemColors(
+                        textColor = Color(0xFF6B6B6B)
+                    ),
+                    onClick = {
+                        onCategorySelected(label)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AppDropDownFilter(
+    modifier: Modifier = Modifier,
+    options: List<String>,
+    fontSize: TextUnit = 12.sp
+) {
     var expanded by remember { mutableStateOf(false) }
     var selectedText by remember { mutableStateOf(options.firstOrNull() ?: "") }
     val icon = if (expanded)
@@ -1377,9 +1435,8 @@ fun AppDropDownFilter(options: List<String>, modifier: Modifier = Modifier) {
     ) {
         Text(
             text = selectedText,
-            fontSize = 12.sp,
+            fontSize = fontSize,
             fontWeight = FontWeight.Medium,
-//            modifier = Modifier.padding(top = 15.dp)
         )
         IconButton(
             modifier = Modifier.size(20.dp),
@@ -1388,11 +1445,6 @@ fun AppDropDownFilter(options: List<String>, modifier: Modifier = Modifier) {
             Icon(
                 imageVector = icon,
                 contentDescription = "",
-//                modifier = Modifier
-//                    .offset(
-//                        x = (-9).dp,
-////                        y = (-17).dp
-//                    )
             )
         }
         DropdownMenu(

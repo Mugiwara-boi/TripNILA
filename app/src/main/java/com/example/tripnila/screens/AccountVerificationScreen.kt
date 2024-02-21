@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
@@ -56,6 +57,7 @@ import androidx.compose.ui.unit.toSize
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountVerificationScreen(
     touristId: String = ""
