@@ -98,4 +98,6 @@ dependencies {
     implementation("com.patrykandpatrick.vico:compose-m3:1.13.1")
     implementation("com.patrykandpatrick.vico:core:1.13.1")
     implementation("com.patrykandpatrick.vico:views:1.13.1")
+
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 }

@@ -5,17 +5,13 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.PagingSource
-import androidx.paging.PagingState
-import com.example.tripnila.common.Constants
 import com.example.tripnila.data.Amenity
 import com.example.tripnila.data.Business
 import com.example.tripnila.data.Chat
 import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.HomePagingItem
 import com.example.tripnila.data.Host
+import com.example.tripnila.data.Inbox
 import com.example.tripnila.data.Message
 import com.example.tripnila.data.Offer
 import com.example.tripnila.data.Photo
@@ -34,7 +30,6 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import java.io.File
@@ -50,10 +45,8 @@ import java.util.Locale
 import java.util.SortedSet
 import java.util.TimeZone
 import java.util.UUID
-import java.util.concurrent.Flow
 import java.util.concurrent.TimeUnit
 import kotlin.experimental.and
-import kotlin.math.min
 
 
 class UserRepository {
@@ -108,6 +101,122 @@ class UserRepository {
 
 
 
+    suspend fun getAllChatsByUserId(
+        userId: String,
+        currentPageNumber: Int,
+        pageSize: Int
+    ): List<Inbox> {
+
+        val chats = getChatIdsByUserId(userId, currentPageNumber, pageSize)
+
+        val itemsList = mutableListOf<Inbox>()
+
+        for (chat in chats) {
+            val messageQuerySnapshot = messageCollection
+                .whereEqualTo("chatId", chat.chatId)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(1)
+                .get()
+                .await()
+
+            if (!messageQuerySnapshot.isEmpty) {
+                val latestMessageDocument = messageQuerySnapshot.documents[0]
+                val content = latestMessageDocument.getString("content") ?: ""
+                val lastSender = latestMessageDocument.getString("senderId") ?: ""
+                val timestamp = latestMessageDocument.getLong("timestamp") ?: 0
+
+                val receiverProfile = getTouristProfile(chat.receiverId)
+
+                val inbox = Inbox(
+                    chatId = chat.chatId,
+                    image = receiverProfile?.profilePicture ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
+                    name = "${receiverProfile?.firstName} ${receiverProfile?.lastName}",
+                    inboxPreview = content,
+                    lastSender = lastSender,
+                    timeSent = timestamp
+
+                )
+
+                itemsList.add(inbox)
+            }
+
+        }
+
+
+        return itemsList
+    }
+
+    private suspend fun getChatIdsByUserId(
+        userId: String,
+        pageNumber: Int,
+        pageSize: Int,
+    ): List<Chat> {
+        return try {
+
+            val initialLoadSize = pageSize * 3
+            val startIndex = if (pageNumber == 0) {
+                0
+            } else {
+                ((pageNumber - 1) * pageSize) + initialLoadSize
+            }
+
+            val result = mutableListOf<Chat>()
+
+            var query = chatCollection
+                .whereArrayContains("participants", userId)
+               // .orderBy("serviceId")
+
+            // If it's not the first page, start after the last document of the previous page
+            if (pageNumber > 0) {
+                val lastDocumentSnapshot = chatCollection
+                    .whereArrayContains("participants", userId)
+                   // .orderBy("serviceId")
+                    .limit(startIndex.toLong())
+                    .get()
+                    .await()
+                    .documents
+                    .lastOrNull()
+
+                if (lastDocumentSnapshot != null) {
+                    query = query.startAfter(lastDocumentSnapshot)
+                }
+            }
+
+            val querySnapshot = query
+                .limit(pageSize.toLong() + 1) // Fetch one extra to check if there's a next page
+                .get()
+                .await()
+
+            querySnapshot.documents.forEach { document ->
+                val chatId = document.id
+                val participants = document.get("participants") as List<String>
+                val receiverId = participants.find { it != userId }
+
+                val chat = Chat(
+                    chatId = chatId,
+                    senderId = userId,
+                    receiverId = receiverId ?: ""
+                )
+
+                result.add(chat)
+            }
+
+            // If there are more documents than the requested page size, remove the extra one
+            if (result.size > pageSize) {
+                result.removeAt(result.size - 1)
+            }
+
+            result
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList() // Handle the error case as needed
+        }
+    }
+
+
+
+
+
     suspend fun getChatByUserIds(userId1: String, userId2: String): Chat? {
         try {
             val chatsSnapshot = chatCollection.get().await()
@@ -118,7 +227,7 @@ class UserRepository {
 
                 // Check if the chat contains both user IDs
                 if (participants.contains(userId1) && participants.contains(userId2)) {
-                    return Chat(chatId, participants)
+                    return Chat(chatId, userId1, userId2)
                 }
             }
         } catch (e: Exception) {
@@ -127,24 +236,24 @@ class UserRepository {
         return null
     }
 
-    suspend fun getChats(): List<Chat> {
-        try {
-            val chatsSnapshot = chatCollection.get().await()
-
-            val chatList = mutableListOf<Chat>()
-
-            for (document in chatsSnapshot.documents) {
-                val chatId = document.id
-                val participants = document.get("participants") as List<String>
-                chatList.add(Chat(chatId, participants))
-            }
-
-            return chatList
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return emptyList()
-    }
+//    suspend fun getChats(): List<Chat> {
+//        try {
+//            val chatsSnapshot = chatCollection.get().await()
+//
+//            val chatList = mutableListOf<Chat>()
+//
+//            for (document in chatsSnapshot.documents) {
+//                val chatId = document.id
+//                val participants = document.get("participants") as List<String>
+//                chatList.add(Chat(chatId, participants))
+//            }
+//
+//            return chatList
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
+//        return emptyList()
+//    }
 
     suspend fun getMessages(chatId: String): List<Message> {
         try {
@@ -160,7 +269,18 @@ class UserRepository {
                 val senderId = document.getString("senderId") ?: ""
                 val content = document.getString("content") ?: ""
                 val timestamp = document.getLong("timestamp") ?: 0
-                messageList.add(Message(messageId, chatId, senderId, content, timestamp))
+                val imageUrls = document.get("imageUrls") as? List<String> ?: emptyList() // Fetch image URLs if available
+                val images = imageUrls.map { Photo(photoUrl = it) }
+                messageList.add(
+                    Message(
+                        messageId = messageId,
+                        chatId = chatId,
+                        senderId = senderId,
+                        images = images,
+                        content = content,
+                        timestamp = timestamp
+                    )
+                )
             }
 
             return messageList
@@ -170,12 +290,22 @@ class UserRepository {
         return emptyList()
     }
 
-    suspend fun sendMessage(chatId: String, senderId: String, content: String): Message? {
+    suspend fun sendMessage(chatId: String, senderId: String, content: String, images: List<Photo>): Message? {
         try {
+
+            val imageUrls = uploadImages(images)
+
+            val newImage = imageUrls.map { url ->
+                Photo(
+                    photoUrl = url,
+                )
+            }
+
             val newMessage = hashMapOf(
                 "chatId" to chatId,
                 "senderId" to senderId,
                 "content" to content,
+                "imageUrls" to imageUrls,
                 "timestamp" to System.currentTimeMillis()
             )
 
@@ -186,11 +316,36 @@ class UserRepository {
             val messageId = documentReference.id
             val timestamp = addedMessageSnapshot.getLong("timestamp") ?: 0
 
-            return Message(messageId, chatId, senderId, content, timestamp)
+            return Message(
+                messageId = messageId,
+                chatId = chatId,
+                senderId = senderId,
+                content = content,
+                images = newImage,
+                timestamp = timestamp
+            )
         } catch (e: Exception) {
             e.printStackTrace()
         }
         return null
+    }
+
+    private suspend fun uploadImages(images: List<Photo>): List<String> {
+        val imageUrls = mutableListOf<String>()
+        for (photo in images) {
+            photo.photoUri?.let { uri ->
+
+                val fileName = UUID.randomUUID().toString()
+                val imageRef = storageReference.child("images/messages/$fileName")
+
+                imageRef.putFile(uri).await()
+
+                // Get download URL of uploaded image
+                val imageUrl = imageRef.downloadUrl.await().toString()
+                imageUrls.add(imageUrl)
+            }
+        }
+        return imageUrls
     }
 
 //    fun getHotels(): Flow<PagingData<Staycation>> {
