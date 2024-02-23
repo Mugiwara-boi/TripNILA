@@ -133,8 +133,8 @@ class UserRepository {
                     name = "${receiverProfile?.firstName} ${receiverProfile?.lastName}",
                     inboxPreview = content,
                     lastSender = lastSender,
-                    timeSent = timestamp
-
+                    timeSent = timestamp,
+                    receiverId = chat.receiverId
                 )
 
                 itemsList.add(inbox)
@@ -220,6 +220,24 @@ class UserRepository {
     suspend fun getChatByUserIds(userId1: String, userId2: String): Chat? {
         try {
             val chatsSnapshot = chatCollection.get().await()
+
+            // Check if chatsSnapshot is empty
+            if (chatsSnapshot.isEmpty) {
+                // If chatsSnapshot is empty, add a new document to the collection
+                val chatId = UUID.randomUUID().toString() // Generate a unique chatId
+                val participants = listOf(userId1, userId2)
+
+                // Create a new document with the provided user IDs
+                chatCollection.document(chatId).set(
+                    mapOf(
+                        "chatId" to chatId,
+                        "participants" to participants
+                    )
+                ).await()
+
+                // Return a new Chat object with the generated chatId and user IDs
+                return Chat(chatId, userId1, userId2)
+            }
 
             for (document in chatsSnapshot.documents) {
                 val chatId = document.id

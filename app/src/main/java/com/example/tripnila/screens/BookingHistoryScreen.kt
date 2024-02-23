@@ -114,6 +114,7 @@ fun BookingHistoryScreen(
     touristId: String = "",
     bookingHistoryViewModel: BookingHistoryViewModel? = null,
     navController: NavHostController? = null,
+    onNavToChat: (String, String) -> Unit,
     onBack: () -> Unit,
 ){
 
@@ -241,7 +242,8 @@ fun BookingHistoryScreen(
                             checkOutDate = staycationBooking.checkOutDate,
                             noOfPets = staycationBooking.noOfPets,
                             noOfInfants = staycationBooking.noOfInfants,
-                            noOfGuests = staycationBooking.noOfGuests
+                            noOfGuests = staycationBooking.noOfGuests,
+                            hostTouristId = staycationBooking.staycation?.host?.touristId ?: ""
                         )
 
                         bookingHistoryViewModel?.let { bookingHistoryViewModel ->
@@ -251,6 +253,9 @@ fun BookingHistoryScreen(
                                 coroutineScope = coroutineScope,
                                 modifier = Modifier.padding(top = 15.dp),
                                 staycationBookingItems = staycationBookingItems,
+                                onChatHost = { receiverId ->
+                                    onNavToChat(touristId, receiverId)
+                                }
                             )
                         }
                     }
@@ -297,6 +302,7 @@ fun BookingHistoryCard(
     bookingHistoryViewModel: BookingHistoryViewModel,
     bookingHistory: BookingHistory,
     coroutineScope: CoroutineScope,
+    onChatHost: (String) -> Unit,
     staycationBookingItems: LazyPagingItems<StaycationBooking>,
     modifier: Modifier = Modifier
 ){
@@ -504,7 +510,10 @@ fun BookingHistoryCard(
                                 BookingOutlinedButton(
                                     buttonText = "Chat host",
                                     onClick = {
-                                              /*TODO*/
+                                        val receiverId = bookingHistory.hostTouristId
+                                        onChatHost(receiverId)
+
+
                                     },
                                     modifier = Modifier.width(95.dp)
                                 )

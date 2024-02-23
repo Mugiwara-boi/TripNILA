@@ -6,5 +6,6 @@ data class Inbox(
     val name: String,
     val inboxPreview: String,
     val lastSender: String,
-    val timeSent: Long
+    val timeSent: Long,
+    val receiverId: String
 )

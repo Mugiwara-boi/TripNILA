@@ -66,6 +66,7 @@ import java.time.format.DateTimeFormatter
 fun InboxScreen(
     touristId: String = "",
     inboxViewModel: InboxViewModel? = null,
+    onNavToChat: (String, String) -> Unit,
     navController: NavHostController? = null
 ){
 
@@ -77,14 +78,6 @@ fun InboxScreen(
     }
 
     val lazyPagingItems = inboxViewModel?.inboxPagingData?.collectAsLazyPagingItems()
-
-//    val inboxData = listOf(
-//        Inbox(
-//            image = R.drawable.joshua,
-//            name = "Ryan Cruz",
-//            inboxPreview = "Sent a photo"
-//        ),
-//    )
 
     Surface(
         modifier = Modifier
@@ -113,15 +106,15 @@ fun InboxScreen(
                     .fillMaxSize()
                     .padding(it)
             ) {
-//                items(inboxData){ inboxItem ->
-//                    InboxItem(inboxItem)
-//                }
                 lazyPagingItems?.let { items ->
                     items(items) { inboxItem ->
                         if (inboxItem != null) {
                             InboxItem(
                                 inbox = inboxItem,
-                                currentUser = touristId
+                                currentUser = touristId,
+                                onClick = { receiverId ->
+                                    onNavToChat(touristId, receiverId)
+                                }
                             )
                         }
                     }
@@ -133,7 +126,12 @@ fun InboxScreen(
 }
 
 @Composable
-fun InboxItem(modifier: Modifier = Modifier, inbox: Inbox, currentUser: String){
+fun InboxItem(
+    modifier: Modifier = Modifier,
+    inbox: Inbox,
+    currentUser: String,
+    onClick: (String) -> Unit
+){
 
     val formatterDate = remember {
         val date = Instant.ofEpochMilli(inbox.timeSent)
@@ -156,6 +154,9 @@ fun InboxItem(modifier: Modifier = Modifier, inbox: Inbox, currentUser: String){
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 10.dp, horizontal = 16.dp)
+            .clickable {
+                onClick(inbox.receiverId)
+            }
     ) {
         Box(
             modifier = Modifier
@@ -251,6 +252,11 @@ private fun InboxScreenPreview(){
     val inboxViewModel = viewModel(modelClass = InboxViewModel::class.java)
 
 
-    InboxScreen("ITZbCFfF7Fzqf1qPBiwx", inboxViewModel)
+    InboxScreen(
+        touristId = "ITZbCFfF7Fzqf1qPBiwx",
+        onNavToChat = {_, _ ->},
+        inboxViewModel = inboxViewModel
+    )
+
 
 }

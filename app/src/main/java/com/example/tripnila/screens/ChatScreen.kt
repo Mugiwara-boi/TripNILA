@@ -110,6 +110,7 @@ fun ChatScreen(
     receiverTouristId: String,
     onBack: () -> Unit,
 ){
+    Log.d("ChatId", chatId)
 
     val messages = chatViewModel.messages.collectAsState().value.sortedBy { it.timestamp }
     val currentUser = chatViewModel.currentUser.collectAsState().value

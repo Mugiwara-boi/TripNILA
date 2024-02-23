@@ -109,7 +109,8 @@ fun StaycationDetailsScreen(
     touristId: String,
     detailViewModel: DetailViewModel? = null,
     onNavToBooking: (String, String) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavToChat: (String, String) -> Unit
 ) {
 
     var staycation = detailViewModel?.staycation?.collectAsState()
@@ -260,14 +261,14 @@ fun StaycationDetailsScreen(
                 bottomBar = {
                     bottomBookingText.value?.let { nights ->
                         StaycationBottomBookingBar(
-                            staycation = staycation?.value,
+                            staycation = staycation.value,
                             nights = nights,
                             enableButton = enableBottomBookingButton.value,
                             onClickUnderlinedText = {
                                 openBottomSheet.value = true
                             },
                             onClickChatHost = {
-                                /*TODO*/
+                                onNavToChat(touristId, staycation.value!!.host.touristId)
                             },
                             onClickBook = {
                                 onNavToBooking(touristId, staycationId)
@@ -992,6 +993,7 @@ fun StaycationAdditionalInformationCard(withEditButton: Boolean = false, modifie
 
 @Composable
 fun StaycationBottomBookingBar(
+    modifier: Modifier = Modifier,
     staycation: Staycation? = null,
     bookButtonText: String = "Book",
     nights: String = "",
@@ -999,7 +1001,6 @@ fun StaycationBottomBookingBar(
     onClickChatHost: () -> Unit ,
     onClickBook: () -> Unit ,
     onClickUnderlinedText: () -> Unit,
-    modifier: Modifier = Modifier
 ){
     val formattedNumber = NumberFormat.getNumberInstance().format(staycation?.staycationPrice)
 
@@ -1060,7 +1061,6 @@ fun StaycationBottomBookingBar(
                 BookingOutlinedButton(
                     buttonText = "Chat host",
                     onClick = {
-                        /*TODO*/
                         onClickChatHost()
                     },
                     modifier = Modifier.padding(horizontal = 15.dp)
@@ -1430,17 +1430,17 @@ private fun StaycationDetailsPreview() {
         // Your implementation here
     }
 
-    StaycationDetailsScreen(
-        detailViewModel = detailViewModel,
-        staycationId = "LxpNxRFdwkQzBxujF3gx",
-        touristId = "5JCZ1j5hODQ7BcURS2GI",
-        onNavToBooking = onNavToBooking,
-        onBack = {
-
-        }
-
-
-    )
+//    StaycationDetailsScreen(
+//        detailViewModel = detailViewModel,
+//        staycationId = "LxpNxRFdwkQzBxujF3gx",
+//        touristId = "5JCZ1j5hODQ7BcURS2GI",
+//        onNavToBooking = onNavToBooking,
+//        onBack = {
+//
+//        }
+//
+//
+//    )
 
 
 

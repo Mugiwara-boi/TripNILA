@@ -21,4 +21,5 @@ data class BookingHistory(
     val noOfGuests: Int,
     val noOfInfants: Int,
     val noOfPets: Int,
+    val hostTouristId: String = ""
 )

@@ -16,7 +16,9 @@ class InboxPagingSource(
             val currentPageNumber = params.key ?: 0
             val pageSize = params.loadSize
 
-            val inbox = repository.getAllChatsByUserId(touristId, currentPageNumber, pageSize)
+            var inbox = repository.getAllChatsByUserId(touristId, currentPageNumber, pageSize)
+
+            inbox = inbox.sortedByDescending { it.timeSent }
 
             LoadResult.Page(
                 data = inbox,
