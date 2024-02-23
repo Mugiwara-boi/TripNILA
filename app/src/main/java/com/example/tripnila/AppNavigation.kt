@@ -39,6 +39,7 @@ import com.example.tripnila.model.DetailViewModel
 import com.example.tripnila.model.HomeViewModel
 import com.example.tripnila.model.HostDashboardViewModel
 import com.example.tripnila.model.HostTourViewModel
+import com.example.tripnila.model.InsightViewModel
 import com.example.tripnila.model.ItineraryViewModel
 import com.example.tripnila.model.LocationViewModel
 import com.example.tripnila.model.LocationViewModelFactory
@@ -162,7 +163,8 @@ fun Navigation(
     staycationManagerViewModel: StaycationManagerViewModel,
     tourManagerViewModel: TourManagerViewModel,
     businessManagerViewModel: BusinessManagerViewModel,
-    itineraryViewModel: ItineraryViewModel
+    itineraryViewModel: ItineraryViewModel,
+    insightViewModel: InsightViewModel,
 ) {
 
     NavHost(
@@ -178,7 +180,7 @@ fun Navigation(
         hostGraph(
             navController = navController, hostDashboardViewModel = hostDashboardViewModel, addListingViewModel = addListingViewModel, locationViewModelFactory = locationViewModelFactory,
             hostTourViewModel = hostTourViewModel, addBusinessViewModel = addBusinessViewModel, staycationManagerViewModel = staycationManagerViewModel,
-            tourManagerViewModel = tourManagerViewModel, businessManagerViewModel = businessManagerViewModel
+            tourManagerViewModel = tourManagerViewModel, businessManagerViewModel = businessManagerViewModel, insightViewModel = insightViewModel,
         )
     }
 }
@@ -370,6 +372,7 @@ fun NavGraphBuilder.hostGraph(
     staycationManagerViewModel: StaycationManagerViewModel,
     tourManagerViewModel: TourManagerViewModel,
     businessManagerViewModel: BusinessManagerViewModel,
+    insightViewModel: InsightViewModel,
 ) {
     navigation(startDestination = HostRoutes.Dashboard.name, route = NestedRoutes.Host.name) {
         composable(
@@ -782,6 +785,7 @@ fun NavGraphBuilder.hostGraph(
             )
         ) { entry ->
             InsightsScreen(
+                insightViewModel = insightViewModel,
                 hostId = entry.arguments?.getString("hostId") ?: "",
                 onBack = {
                     navController.popBackStack()

@@ -2129,6 +2129,149 @@ class UserRepository {
 //            StaycationBooking()
 //    }
 
+    suspend fun getHostedStaycation(hostId : String): List<Staycation>{
+        try {
+            val query = staycationCollection
+                .whereEqualTo("hostId", hostId)
+            val result = query.get().await()
+            val staycations = mutableListOf<Staycation>()
+
+            for (document in result.documents) {
+                val staycation = getStaycationDetailsById(document.id) ?: Staycation()
+                staycations.add(staycation)
+
+            }
+            return staycations
+
+        }
+        catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+
+    suspend fun getHostedTours(hostId : String): List<Tour>{
+        try {
+            val query = tourCollection
+                .whereEqualTo("hostId", hostId)
+            val result = query.get().await()
+            val tours = mutableListOf<Tour>()
+
+            for (document in result.documents) {
+                val tour = getTourById(document.id)
+                tours.add(tour)
+
+            }
+            return tours
+
+        }
+        catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+
+    suspend fun getCompletedStaycationBookingForStaycation(staycationId: String): List<StaycationBooking>{
+        try{
+            val query = staycationBookingCollection
+                .whereEqualTo("staycationId", staycationId)
+
+            val result = query.get().await()
+
+            val staycationBookings = mutableListOf<StaycationBooking>()
+
+            for (document in result.documents) {
+
+                val bookingStatus = document.getString("bookingStatus") ?: ""
+
+                if (bookingStatus == "Completed") {
+
+                    val bookingId = document.id
+
+                    val bookingDate = document.getDate("bookingDate") ?: Date()
+                    val checkInDate = document.getDate("checkInDate") ?: Date()
+                    val checkOutDate = document.getDate("checkOutDate") ?: Date()
+                    val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
+                    val noOfInfants = document.getLong("noOfInfants")?.toInt() ?: 0
+                    val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
+                    val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                    val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
+
+                    val staycationBooking = StaycationBooking(
+                        staycationBookingId = bookingId,
+                        bookingDate = bookingDate,
+                        bookingStatus = bookingStatus,
+                        checkInDate = checkInDate,
+                        checkOutDate = checkOutDate,
+                        noOfGuests = noOfGuests,
+                        noOfInfants = noOfInfants,
+                        noOfPets = noOfPets,
+                        staycation = staycation,
+                        totalAmount = totalAmount,
+                    )
+
+                    staycationBookings.add(staycationBooking)
+                }
+
+
+            }
+            return staycationBookings
+        }catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+    suspend fun getCancelledStaycationBookingForStaycation(staycationId: String): List<StaycationBooking>{
+        try{
+            val query = staycationBookingCollection
+                .whereEqualTo("staycationId", staycationId)
+
+            val result = query.get().await()
+
+            val staycationBookings = mutableListOf<StaycationBooking>()
+
+            for (document in result.documents) {
+
+                val bookingStatus = document.getString("bookingStatus") ?: ""
+
+                if (bookingStatus == "Cancelled") {
+
+                    val bookingId = document.id
+
+                    val bookingDate = document.getDate("bookingDate") ?: Date()
+                    val checkInDate = document.getDate("checkInDate") ?: Date()
+                    val checkOutDate = document.getDate("checkOutDate") ?: Date()
+                    val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
+                    val noOfInfants = document.getLong("noOfInfants")?.toInt() ?: 0
+                    val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
+                    val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                    val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
+
+                    val staycationBooking = StaycationBooking(
+                        staycationBookingId = bookingId,
+                        bookingDate = bookingDate,
+                        bookingStatus = bookingStatus,
+                        checkInDate = checkInDate,
+                        checkOutDate = checkOutDate,
+                        noOfGuests = noOfGuests,
+                        noOfInfants = noOfInfants,
+                        noOfPets = noOfPets,
+                        staycation = staycation,
+                        totalAmount = totalAmount,
+                    )
+
+                    staycationBookings.add(staycationBooking)
+                }
+
+
+            }
+            return staycationBookings
+        }catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+
 
     suspend fun getStaycationBookingForItinerary(touristId: String): List<StaycationBooking> {
         try {
