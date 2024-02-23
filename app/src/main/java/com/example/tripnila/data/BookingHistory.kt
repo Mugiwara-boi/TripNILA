@@ -23,3 +23,7 @@ data class BookingHistory(
     val noOfPets: Int,
     val hostTouristId: String = ""
 )
+data class MonthTotal(
+    val month: Int,
+    val totalAmount: Double
+)
