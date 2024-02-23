@@ -74,6 +74,7 @@ import com.example.tripnila.model.HomeViewModel
 import com.example.tripnila.model.HostDashboardViewModel
 import com.example.tripnila.model.HostTourViewModel
 import com.example.tripnila.model.ItineraryViewModel
+import com.example.tripnila.model.InsightViewModel
 import com.example.tripnila.model.LocationViewModel
 import com.example.tripnila.model.LocationViewModelFactory
 import com.example.tripnila.model.LoginViewModel
@@ -133,6 +134,7 @@ class MainActivity : ComponentActivity() {
                 val businessManagerViewModel = viewModel(modelClass = BusinessManagerViewModel::class.java)
                 val chatViewModel = viewModel(modelClass = ChatViewModel::class.java)
                 val itineraryViewModel = viewModel(modelClass = ItineraryViewModel::class.java)
+                val insightViewModel = viewModel(modelClass = InsightViewModel::class.java)
 
 
                 Navigation(
@@ -152,6 +154,7 @@ class MainActivity : ComponentActivity() {
                     tourManagerViewModel = tourManagerViewModel,
                     businessManagerViewModel = businessManagerViewModel,
                     itineraryViewModel = itineraryViewModel,
+                    insightViewModel = insightViewModel,
                  //   chatViewModel
                 )
             }

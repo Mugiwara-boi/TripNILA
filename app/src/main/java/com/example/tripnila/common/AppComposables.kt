@@ -1,9 +1,12 @@
 package com.example.tripnila.common
 
 import android.util.Log
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -70,6 +73,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
@@ -97,19 +101,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tripnila.R
-import com.example.tripnila.data.BottomNavigationItem
-import com.example.tripnila.data.ReviewUiState
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.tween
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
+import com.example.tripnila.R
+import com.example.tripnila.data.BottomNavigationItem
+import com.example.tripnila.data.ReviewUiState
 import java.text.NumberFormat
 
 val Orange = Color(0xfff9a664)
@@ -168,7 +167,59 @@ fun Modifier.shimmerLoadingAnimation(
         }
     }
 }
+@Composable
+fun ChartDropDownFilter(
+    options: List<String>,
+    onItemSelected: (String) -> Unit, // Callback function to handle selection changes
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var selectedYear by remember { mutableStateOf(options.firstOrNull() ?: "") }
+    val icon = if (expanded)
+        Icons.Filled.KeyboardArrowUp
+    else
+        Icons.Filled.KeyboardArrowDown
 
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier,
+    ) {
+        Text(
+            text = selectedYear,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium,
+        )
+        IconButton(
+            modifier = Modifier.size(20.dp),
+            onClick = { expanded = true }
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = "",
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .background(Color.White)
+        ) {
+            options.forEach { label ->
+                DropdownMenuItem(
+                    text = { Text(text = label) },
+                    colors = MenuDefaults.itemColors(
+                        textColor = Color(0xFF6B6B6B)
+                    ),
+                    onClick = {
+                        selectedYear = label
+                        expanded = false
+                        onItemSelected(label) // Call the callback function
+                    }
+                )
+            }
+        }
+    }
+}
 data class ShimmerAnimationData(
     private val isLightMode: Boolean
 ) {

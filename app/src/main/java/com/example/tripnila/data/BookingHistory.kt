@@ -22,3 +22,7 @@ data class BookingHistory(
     val noOfInfants: Int,
     val noOfPets: Int,
 )
+data class MonthTotal(
+    val month: Int,
+    val totalAmount: Double
+)

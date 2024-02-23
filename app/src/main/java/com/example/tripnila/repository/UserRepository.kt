@@ -5,11 +5,6 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.PagingSource
-import androidx.paging.PagingState
-import com.example.tripnila.common.Constants
 import com.example.tripnila.data.Amenity
 import com.example.tripnila.data.Business
 import com.example.tripnila.data.Chat
@@ -34,7 +29,6 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import java.io.File
@@ -50,10 +44,8 @@ import java.util.Locale
 import java.util.SortedSet
 import java.util.TimeZone
 import java.util.UUID
-import java.util.concurrent.Flow
 import java.util.concurrent.TimeUnit
 import kotlin.experimental.and
-import kotlin.math.min
 
 
 class UserRepository {
@@ -1973,6 +1965,149 @@ class UserRepository {
 //        }
 //            StaycationBooking()
 //    }
+
+    suspend fun getHostedStaycation(hostId : String): List<Staycation>{
+        try {
+            val query = staycationCollection
+                .whereEqualTo("hostId", hostId)
+            val result = query.get().await()
+            val staycations = mutableListOf<Staycation>()
+
+            for (document in result.documents) {
+                val staycation = getStaycationDetailsById(document.id) ?: Staycation()
+                staycations.add(staycation)
+
+            }
+            return staycations
+
+        }
+        catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+
+    suspend fun getHostedTours(hostId : String): List<Tour>{
+        try {
+            val query = tourCollection
+                .whereEqualTo("hostId", hostId)
+            val result = query.get().await()
+            val tours = mutableListOf<Tour>()
+
+            for (document in result.documents) {
+                val tour = getTourById(document.id)
+                tours.add(tour)
+
+            }
+            return tours
+
+        }
+        catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+
+    suspend fun getCompletedStaycationBookingForStaycation(staycationId: String): List<StaycationBooking>{
+        try{
+            val query = staycationBookingCollection
+                .whereEqualTo("staycationId", staycationId)
+
+            val result = query.get().await()
+
+            val staycationBookings = mutableListOf<StaycationBooking>()
+
+            for (document in result.documents) {
+
+                val bookingStatus = document.getString("bookingStatus") ?: ""
+
+                if (bookingStatus == "Completed") {
+
+                    val bookingId = document.id
+
+                    val bookingDate = document.getDate("bookingDate") ?: Date()
+                    val checkInDate = document.getDate("checkInDate") ?: Date()
+                    val checkOutDate = document.getDate("checkOutDate") ?: Date()
+                    val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
+                    val noOfInfants = document.getLong("noOfInfants")?.toInt() ?: 0
+                    val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
+                    val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                    val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
+
+                    val staycationBooking = StaycationBooking(
+                        staycationBookingId = bookingId,
+                        bookingDate = bookingDate,
+                        bookingStatus = bookingStatus,
+                        checkInDate = checkInDate,
+                        checkOutDate = checkOutDate,
+                        noOfGuests = noOfGuests,
+                        noOfInfants = noOfInfants,
+                        noOfPets = noOfPets,
+                        staycation = staycation,
+                        totalAmount = totalAmount,
+                    )
+
+                    staycationBookings.add(staycationBooking)
+                }
+
+
+            }
+            return staycationBookings
+        }catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+    suspend fun getCancelledStaycationBookingForStaycation(staycationId: String): List<StaycationBooking>{
+        try{
+            val query = staycationBookingCollection
+                .whereEqualTo("staycationId", staycationId)
+
+            val result = query.get().await()
+
+            val staycationBookings = mutableListOf<StaycationBooking>()
+
+            for (document in result.documents) {
+
+                val bookingStatus = document.getString("bookingStatus") ?: ""
+
+                if (bookingStatus == "Cancelled") {
+
+                    val bookingId = document.id
+
+                    val bookingDate = document.getDate("bookingDate") ?: Date()
+                    val checkInDate = document.getDate("checkInDate") ?: Date()
+                    val checkOutDate = document.getDate("checkOutDate") ?: Date()
+                    val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
+                    val noOfInfants = document.getLong("noOfInfants")?.toInt() ?: 0
+                    val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
+                    val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                    val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
+
+                    val staycationBooking = StaycationBooking(
+                        staycationBookingId = bookingId,
+                        bookingDate = bookingDate,
+                        bookingStatus = bookingStatus,
+                        checkInDate = checkInDate,
+                        checkOutDate = checkOutDate,
+                        noOfGuests = noOfGuests,
+                        noOfInfants = noOfInfants,
+                        noOfPets = noOfPets,
+                        staycation = staycation,
+                        totalAmount = totalAmount,
+                    )
+
+                    staycationBookings.add(staycationBooking)
+                }
+
+
+            }
+            return staycationBookings
+        }catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
 
 
     suspend fun getStaycationBookingForItinerary(touristId: String): List<StaycationBooking> {

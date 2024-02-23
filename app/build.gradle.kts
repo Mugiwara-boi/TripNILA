@@ -87,7 +87,7 @@ dependencies {
 
     // google map services
     implementation ("com.google.android.gms:play-services-maps:18.2.0")
-    implementation ("com.google.android.gms:play-services-location:21.0.1")
+    implementation ("com.google.android.gms:play-services-location:21.1.0")
 
     // google maps utils
     implementation ("com.google.maps.android:android-maps-utils:3.4.0")
