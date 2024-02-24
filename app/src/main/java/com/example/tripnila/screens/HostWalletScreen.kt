@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,10 +34,17 @@ import androidx.compose.ui.unit.sp
 import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.WalletTransaction
+import java.text.DecimalFormat
+import java.text.NumberFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HostWalletScreen(){
+fun HostWalletScreen(
+    hostId: String = "",
+    onBack: () -> Unit,
+    onNavToWithdraw: (String) -> Unit
+){
     val horizontalPaddingValue = 16.dp
     val verticalPaddingValue = 10.dp
 
@@ -53,18 +61,21 @@ fun HostWalletScreen(){
         ),
     )
 
-    var selectedItemIndex by rememberSaveable { mutableStateOf(3) }
-
     Surface(
         modifier = Modifier
             .fillMaxSize()
     ) {
         Scaffold(
             bottomBar = {
-                AppBottomNavigationBar(
-                    selectedItemIndex = selectedItemIndex,
-                    onItemSelected = { newIndex ->
-                        selectedItemIndex = newIndex
+//                AppBottomNavigationBar(
+//                    selectedItemIndex = selectedItemIndex,
+//                    onItemSelected = { newIndex ->
+//                        selectedItemIndex = newIndex
+//                    }
+//                )
+                WalletBottomBar(
+                    onBack = {
+                        onBack()
                     }
                 )
             }
@@ -85,6 +96,9 @@ fun HostWalletScreen(){
                     AvailableBalanceCardWithWithdrawButton(
                         hostName = "Joshua Araneta",
                         hostBalance = 7600.00,
+                        onWithdraw = {
+                            onNavToWithdraw(hostId)
+                        },
                         modifier = Modifier
                             .padding(
                                 vertical = verticalPaddingValue,
@@ -104,13 +118,55 @@ fun HostWalletScreen(){
                 }
 
                 item {
-                    RecentTransactionsList(
-                        walletTransactions = walletTransactions,
-                        modifier = Modifier.padding(
-                            horizontal = horizontalPaddingValue
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                vertical = verticalPaddingValue,
+                                horizontal = horizontalPaddingValue
+                            )
+                    ) {
+                        Text(
+                            text = "Recent Transactions",
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 16.sp
                         )
-                    )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        walletTransactions.forEach { walletTransaction ->
+                            RecentTransactionCard(
+                                transaction = walletTransaction,
+                                modifier = Modifier.padding(top = 8.dp, start = 5.dp, end = 5.dp)
+                            )
+                        }
+                        BookingOutlinedButton(
+                            buttonText = "See all transactions",
+                            containerColor = Color(0xFFF8F8F9),
+                            buttonShape = RoundedCornerShape(10.dp),
+                            borderStroke = BorderStroke(1.dp, Color(0xff999999)),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                            contentFontSize  = 12.sp,
+                            contentFontWeight = FontWeight.Medium,
+                            contentColor = Color(0xff999999),
+                            onClick = {
+
+                            },
+                            modifier = Modifier
+                                .padding(start = 30.dp, end = 30.dp, top = 12.dp)
+                                .fillMaxWidth()
+                                .height(35.dp)
+                        )
+                    }
                 }
+
+//                item {
+//                    RecentTransactionsList(
+//                        walletTransactions = walletTransactions,
+//                        modifier = Modifier.padding(
+//                            vertical = verticalPaddingValue,
+//                            horizontal = horizontalPaddingValue
+//                        )
+//                    )
+//                }
 //                item {
 //                    HostBusinessesList(
 //                        properties = businessProperties,
@@ -140,8 +196,12 @@ fun HostWalletScreen(){
 fun AvailableBalanceCardWithWithdrawButton(
     hostName: String,
     hostBalance: Double,
+    onWithdraw: () -> Unit,
     modifier: Modifier = Modifier
 ){
+
+    val formattedBalance = DecimalFormat("#,##0.${"0".repeat(2)}").format(hostBalance)
+
     Card(
         colors = CardDefaults.cardColors(
             containerColor = Orange
@@ -149,7 +209,7 @@ fun AvailableBalanceCardWithWithdrawButton(
         elevation = CardDefaults.cardElevation(
             defaultElevation = 10.dp
         ),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(10.dp),
         modifier = modifier
             .fillMaxWidth()
             .height(140.dp)
@@ -163,7 +223,9 @@ fun AvailableBalanceCardWithWithdrawButton(
                 .fillMaxWidth()
         ) {
             Row {
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
                         text = hostName,
                         color = Color.White,
@@ -178,7 +240,6 @@ fun AvailableBalanceCardWithWithdrawButton(
                     )
 
                 }
-                Spacer(modifier = Modifier.weight(1f))
                 Column {
                     Text(
                         text = "Available balance",
@@ -187,14 +248,28 @@ fun AvailableBalanceCardWithWithdrawButton(
                         fontWeight = FontWeight.Medium,
                     )
                     Text(
-                        text =  "₱ ${String.format("%.2f", hostBalance)}",
+                        text =  "₱ $formattedBalance",
                         color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
+                        modifier = Modifier.align(Alignment.End)
                     )
                 }
             }
             Spacer(modifier = Modifier.weight(1f))
+            BookingFilledButton(
+                buttonText = "Withdraw",
+                contentFontSize = 12.sp,
+                contentColor = Orange,
+                contentPadding = PaddingValues(18.dp, 0.dp),
+                containerColor = Color.White,
+                onClick = {
+                    onWithdraw()
+                },
+                modifier = Modifier
+                    .height(30.dp)
+                    .align(Alignment.End)
+            )
 
         }
     }
@@ -213,7 +288,7 @@ fun TotalBalanceCard(
         elevation = CardDefaults.cardElevation(
             defaultElevation = 10.dp
         ),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(10.dp),
         modifier = modifier
             .fillMaxWidth()
     ) {
@@ -254,51 +329,59 @@ fun TotalBalanceCard(
     }
 }
 
-@Composable
-fun RecentTransactionsList(walletTransactions: List<WalletTransaction>, modifier: Modifier = Modifier){
-    Column(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Text(
-            text = "Recent Transactions",
-            fontWeight = FontWeight.Medium,
-            fontSize = 16.sp
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        walletTransactions.forEach { walletTransaction ->
-            RecentTransactionCard(
-                transaction = walletTransaction,
-                modifier = Modifier.padding(top = 8.dp, start = 5.dp, end = 5.dp)
-            )
-        }
-        BookingOutlinedButton(
-            buttonText = "See all transactions",
-            containerColor = Color(0xFFF8F8F9),
-            buttonShape = RoundedCornerShape(10.dp),
-            borderStroke = BorderStroke(1.dp, Color(0xff999999)),
-            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-            contentFontSize  = 12.sp,
-            contentFontWeight = FontWeight.Medium,
-            contentColor = Color(0xff999999),
-            onClick = {
-
-            },
-            modifier = Modifier
-                .padding(start = 30.dp, end = 30.dp, top = 12.dp)
-                .fillMaxWidth()
-                .height(35.dp)
-        )
-    }
-
-
-}
+//@Composable
+//fun RecentTransactionsList(walletTransactions: List<WalletTransaction>, modifier: Modifier = Modifier){
+//    Column(
+//        modifier = modifier.fillMaxWidth()
+//    ) {
+//        Text(
+//            text = "Recent Transactions",
+//            fontWeight = FontWeight.Medium,
+//            fontSize = 16.sp
+//        )
+//        Spacer(modifier = Modifier.height(2.dp))
+//        walletTransactions.forEach { walletTransaction ->
+//            RecentTransactionCard(
+//                transaction = walletTransaction,
+//                modifier = Modifier.padding(top = 8.dp, start = 5.dp, end = 5.dp)
+//            )
+//        }
+//        BookingOutlinedButton(
+//            buttonText = "See all transactions",
+//            containerColor = Color(0xFFF8F8F9),
+//            buttonShape = RoundedCornerShape(10.dp),
+//            borderStroke = BorderStroke(1.dp, Color(0xff999999)),
+//            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+//            contentFontSize  = 12.sp,
+//            contentFontWeight = FontWeight.Medium,
+//            contentColor = Color(0xff999999),
+//            onClick = {
+//
+//            },
+//            modifier = Modifier
+//                .padding(start = 30.dp, end = 30.dp, top = 12.dp)
+//                .fillMaxWidth()
+//                .height(35.dp)
+//        )
+//    }
+//
+//
+//}
 
 @Composable
 fun RecentTransactionCard(
     transaction: WalletTransaction,
     modifier: Modifier = Modifier
 ) {
-    var sign = if (transaction.transactionType == "Withdraw") "-" else "+"
+    val sign = when(transaction.transactionType) {
+        "Withdraw" -> "-"
+        "Withdrawal" -> "-"
+        "Payment" -> "-"
+        "Cash in" -> "+"
+        else -> "+"
+    }
+
+    val formattedBalance = DecimalFormat("#,##0.${"0".repeat(2)}").format(transaction.amount)
 
     Card(
         colors = CardDefaults.cardColors(
@@ -333,7 +416,7 @@ fun RecentTransactionCard(
             }
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = "$sign ₱ ${String.format("%.2f", transaction.amount)}",
+                text = "$sign ₱ $formattedBalance",
                 color = Orange,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
@@ -363,7 +446,7 @@ private fun HostWalletPreview(){
         ),
     )
 
-    RecentTransactionsList(transactions)
+//    RecentTransactionsList(transactions)
 
 
 }
@@ -371,5 +454,5 @@ private fun HostWalletPreview(){
 @Preview
 @Composable
 private fun HostWalletScreenPreview(){
-    HostWalletScreen()
+   // HostWalletScreen()
 }

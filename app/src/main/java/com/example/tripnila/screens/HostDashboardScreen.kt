@@ -82,6 +82,7 @@ fun HostDashboardScreen(
     onNavToBusinessManager: (String, String) -> Unit,
     onNavToTourManager: (String, String) -> Unit,
     onNavToInsights: (String) -> Unit,
+    onNavToHostWallet: (String) -> Unit,
 ){
 
     Log.d("TouristId", "$touristId")
@@ -169,6 +170,9 @@ fun HostDashboardScreen(
                         HostWalletCard(
                             hostName = "${host?.firstName} ${host?.lastName}" ,
                             hostBalance = 7600.00,
+                            onArrowClick = {
+                                host?.hostId?.let { hostId -> onNavToHostWallet(hostId) }
+                            },
                             modifier = Modifier
                                 .padding(
                                     vertical = verticalPaddingValue,
@@ -274,6 +278,7 @@ fun HostDashboardScreen(
 fun HostWalletCard(
     hostName: String,
     hostBalance: Double,
+    onArrowClick: () -> Unit,
     modifier: Modifier = Modifier
 ){
     Card(
@@ -314,7 +319,9 @@ fun HostWalletCard(
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(
-                    onClick = { /*TODO*/ },
+                    onClick = {
+                        onArrowClick()
+                    },
                     modifier = Modifier
                         .size(34.dp)
                         .offset(x = 10.dp)

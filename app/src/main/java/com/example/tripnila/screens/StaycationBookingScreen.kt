@@ -1038,10 +1038,15 @@ fun PaymentRow(feeLabel: String, feePrice: Double, modifier: Modifier = Modifier
 fun PaymentMethodCard(
     logoId: Int,
     isSelected: Boolean,
+    selectedBorderColor: Color = Orange,
+    unselectedBorderColor: Color = Color(0xFFF3F3F3),
+    selectedContainerColor: Color = Color(0xFFF3F3F3),
+    unselectedContainerColor: Color = Color(0xFFF3F3F3),
     onCardSelect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val borderColor = if (isSelected) Orange else Color(0xFFF3F3F3)
+    val borderColor = if (isSelected) selectedBorderColor else unselectedBorderColor
+    val containerColor = if (isSelected) selectedContainerColor else unselectedContainerColor
 
     val interactionSource = remember { MutableInteractionSource() }
     val clickableModifier = Modifier.clickable(
@@ -1057,7 +1062,7 @@ fun PaymentMethodCard(
             defaultElevation = 10.dp
         ),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF3F3F3)
+            containerColor = containerColor
         ),
         modifier = modifier
             .height(40.dp)

@@ -1,36 +1,14 @@
 package com.example.tripnila
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
-import com.example.tripnila.common.Orange
-import com.example.tripnila.data.BottomNavigationItem
-import com.example.tripnila.data.Tour
 import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.BookingHistoryViewModel
@@ -74,21 +52,25 @@ import com.example.tripnila.screens.AddTourScreen3
 import com.example.tripnila.screens.AddTourScreen9
 import com.example.tripnila.screens.BookingHistoryScreen
 import com.example.tripnila.screens.BusinessManagerScreen
+import com.example.tripnila.screens.CashInScreen
 import com.example.tripnila.screens.ChatScreen
 import com.example.tripnila.screens.HomeScreen
 import com.example.tripnila.screens.HostDashboardScreen
+import com.example.tripnila.screens.HostWalletScreen
 import com.example.tripnila.screens.InboxScreen
 import com.example.tripnila.screens.InsightsScreen
 import com.example.tripnila.screens.ItineraryScreen
 import com.example.tripnila.screens.LoginScreen
 import com.example.tripnila.screens.PreferenceScreen
-import com.example.tripnila.screens.ProfileScreen
+import com.example.tripnila.screens.TouristProfileScreen
 import com.example.tripnila.screens.SignupScreen
 import com.example.tripnila.screens.StaycationBookingScreen
 import com.example.tripnila.screens.StaycationDetailsScreen
 import com.example.tripnila.screens.StaycationManagerScreen
 import com.example.tripnila.screens.TourDatesScreen
 import com.example.tripnila.screens.TourManagerScreen
+import com.example.tripnila.screens.TouristWalletScreen
+import com.example.tripnila.screens.WithdrawScreen
 
 enum class LoginRoutes {
     Signup,
@@ -107,7 +89,10 @@ enum class HomeRoutes {
     BookingHistory,
     EditProfile,
     AccountVerification,
-    Preference
+    Preference,
+
+    TouristWallet,
+    CashIn
 }
 
 enum class HostRoutes {
@@ -139,6 +124,9 @@ enum class HostRoutes {
     StaycationManager,
     BusinessManager,
     TourManager,
+
+    HostWallet,
+    Withdraw
 }
 
 enum class NestedRoutes {
@@ -382,7 +370,7 @@ fun NavGraphBuilder.homeGraph(
                 navArgument("touristId") { type = NavType.StringType }
             )
         ) {entry ->
-            ProfileScreen(
+            TouristProfileScreen(
                 profileViewModel = profileViewModel,
                 loginViewModel = loginViewModel,
                 touristId = entry.arguments?.getString("touristId") ?: "",
@@ -392,7 +380,40 @@ fun NavGraphBuilder.homeGraph(
                 onNavToEditProfile = { touristId -> navigateToEditProfile(navController, touristId) },
                 onNavToPreference = { touristId -> navigateToEditPreference(navController, touristId) },
                 onNavToVerifyAccount = { touristId -> navigateToVerifyAccount(navController, touristId) },
-                onNavToHostDashboard = { touristId -> navigateToHost(navController, touristId = touristId)}
+                onNavToHostDashboard = { touristId -> navigateToHost(navController, touristId)},
+                onNavToTouristWallet = { touristId -> navigateToTouristWallet(navController, touristId) }
+            )
+        }
+
+        composable(
+            route = HomeRoutes.TouristWallet.name + "/{touristId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType},
+            )
+        ) {entry ->
+            TouristWalletScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                onBack = {
+                    navController.popBackStack()
+                },
+                onNavToCashIn = {  touristId ->
+                    navigateToCashIn(navController, touristId)
+                }
+            )
+        }
+
+        composable(
+            route = HomeRoutes.CashIn.name + "/{touristId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType},
+            )
+        ) {entry ->
+            CashInScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                onCancel = {
+                    navController.popBackStack()
+                },
+
             )
         }
 
@@ -442,6 +463,9 @@ fun NavGraphBuilder.hostGraph(
                 hostDashboardViewModel = hostDashboardViewModel,
                 onNavToInsights = { hostId ->
                     navigateToInsights(navController,hostId)
+                },
+                onNavToHostWallet = { hostId ->
+                    navigateToHostWallet(navController, hostId)
                 }
             )
         }
@@ -814,6 +838,38 @@ fun NavGraphBuilder.hostGraph(
             )
         }
 
+        composable(
+            route = HostRoutes.HostWallet.name + "/{hostId}",
+            arguments = listOf(
+                navArgument("hostId") { type = NavType.StringType},
+            )
+        ) {entry ->
+            HostWalletScreen(
+                hostId = entry.arguments?.getString("hostId") ?: "",
+                onBack = {
+                    navController.popBackStack()
+                },
+                onNavToWithdraw = {  hostId ->
+                    navigateToWithdraw(navController, hostId)
+                }
+            )
+        }
+
+        composable(
+            route = HostRoutes.Withdraw.name + "/{hostId}",
+            arguments = listOf(
+                navArgument("hostId") { type = NavType.StringType},
+            )
+        ) {entry ->
+            WithdrawScreen(
+                hostId = entry.arguments?.getString("hostId") ?: "",
+                onCancel = {
+                    navController.popBackStack()
+                },
+
+            )
+        }
+
 
         composable(
             route = HostRoutes.Insights.name + "/{hostId}",
@@ -858,6 +914,32 @@ fun NavGraphBuilder.hostGraph(
 
 
 // Navigation functions
+
+
+private fun navigateToTouristWallet(navController: NavHostController, touristId: String) {
+    navController.navigate("${HomeRoutes.TouristWallet.name}/$touristId") {
+        launchSingleTop = true
+    }
+}
+
+private fun navigateToCashIn(navController: NavHostController, touristId: String) {
+    navController.navigate("${HomeRoutes.CashIn.name}/$touristId") {
+        launchSingleTop = true
+    }
+}
+
+private fun navigateToHostWallet(navController: NavHostController, hostId: String) {
+    navController.navigate("${HostRoutes.HostWallet.name}/$hostId") {
+        launchSingleTop = true
+    }
+}
+
+private fun navigateToWithdraw(navController: NavHostController, hostId: String) {
+    navController.navigate("${HostRoutes.Withdraw.name}/$hostId") {
+        launchSingleTop = true
+    }
+}
+
 
 private fun navigateToEditListing(navController: NavHostController, serviceId: String, hostId: String, listingType: String) {
     navController.navigate("${HostRoutes.AddListing1.name}/$serviceId/$hostId/$listingType") {

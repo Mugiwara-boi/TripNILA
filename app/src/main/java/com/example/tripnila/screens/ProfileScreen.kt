@@ -63,11 +63,12 @@ import com.example.tripnila.model.ProfileViewModel
 
 
 @Composable
-fun ProfileScreen(
+fun TouristProfileScreen(
     profileViewModel: ProfileViewModel? = null,
     loginViewModel: LoginViewModel? = null,
     touristId: String = "",
     navController: NavHostController? = null,
+    onNavToTouristWallet: (String) -> Unit,
     onNavToBookingHistory: (String) -> Unit,
     onNavToPreference: (String) -> Unit,
     onNavToEditProfile: (String) -> Unit,
@@ -204,7 +205,7 @@ fun ProfileScreen(
                         icon = R.drawable.payment,
                         rowText = "Payment and payouts",
                         onClick = {
-                            /*TODO*/
+                            onNavToTouristWallet(touristId)
                         },
                         modifier = Modifier
                             .padding(horizontal = horizontalPaddingValue)
