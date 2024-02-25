@@ -518,7 +518,7 @@ class UserRepository {
                 val businessType = businessDocument.getString("businessType") ?: ""
                 val businessURL = businessDocument.getString("businessURL") ?: ""
                 val additionalInfo = businessDocument.getString("additionalInfo") ?: ""
-
+                val minSpend = businessDocument.getDouble("minSpend") ?: 0.0
                 val businessImages = getServiceImages(businessId, "Business")
                 val businessMenuImages = getBusinessMenu(businessId)
                 val hostInfo = getHostInfo(hostId)
@@ -537,6 +537,7 @@ class UserRepository {
                     businessTitle = businessTitle,
                     businessType = businessType,
                     businessURL = businessURL,
+                    minSpend = minSpend,
                     additionalInfo = additionalInfo,
                     host = Host(
                         profilePicture = hostInfo?.profilePicture ?: "",
@@ -744,6 +745,7 @@ class UserRepository {
                 val businessEmail = document.getString("businessEmail") ?: ""
                 val businessLat = document.getDouble("businessLat") ?: 0.0
                 val businessLng = document.getDouble("businessLng") ?: 0.0
+                val minSpend = document.getDouble("minSpend") ?: 0.0
                 val businessLocation = document.getString("businessLocation") ?: ""
                 val businessTitle = document.getString("businessTitle") ?: ""
                 val businessType = document.getString("businessType") ?: ""
@@ -754,6 +756,7 @@ class UserRepository {
                 val business = Business(
                     businessId = businessId,
                     additionalInfo = additionalInfo,
+                    minSpend = minSpend,
                     businessContact = businessContact,
                     businessDescription = businessDescription,
                     businessEmail = businessEmail,
@@ -863,6 +866,7 @@ class UserRepository {
                 val businessEmail = document.getString("businessEmail") ?: ""
                 val businessLat = document.getDouble("businessLat") ?: 0.0
                 val businessLng = document.getDouble("businessLng") ?: 0.0
+                val minSpend = document.getDouble("minSpend") ?: 0.0
                 val businessLocation = document.getString("businessLocation") ?: ""
                 val businessTitle = document.getString("businessTitle") ?: ""
                 val businessType = document.getString("businessType") ?: ""
@@ -877,6 +881,7 @@ class UserRepository {
                 val business = Business(
                     businessId = businessId,
                     additionalInfo = additionalInfo,
+                    minSpend = minSpend,
                     businessContact = businessContact,
                     businessDescription = businessDescription,
                     businessEmail = businessEmail,
@@ -1133,6 +1138,7 @@ class UserRepository {
         businessContact: String = "",
         businessEmail: String = "",
         businessURL: String = "",
+        minSpend: Double = 0.0,
         additionalInfo: String = "",
         amenities: List<Amenity> = emptyList(),
         businessImages: List<Photo> = emptyList(),
@@ -1172,6 +1178,7 @@ class UserRepository {
             val business = hashMapOf(
                 "hostId" to hostId,
                 "additionalInfo" to additionalInfo,
+                "minSpend" to minSpend,
                 "businessDescription" to businessDescription,
                 "businessLat" to businessLat,
                 "businessLng" to businessLng,

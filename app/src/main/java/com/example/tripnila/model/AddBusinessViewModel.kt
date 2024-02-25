@@ -133,6 +133,11 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
         _business.value = _business.value.copy(additionalInfo = info)
     }
 
+    fun setMinSpend(price: Double) {
+        _business.value = _business.value.copy(minSpend = price)
+        Log.d("minSpendOnBusiness", "${_business.value.minSpend}")
+    }
+
     fun addSchedule(day: String, openingTime: String, closingTime: String) {
         val newSchedule = DailySchedule(day = day, openingTime = openingTime, closingTime = closingTime)
         _business.value = _business.value.copy(schedule = _business.value.schedule + newSchedule)
@@ -184,6 +189,7 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
                   //  amenities = _business.value.amenities.map { it.amenityName },
                     amenities = _business.value.amenities,
                     additionalInfo = _business.value.additionalInfo,
+                    minSpend = _business.value.minSpend,
                     businessImages = _business.value.businessImages,
                     businessMenusPhotos = _business.value.businessMenu,
                     schedule = _business.value.schedule,

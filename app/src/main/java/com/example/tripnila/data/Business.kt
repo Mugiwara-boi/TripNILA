@@ -13,6 +13,7 @@ data class Business (
     val businessContact: String = "",
     val businessEmail: String = "",
     val businessURL: String = "",
+    val minSpend: Double = 0.0,
     val additionalInfo: String = "",
     val cheapestPrice: Double = 0.0,
     val mostExpensivePrice: Double = 0.0,
