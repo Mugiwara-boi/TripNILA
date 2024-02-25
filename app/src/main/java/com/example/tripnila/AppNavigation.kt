@@ -377,7 +377,7 @@ fun NavGraphBuilder.homeGraph(
                 navController = navController,
                 onNavToBookingHistory = { touristId -> navigateToBookingHistory(navController, touristId) },
                 onLogout = { navigateToLogin(navController) },
-                onNavToEditProfile = { touristId -> navigateToEditProfile(navController, touristId) },
+               // onNavToEditProfile = { touristId -> navigateToEditProfile(navController, touristId) },
                 onNavToPreference = { touristId -> navigateToEditPreference(navController, touristId) },
                 onNavToVerifyAccount = { touristId -> navigateToVerifyAccount(navController, touristId) },
                 onNavToHostDashboard = { touristId -> navigateToHost(navController, touristId)},

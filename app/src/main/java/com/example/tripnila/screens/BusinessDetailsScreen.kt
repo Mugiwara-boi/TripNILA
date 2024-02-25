@@ -496,6 +496,9 @@ fun BusinessAmenitiesCard(
             }
             AppOutlinedButton(
                 buttonText = "See all offers",
+                onClick = {
+
+                },
                 modifier = Modifier
                     .padding(top = 12.dp)
             )

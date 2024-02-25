@@ -780,13 +780,13 @@ fun TouristBottomNavigationBar(
             hasNews = false,
 
             ),
-        BottomNavigationItem(
-            title = "Itinerary",
-            selectedIcon = R.drawable.map_filled,
-            unselectedIcon = R.drawable.map_outlined,
-            hasNews = false,
-            //badgeCount = 45
-        ),
+//        BottomNavigationItem(
+//            title = "Itinerary",
+//            selectedIcon = R.drawable.map_filled,
+//            unselectedIcon = R.drawable.map_outlined,
+//            hasNews = false,
+//            //badgeCount = 45
+//        ),
         BottomNavigationItem(
             title = "Inbox",
             selectedIcon = R.drawable.inbox_filled,
@@ -942,6 +942,9 @@ fun AppReviewsCard(
             }
             AppOutlinedButton(
                 buttonText = "See all",
+                onClick = {
+
+                },
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
             )
@@ -1040,10 +1043,10 @@ fun ReviewCard(review: ReviewUiState, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun AppOutlinedButton(buttonText: String, modifier: Modifier = Modifier){
+fun AppOutlinedButton(modifier: Modifier = Modifier, buttonText: String, onClick: () -> Unit){
 
     OutlinedButton(
-        onClick = { },
+        onClick = { onClick() },
         shape = RoundedCornerShape(10.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
         border = BorderStroke(1.dp, Color(0xff999999)),

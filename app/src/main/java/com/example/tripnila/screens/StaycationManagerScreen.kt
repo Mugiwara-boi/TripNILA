@@ -306,6 +306,9 @@ fun AppTransactionsCard(transactions: List<Transaction>, modifier: Modifier = Mo
 
             AppOutlinedButton(
                 buttonText = "See all transactions",
+                onClick = {
+
+                },
                 modifier = Modifier
                     .padding(top = 12.dp)
             )

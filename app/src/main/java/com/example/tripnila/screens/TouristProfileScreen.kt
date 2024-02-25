@@ -1,6 +1,7 @@
 package com.example.tripnila.screens
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -42,19 +43,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
-import coil.compose.rememberImagePainter
 import coil.request.ImageRequest
 import com.example.tripnila.R
-import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.common.Orange
 import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.ProfileData
@@ -71,7 +70,7 @@ fun TouristProfileScreen(
     onNavToTouristWallet: (String) -> Unit,
     onNavToBookingHistory: (String) -> Unit,
     onNavToPreference: (String) -> Unit,
-    onNavToEditProfile: (String) -> Unit,
+   // onNavToEditProfile: (String) -> Unit,
     onNavToVerifyAccount: (String) -> Unit,
     onNavToHostDashboard: (String) -> Unit,
     onLogout: () -> Unit,
@@ -82,6 +81,8 @@ fun TouristProfileScreen(
         profileViewModel?.fetchUserData(touristId)
         Log.d("Fetching", "")
     }
+
+    val context = LocalContext.current
 
     val currentUser = profileViewModel?.currentUser?.collectAsState()?.value
 
@@ -160,9 +161,15 @@ fun TouristProfileScreen(
                             }
                         )
                         AppFilledCard(
-                            cardText = "Edit Profile",
+                            cardText = "Itinerary",
                             onClick = {
-                                onNavToEditProfile(touristId)
+                                // sa touristId na variable nakastore yung Id ng Current User
+                                // Profile Screen -> Itinerary Planner
+                                Toast.makeText(
+                                    context,
+                                    "TouristId: $touristId",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         )
                     }
@@ -470,5 +477,32 @@ fun OptionsRow(
 @Preview
 @Composable
 fun ProfileScreenPreview(){
-    //ProfileScreen("","","",{},{},{},{})
+
+    val profileViewModel = viewModel(modelClass = ProfileViewModel::class.java)
+    val loginViewModel = viewModel(modelClass = LoginViewModel::class.java)
+
+
+    TouristProfileScreen(
+        profileViewModel = profileViewModel,
+        loginViewModel = loginViewModel,
+        touristId = "ITZbCFfF7Fzqf1qPBiwx",
+        onNavToTouristWallet = {
+
+        },
+        onNavToBookingHistory = {
+
+        },
+        onNavToPreference = {
+
+        },
+        onNavToVerifyAccount = {
+
+        },
+        onNavToHostDashboard = {
+
+        },
+        onLogout = {
+
+        },
+    )
 }

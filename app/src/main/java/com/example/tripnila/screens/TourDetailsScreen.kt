@@ -544,7 +544,9 @@ fun TourDescriptionCard3(
             }
             AppOutlinedButton(
                 buttonText = "See all photos",
+                onClick = {
 
+                }
             )
         }
     }
@@ -599,7 +601,7 @@ fun TourAvailabilityCard(availableDates: List<TourAvailableDates> , modifier: Mo
                     )
                 }
             }
-            AppOutlinedButton(buttonText = "See all dates")
+            AppOutlinedButton(buttonText = "See all dates", onClick = {})
         }
     }
 }

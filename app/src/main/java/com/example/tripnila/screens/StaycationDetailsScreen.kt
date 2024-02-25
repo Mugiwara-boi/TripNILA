@@ -1,6 +1,7 @@
 package com.example.tripnila.screens
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -68,6 +69,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
@@ -113,20 +115,21 @@ fun StaycationDetailsScreen(
     onNavToChat: (String, String) -> Unit
 ) {
 
-    var staycation = detailViewModel?.staycation?.collectAsState()
+    val staycation = detailViewModel?.staycation?.collectAsState()
+    val context = LocalContext.current
 
     val dateRangePickerState = rememberDateRangePickerState()
     val bottomSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
-    var openBottomSheet = remember { mutableStateOf(false) }
-    var isSaveButtonClicked = remember { mutableStateOf(false) }
-    var titleText: MutableState<String?> = remember { mutableStateOf(null) }
-    var bottomBookingText: MutableState<String?> = remember { mutableStateOf(null) }
-    var enableBottomBookingButton: MutableState<Boolean> = remember { mutableStateOf(false) }
-    var enableBottomSaveButton: MutableState<Boolean> = remember { mutableStateOf(false) }
-    var nights = remember { mutableStateOf(0) }
-    var hasNavigationBar = WindowInsets.areNavigationBarsVisible
+    val openBottomSheet = remember { mutableStateOf(false) }
+    val isSaveButtonClicked = remember { mutableStateOf(false) }
+    val titleText: MutableState<String?> = remember { mutableStateOf(null) }
+    val bottomBookingText: MutableState<String?> = remember { mutableStateOf(null) }
+    val enableBottomBookingButton: MutableState<Boolean> = remember { mutableStateOf(false) }
+    val enableBottomSaveButton: MutableState<Boolean> = remember { mutableStateOf(false) }
+    val nights = remember { mutableStateOf(0) }
+    val hasNavigationBar = WindowInsets.areNavigationBarsVisible
 
     val staycationReviews = staycation?.value?.staycationBookings?.mapNotNull { it.bookingReview }
     val reviews: List<ReviewUiState> = staycationReviews?.filter { it.bookingId != "" }
@@ -331,6 +334,16 @@ fun StaycationDetailsScreen(
                     item {
                         AttractionsNearbyCard(
                             attractionUiStates = attractionUiStates,
+                            onSeeItineraryButtonClick = {
+
+                                // Staycation Detail -> Itinerary
+                                // Sa staycationId na variable nakastore yung Id ng staycation
+                                Toast.makeText(
+                                    context,
+                                    "StaycationId: $staycationId",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
                             modifier = Modifier
                                 .offset(y = (-5).dp)
                                 .padding(bottom = 12.dp)
@@ -666,8 +679,8 @@ fun StaycationDescriptionCard1(
 
 @Composable
 fun StaycationDescriptionCard2(
+    modifier: Modifier = Modifier,
     staycation: Staycation? = null,
-    modifier: Modifier = Modifier
 ){
     Box(
         modifier = modifier
@@ -706,9 +719,9 @@ fun StaycationDescriptionCard2(
 
 @Composable
 fun StaycationDescriptionCard3(
+    modifier: Modifier = Modifier,
     staycation: Staycation? = null,
     withEditButton: Boolean = false,
-    modifier: Modifier = Modifier
 ) {
 
 //    val imageLoader = rememberImageP(
@@ -827,7 +840,7 @@ fun StaycationDescriptionCard3(
 
 
 @Composable
-fun AttractionsNearbyCard(attractionUiStates: List<AttractionUiState>, modifier: Modifier = Modifier){
+fun AttractionsNearbyCard(modifier: Modifier = Modifier, attractionUiStates: List<AttractionUiState>, onSeeItineraryButtonClick: () -> Unit){
     /*TODO*/
     // NOT FUNCTIONING
 
@@ -864,6 +877,9 @@ fun AttractionsNearbyCard(attractionUiStates: List<AttractionUiState>, modifier:
             }
             AppOutlinedButton(
                 buttonText = "See itinerary",
+                onClick = {
+                    onSeeItineraryButtonClick()
+                },
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
             )
@@ -873,9 +889,9 @@ fun AttractionsNearbyCard(attractionUiStates: List<AttractionUiState>, modifier:
 
 @Composable
 fun StaycationAmenitiesCard(
+    modifier: Modifier = Modifier,
     staycation: Staycation? = null,
     withEditButton: Boolean = false,
-    modifier: Modifier = Modifier
 ) {
     val amenities = staycation?.amenities?.take(6) ?: emptyList()
 
@@ -935,6 +951,9 @@ fun StaycationAmenitiesCard(
             }
             AppOutlinedButton(
                 buttonText = "See all amenities",
+                onClick = {
+
+                },
                 modifier = Modifier
                     .padding(top = 12.dp)
             )
