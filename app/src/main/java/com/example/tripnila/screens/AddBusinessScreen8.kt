@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -102,6 +103,8 @@ fun AddBusinessScreen8(
 
     val mutableAdditionInfo = remember { mutableStateOf( addBusinessViewModel?.business?.value?.additionalInfo) }
     val price = remember { mutableStateOf( addBusinessViewModel?.business?.value?.minSpend?.toInt()) }
+    val entranceFee = remember { mutableStateOf( addBusinessViewModel?.business?.value?.entranceFee?.toInt()) }
+    var hasEntranceFee by remember { mutableStateOf(false) }
     val formatter = NumberFormat.getNumberInstance(Locale.US)
     var isFocused by remember { mutableStateOf(false) }
 
@@ -289,6 +292,7 @@ fun AddBusinessScreen8(
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
                             )
+
                             BasicTextField(
                                 value = formatter.format(price.value),
                                 onValueChange = {
@@ -320,6 +324,7 @@ fun AddBusinessScreen8(
                                     }
                                 }
                             )
+
                             /*LongBasicTextFieldWithCharacterLimit(
                                 inputText = mutableAdditionInfo,
                                 maxCharacterLimit = 10,
@@ -333,6 +338,66 @@ fun AddBusinessScreen8(
 //                        )
 
                     }
+                    item{
+
+                        Row() {
+                            Checkbox(
+                                checked = hasEntranceFee,
+                                onCheckedChange = { isChecked ->
+                                    hasEntranceFee = isChecked
+                                }
+                            )
+                            Text(
+                                text = "Do you have any entrance fee?",
+                                color = Color(0xff333333),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
+                            )
+                        }
+
+                            if (hasEntranceFee) {
+                                BasicTextField(
+
+                                    value = formatter.format(entranceFee.value),
+                                    onValueChange = {
+                                        entranceFee.value = it.replace(",", "").toIntOrNull() ?: 0
+
+                                        addBusinessViewModel?.setEntranceFee(entranceFee?.value!!.toDouble())
+                                    },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    textStyle = TextStyle(fontSize = 18.sp),
+                                    singleLine = true,
+                                    decorationBox = { innerTextField ->
+                                        Row(
+                                            modifier = Modifier
+                                                .background(
+                                                    color = Color.White,
+                                                    shape = RoundedCornerShape(size = 10.dp)
+                                                )
+                                                .border(
+                                                    width = 2.dp,
+                                                    color = if (isFocused) Orange else Color(
+                                                        0xFFC2C2C2
+                                                    ),
+                                                    shape = RoundedCornerShape(size = 10.dp)
+                                                )
+                                                .padding(all = 8.dp), // inner padding
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "₱ ",
+                                                fontWeight = FontWeight.Medium,
+                                            )
+
+                                            innerTextField()
+                                        }
+                                    }
+                                )
+                            }
+                        }
+
+
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 AddListingStepIndicator(modifier = Modifier, currentPage = 1, pageCount = 4)
