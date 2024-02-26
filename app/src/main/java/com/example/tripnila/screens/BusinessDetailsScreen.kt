@@ -1,7 +1,5 @@
 package com.example.tripnila.screens
 
-import com.example.tripnila.data.AmenityBrief
-
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -46,6 +44,7 @@ import com.example.tripnila.common.AppOutlinedButton
 import com.example.tripnila.common.AppReviewsCard
 import com.example.tripnila.common.Tag
 import com.example.tripnila.common.UnderlinedText
+import com.example.tripnila.data.AmenityBrief
 import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.ReviewUiState
 
@@ -81,7 +80,7 @@ fun BusinessDetailsScreen(){
             name = "kitchen"
         )
     )
-    val promos = listOf("Senior citizen & PWD : 20%")
+    val entranceFee = 0.0
     val tags = listOf("Food", "Bar")
     val dailySchedule = listOf(
         DailySchedule(
@@ -229,7 +228,7 @@ fun BusinessDetailsScreen(){
             item {
                 BusinessMenuCard(
                     menuImage = "R.drawable.business1",
-                    promos = promos,
+                    entranceFee = entranceFee,
                     modifier = Modifier
                         .offset(y = (-5).dp)
                         .padding(bottom = 12.dp)
@@ -510,7 +509,7 @@ fun BusinessAmenitiesCard(
 @Composable
 fun BusinessMenuCard(
     menuImage: String,
-    promos: List<String>,
+    entranceFee: Double,
     withEditButton: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -577,22 +576,31 @@ fun BusinessMenuCard(
 //                )
             }
             Text(
-                text = "Discount and promos",
+                text = "Entrance Fee",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .padding(top = 10.dp)
                     .align(Alignment.Start)
             )
-            promos.forEach { promoText ->
+            if(entranceFee != 0.0){
                 Text(
-                    text = promoText,
+                    text = "₱ $entranceFee",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                )
+            } else{
+                Text(
+                    text = "No Entrance Fee",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
                         .align(Alignment.Start)
                 )
             }
+
 
 
         }

@@ -10,6 +10,7 @@ import com.example.tripnila.data.Business
 import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.Host
 import com.example.tripnila.data.Photo
+import com.example.tripnila.data.Tag
 import com.example.tripnila.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -129,8 +130,36 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
         _business.value = _business.value.copy(businessMenu = _business.value.businessMenu.filter { it.photoUri != uri })
     }
 
+    fun setBusinessTag(tag: String){
+        var tagName = ""
+
+        when (tag) {
+            "Restaurant" -> tagName = "Food Trip"
+            "Bar or Club" -> tagName = "Clubs"
+            "Retail Store" -> tagName = "Shopping"
+            "Park" -> tagName = "Nature"
+            "Resort" -> tagName = "Swimming"
+            "Activity Center" -> tagName = "Sports"
+            "Gaming Center" -> tagName = "Gaming"
+            "Museum or Historic Sites" -> tagName = "History"
+        }
+
+        val newTag = Tag(tagName = tagName)
+        _business.value = _business.value.copy(businessTags = _business.value.businessTags + newTag)
+        Log.d("businessTags", "${_business.value.businessTags}")
+    }
     fun setAdditionalInfo(info: String) {
         _business.value = _business.value.copy(additionalInfo = info)
+    }
+
+    fun setMinSpend(price: Double) {
+        _business.value = _business.value.copy(minSpend = price)
+        Log.d("minSpendOnBusiness", "${_business.value.minSpend}")
+    }
+
+    fun setEntranceFee(fee: Double) {
+        _business.value = _business.value.copy(entranceFee = fee)
+        Log.d("entranceFeeOnBusiness", "${_business.value.entranceFee}")
     }
 
     fun addSchedule(day: String, openingTime: String, closingTime: String) {
@@ -184,6 +213,8 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
                   //  amenities = _business.value.amenities.map { it.amenityName },
                     amenities = _business.value.amenities,
                     additionalInfo = _business.value.additionalInfo,
+                    minSpend = _business.value.minSpend,
+                    entranceFee = _business.value.entranceFee,
                     businessImages = _business.value.businessImages,
                     businessMenusPhotos = _business.value.businessMenu,
                     schedule = _business.value.schedule,

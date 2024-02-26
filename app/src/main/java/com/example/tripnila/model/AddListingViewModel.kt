@@ -1,10 +1,8 @@
 package com.example.tripnila.model
 
 import android.content.Context
-import android.location.Geocoder
 import android.net.Uri
 import android.util.Log
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Amenity
@@ -16,19 +14,13 @@ import com.example.tripnila.data.StaycationAvailability
 import com.example.tripnila.data.Tag
 import com.example.tripnila.repository.UserRepository
 import com.google.firebase.Timestamp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.io.IOException
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Date
-import java.util.Locale
 
 class AddListingViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
 
@@ -98,17 +90,22 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
     fun addStaycationAmenity(amenity: String) {
         val newAmenity = Amenity(amenityName = amenity)
         _staycation.value = _staycation.value.copy(amenities = _staycation.value.amenities + newAmenity)
-
         var tagName = ""
 
         when (amenity) {
             "Pool" -> tagName = "Swimming"
             "Gym equipment" -> tagName = "Sports"
         }
-        
+
         val newTag = Tag(tagName = tagName)
         _staycation.value = _staycation.value.copy(staycationTags = _staycation.value.staycationTags + newTag)
-      //  Log.d("Staycation", "${_staycation.value.amenities.map { it.amenityName }}")
+        Log.d("Staycation", "${_staycation.value.staycationTags}")
+
+
+    }
+
+    fun addStaycationTag(amenity: String){
+
     }
 
     fun removeStaycationAmenity(amenity: String) {

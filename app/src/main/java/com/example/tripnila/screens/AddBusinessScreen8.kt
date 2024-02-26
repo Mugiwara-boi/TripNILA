@@ -1,12 +1,11 @@
 package com.example.tripnila.screens
 
 import android.annotation.SuppressLint
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,10 +22,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,8 +39,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -46,16 +50,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 import com.example.tripnila.model.AddBusinessViewModel
-import com.example.tripnila.model.HostTourViewModel
+import java.text.NumberFormat
+import java.util.Locale
 
 @SuppressLint("SuspiciousIndentation")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -97,8 +102,11 @@ fun AddBusinessScreen8(
     }
 
     val mutableAdditionInfo = remember { mutableStateOf( addBusinessViewModel?.business?.value?.additionalInfo) }
-
-
+    val price = remember { mutableStateOf( addBusinessViewModel?.business?.value?.minSpend?.toInt()) }
+    val entranceFee = remember { mutableStateOf( addBusinessViewModel?.business?.value?.entranceFee?.toInt()) }
+    var hasEntranceFee by remember { mutableStateOf(false) }
+    val formatter = NumberFormat.getNumberInstance(Locale.US)
+    var isFocused by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier
@@ -114,7 +122,7 @@ fun AddBusinessScreen8(
                     onCancel = {
                         onNavToBack()
                     },
-                    enableRightButton = addBusinessViewModel?.business?.collectAsState()?.value?.businessMenu?.any { it.photoType == "Cover" } == true && addBusinessViewModel.business.collectAsState().value.businessMenu.any { it.photoType == "Others" }
+                    enableRightButton = addBusinessViewModel?.business?.collectAsState()?.value?.businessMenu?.any { it.photoType == "Cover" } == true && addBusinessViewModel.business.collectAsState().value.businessMenu.any { it.photoType == "Others" } && addBusinessViewModel?.business?.collectAsState()?.value?.minSpend != 0.0
 
                 )
             },
@@ -277,25 +285,119 @@ fun AddBusinessScreen8(
 
 
                     item {
-                        Text(
-                            text = "Any additional information?",
-                            color = Color(0xff333333),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
-                        )
-                        LongBasicTextFieldWithCharacterLimit(
-                            inputText = mutableAdditionInfo,
-                            maxCharacterLimit = 500,
-                            onTextChanged = { newText ->
-                                addBusinessViewModel?.setAdditionalInfo(newText)
-                            }
-                        )
+                            Text(
+                                text = "What is the minimum spending on your business?",
+                                color = Color(0xff333333),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
+                            )
+
+                            BasicTextField(
+                                value = formatter.format(price.value),
+                                onValueChange = {
+                                    price.value = it.replace(",", "").toIntOrNull() ?: 0
+
+                                    addBusinessViewModel?.setMinSpend(price?.value!!.toDouble())
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                textStyle = TextStyle(fontSize = 18.sp),
+                                singleLine = true,
+                                decorationBox = { innerTextField ->
+                                    Row(
+                                        modifier = Modifier
+                                            .background(color = Color.White, shape = RoundedCornerShape(size = 10.dp))
+                                            .border(
+                                                width = 2.dp,
+                                                color = if (isFocused) Orange else Color(0xFFC2C2C2),
+                                                shape = RoundedCornerShape(size = 10.dp)
+                                            )
+                                            .padding(all = 8.dp), // inner padding
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "₱ ",
+                                            fontWeight = FontWeight.Medium,
+                                        )
+
+                                        innerTextField()
+                                    }
+                                }
+                            )
+
+                            /*LongBasicTextFieldWithCharacterLimit(
+                                inputText = mutableAdditionInfo,
+                                maxCharacterLimit = 10,
+                                onTextChanged = { newText ->
+                                    addBusinessViewModel?.setAdditionalInfo(newText)
+                                }
+                            )*/
 //                        LongBasicTextFieldWithCharacterLimit(
 //                            inputText = ,
 //                            maxCharacterLimit = 500
 //                        )
+
                     }
+                    item{
+
+                        Row() {
+                            Checkbox(
+                                checked = hasEntranceFee,
+                                onCheckedChange = { isChecked ->
+                                    hasEntranceFee = isChecked
+                                }
+                            )
+                            Text(
+                                text = "Do you have any entrance fee?",
+                                color = Color(0xff333333),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
+                            )
+                        }
+
+                            if (hasEntranceFee) {
+                                BasicTextField(
+
+                                    value = formatter.format(entranceFee.value),
+                                    onValueChange = {
+                                        entranceFee.value = it.replace(",", "").toIntOrNull() ?: 0
+
+                                        addBusinessViewModel?.setEntranceFee(entranceFee?.value!!.toDouble())
+                                    },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    textStyle = TextStyle(fontSize = 18.sp),
+                                    singleLine = true,
+                                    decorationBox = { innerTextField ->
+                                        Row(
+                                            modifier = Modifier
+                                                .background(
+                                                    color = Color.White,
+                                                    shape = RoundedCornerShape(size = 10.dp)
+                                                )
+                                                .border(
+                                                    width = 2.dp,
+                                                    color = if (isFocused) Orange else Color(
+                                                        0xFFC2C2C2
+                                                    ),
+                                                    shape = RoundedCornerShape(size = 10.dp)
+                                                )
+                                                .padding(all = 8.dp), // inner padding
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "₱ ",
+                                                fontWeight = FontWeight.Medium,
+                                            )
+
+                                            innerTextField()
+                                        }
+                                    }
+                                )
+                            }
+                        }
+
+
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 AddListingStepIndicator(modifier = Modifier, currentPage = 1, pageCount = 4)
