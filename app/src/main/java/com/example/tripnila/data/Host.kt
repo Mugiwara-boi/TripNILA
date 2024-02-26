@@ -20,3 +20,9 @@ data class Host (
             return "$firstName $lastName"
         }
 }
+
+data class HostWallet(
+    val currentBalance : Double = 0.0,
+    val pendingBalance : Double = 0.0,
+    val hostId: String = ""
+)

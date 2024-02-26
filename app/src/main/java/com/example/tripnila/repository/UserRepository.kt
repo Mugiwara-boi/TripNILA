@@ -25,6 +25,7 @@ import com.example.tripnila.data.Tag
 import com.example.tripnila.data.Tour
 import com.example.tripnila.data.TourSchedule
 import com.example.tripnila.data.Tourist
+import com.example.tripnila.data.TouristWallet
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
@@ -71,7 +72,8 @@ class UserRepository {
     private val touristProfileCollection = db.collection("tourist_profile")
     private val reviewPhotoCollection = db.collection("review_photo")
     private val serviceCollection = db.collection("service")
-
+    private val hostWalletCollection = db.collection("host_wallet")
+    private val touristWalletCollection = db.collection("tourist_wallet")
     private val businessCollection = db.collection("business")
     private val businessMenuCollection = db.collection("business_menu")
     private val businessAvailabilityCollection = db.collection("business_availability")
@@ -448,7 +450,54 @@ class UserRepository {
         return staycations
     }
 
+    suspend fun createHostWallet(hostId: String){
+        val currentBalance = 0.0
+        val pendingBalance = 0.0
+        val hostWallet = hashMapOf(
+            "hostId" to hostId,
+            "currentBalance" to currentBalance,
+            "pendingBalance" to pendingBalance
+        )
 
+        hostWalletCollection.add(hostWallet).await()
+    }
+    suspend fun createTouristWallet(touristId: String){
+        val currentBalance = 0.0
+        val touristWallet = hashMapOf(
+            "touristId" to touristId,
+            "currentBalance" to currentBalance
+        )
+        touristWalletCollection.add(touristWallet).await()
+    }
+    suspend fun getTouristWallet(touristId: String): TouristWallet{
+
+        try {
+            val querySnapshot = touristWalletCollection
+                .whereEqualTo("touristId", touristId)
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                val currentBalance = document.getDouble("currentBalance") ?: 0.0
+
+                return TouristWallet(
+                    touristId = touristId,
+                    currentBalance = currentBalance
+                )
+            }
+
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+
+        return TouristWallet()
+    }
+
+    suspend fun getWalletByHostId(){
+
+    }
     suspend fun getStaycationBookingsByStaycationId(staycationId: String) : List<StaycationBooking> {
 
         val bookings = mutableListOf<StaycationBooking>()
@@ -4328,12 +4377,13 @@ class UserRepository {
 
             val touristDocRef = touristCollection.add(userData).await()
             val touristId = touristDocRef.id
-
+            val hostId = "HOST-$touristId"
             val hostData = hashMapOf(
                 "touristId" to touristId
             )
             hostCollection.document("HOST-$touristId").set(hostData).await()
-
+            createHostWallet(hostId)
+            createTouristWallet(touristId)
             true
         } catch (e: Exception) {
             e.printStackTrace()
