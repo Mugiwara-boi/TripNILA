@@ -5,15 +5,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.repository.UserRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import java.time.format.TextStyle
+import java.util.Locale
+import java.util.TimeZone
 
 
 class DetailViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
@@ -78,7 +78,6 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
         _alertDialogMessage.value = when {
             !isNightsDifferenceValid() -> "Please select booking dates."
             !isGuestsValid() -> "Please select booking guests."
-            !isPaymentMethodSelected() -> "Please select your payment method."
 
             else -> "Are you sure you want to proceed?" // No issues, return null for no alert dialog
         }

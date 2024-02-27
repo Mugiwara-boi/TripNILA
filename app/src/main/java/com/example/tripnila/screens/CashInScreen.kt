@@ -1,6 +1,5 @@
 package com.example.tripnila.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
@@ -51,7 +50,6 @@ import com.example.tripnila.common.Orange
 import com.example.tripnila.data.PaymentMethod
 import com.example.tripnila.model.TouristWalletViewModel
 import kotlinx.coroutines.launch
-import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +64,7 @@ fun CashInScreen(
     val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
     val cashIn by touristWalletViewModel.amount.collectAsState()
     touristWalletViewModel.getWallet(touristId)
+//    touristWalletViewModel.setWallet(touristId)
     val currentBalance = touristWallet.currentBalance
     val context = LocalContext.current
 
@@ -396,137 +395,7 @@ fun CashInCard(
         }
     }
 }
-@Composable
-fun WithdrawCard(
-    modifier: Modifier = Modifier,
-    availableBalance: Double,
-    touristWalletViewModel: TouristWalletViewModel
-) {
-    var text by remember {
-        mutableDoubleStateOf(0.00)
-    }
 
-    var isFocused by remember { mutableStateOf(false) }
-
-    val localFocusManager = LocalFocusManager.current
-
-    val inputAmount = text
-    val courotineScope = rememberCoroutineScope()
-    // Format the input amount with two decimal places
-    val formattedAmount = String.format("%.2f", inputAmount)
-
-    val enoughBalance = inputAmount <= availableBalance
-    val balanceTextColor = if (enoughBalance) Color.Green else Color.Red
-    val balanceText = if (enoughBalance) "There's enough balance." else "There's insufficient balance."
-
-    val formattedBalance = DecimalFormat("#,##0.${"0".repeat(2)}").format(availableBalance)
-
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
-        ),
-        shape = RoundedCornerShape(10.dp),
-        modifier = modifier
-            .fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(
-                    horizontal = 15.dp,
-                    vertical = 15.dp // 12
-                )
-        ) {
-            Text(
-                text = "Current Balance",
-                color = Color(0xff333333),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = "₱ $formattedBalance",
-                color = Color(0xff333333),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-            Text(
-                text = "Cash in amount",
-                color = Color(0xff333333),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(3.dp))
-            BasicTextField(
-
-                value = formattedAmount,
-                onValueChange = { newValue ->
-                    // Filter out non-numeric characters
-                    text = newValue.toDoubleOrNull() ?: 0.0
-                    courotineScope.launch {
-                        if (balanceText == "There's enough balance.") {
-                            touristWalletViewModel.setAmount(text)
-
-                        }
-                    }
-                },
-                textStyle = TextStyle(
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black
-                ),
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Done,
-                    keyboardType = KeyboardType.Number
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        localFocusManager.clearFocus()
-                    }
-                ),
-                singleLine = true,
-                decorationBox = { innerTextField ->
-                    Row(
-                        modifier = Modifier
-                            .background(
-                                color = Color.White,
-                                shape = RoundedCornerShape(size = 10.dp)
-                            )
-                            .border(
-                                width = 2.dp,
-                                color = if (isFocused) Orange else Color(0xFFC2C2C2),
-                                shape = RoundedCornerShape(size = 10.dp)
-                            )
-                            .padding(all = 8.dp), // inner padding
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "₱ ",
-                            fontWeight = FontWeight.Medium,
-                        )
-
-                        innerTextField()
-                    }
-                },
-                modifier = modifier
-                    .width(128.dp)
-                    .padding(start = 0.dp)
-                    .onFocusChanged { focusState ->
-                        isFocused = focusState.isFocused
-                    }
-            )
-
-            Text(
-                text = balanceText,
-                color = balanceTextColor,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(start = 8.dp) // Add padding to separate from the input field
-            )
-        }
-    }
-}
 
 @Composable
 fun WithdrawTextField(
@@ -615,51 +484,7 @@ fun WithdrawTextField(
     )
 }
 
-@Composable
-fun RemainingBalanceCard(
-    modifier: Modifier = Modifier,
-    remainingBalance: Double
-) {
 
-    val formattedBalance = DecimalFormat("#,##0.${"0".repeat(2)}").format(remainingBalance)
-
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF8F8F9)
-        ),
-        border = BorderStroke(1.dp, Color(0xff999999)),
-        shape = RoundedCornerShape(10.dp),
-        modifier = modifier
-            .fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(
-                    horizontal = 15.dp,
-                    vertical = 15.dp // 12
-                )
-                .fillMaxWidth()
-        ) {
-            Text(
-                text = "Remaining Balance",
-                color = Color(0xff333333),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = "₱ $formattedBalance",
-                color = Orange,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
-
-        }
-
-    }
-}
 
 
 @Preview

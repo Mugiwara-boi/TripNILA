@@ -96,6 +96,7 @@ import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.BookingHistory
 import com.example.tripnila.data.StaycationBooking
 import com.example.tripnila.model.BookingHistoryViewModel
+import com.example.tripnila.model.TouristWalletViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -112,6 +113,7 @@ import java.util.TimeZone
 @Composable
 fun BookingHistoryScreen(
     touristId: String = "",
+    touristWalletViewModel: TouristWalletViewModel,
     bookingHistoryViewModel: BookingHistoryViewModel? = null,
     navController: NavHostController? = null,
     onNavToChat: (String, String) -> Unit,
@@ -248,7 +250,9 @@ fun BookingHistoryScreen(
 
                         bookingHistoryViewModel?.let { bookingHistoryViewModel ->
                             BookingHistoryCard(
+                                touristId = touristId,
                                 bookingHistoryViewModel = bookingHistoryViewModel,
+                                touristWalletViewModel = touristWalletViewModel,
                                 bookingHistory = bookingHistory,
                                 coroutineScope = coroutineScope,
                                 modifier = Modifier.padding(top = 15.dp),
@@ -299,7 +303,9 @@ private fun formatDateRange(startDate: LocalDate, endDate: LocalDate): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingHistoryCard(
+    touristId: String,
     bookingHistoryViewModel: BookingHistoryViewModel,
+    touristWalletViewModel: TouristWalletViewModel,
     bookingHistory: BookingHistory,
     coroutineScope: CoroutineScope,
     onChatHost: (String) -> Unit,
@@ -615,6 +621,7 @@ fun BookingHistoryCard(
                         } ?: 0
 
                         AppPaymentDivider(
+                            touristId = touristId,
                             forCancelBooking = true,
                             bookingHistoryViewModel = bookingHistoryViewModel,
                             bookingFee = bookingHistory?.staycationPrice ?: 0.0,
@@ -622,6 +629,7 @@ fun BookingHistoryCard(
                             maintenanceFee = bookingHistory?.staycationPrice?.times(0.02) ?: 0.0,
                             tripnilaFee = bookingHistory?.staycationPrice?.times(0.05) ?: 0.0,
                             daysBeforeCheckIn = daysBeforeCheckIn,
+                            touristWalletViewModel = touristWalletViewModel
                         )
                         CancellationAgreementText()
                         Spacer(modifier = Modifier.height(15.dp))

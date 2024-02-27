@@ -283,6 +283,7 @@ fun NavGraphBuilder.homeGraph(
                 touristId = entry.arguments?.getString("touristId") ?: "",
                 staycationId = entry.arguments?.getString("staycationId") ?: "",
                 detailViewModel = detailViewModel,
+                touristWalletViewModel = TouristWalletViewModel()
             )
         }
 
@@ -343,6 +344,7 @@ fun NavGraphBuilder.homeGraph(
             BookingHistoryScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
                 bookingHistoryViewModel = bookingHistoryViewModel,
+                touristWalletViewModel = TouristWalletViewModel(),
                 navController = navController,
                 onNavToChat = { senderTouristId, receiverTouristId ->
                     navigateToChat(navController, senderTouristId, receiverTouristId)
@@ -461,6 +463,7 @@ fun NavGraphBuilder.hostGraph(
                 onNavToTourManager = { hostId, tourId ->
                     navigateToTourManager(navController, hostId, tourId)
                 },
+                touristWalletViewModel = TouristWalletViewModel(),
                 hostDashboardViewModel = hostDashboardViewModel,
                 onNavToInsights = { hostId ->
                     navigateToInsights(navController,hostId)
@@ -847,6 +850,7 @@ fun NavGraphBuilder.hostGraph(
         ) {entry ->
             HostWalletScreen(
                 hostId = entry.arguments?.getString("hostId") ?: "",
+                touristWalletViewModel = TouristWalletViewModel(),
                 onBack = {
                     navController.popBackStack()
                 },
@@ -864,6 +868,7 @@ fun NavGraphBuilder.hostGraph(
         ) {entry ->
             WithdrawScreen(
                 hostId = entry.arguments?.getString("hostId") ?: "",
+                touristWalletViewModel = TouristWalletViewModel(),
                 onCancel = {
                     navController.popBackStack()
                 },

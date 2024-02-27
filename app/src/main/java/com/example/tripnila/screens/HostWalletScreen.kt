@@ -19,10 +19,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
@@ -31,23 +29,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.WalletTransaction
+import com.example.tripnila.model.TouristWalletViewModel
 import java.text.DecimalFormat
-import java.text.NumberFormat
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HostWalletScreen(
     hostId: String = "",
     onBack: () -> Unit,
+    touristWalletViewModel: TouristWalletViewModel,
     onNavToWithdraw: (String) -> Unit
 ){
     val horizontalPaddingValue = 16.dp
     val verticalPaddingValue = 10.dp
+    val touristId = hostId.removePrefix("HOST-")
+    val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
+    val tourist by touristWalletViewModel.tourist.collectAsState()
 
+    touristWalletViewModel.getWallet(touristId)
+//    touristWalletViewModel.setWallet(touristId)
+    touristWalletViewModel.getTouristProfile(touristId)
+    val currentBalance = touristWallet.currentBalance
+    val pendingBalance = touristWallet.pendingBalance
+    val fName = tourist.firstName
+    val lName = tourist.lastName
+    val touristName = fName + " " + lName
     val walletTransactions = listOf(
         WalletTransaction(
             transactionType = "Withdraw",
@@ -94,8 +102,8 @@ fun HostWalletScreen(
                 }
                 item {
                     AvailableBalanceCardWithWithdrawButton(
-                        hostName = "Joshua Araneta",
-                        hostBalance = 7600.00,
+                        hostName = touristName,
+                        hostBalance = currentBalance,
                         onWithdraw = {
                             onNavToWithdraw(hostId)
                         },
@@ -108,8 +116,8 @@ fun HostWalletScreen(
                 }
                 item {
                     TotalBalanceCard(
-                        totalBalance = 8600.00,
-                        fundsOnHold = 1000.00,
+                        totalBalance = currentBalance,
+                        fundsOnHold = pendingBalance,
                         modifier = Modifier.padding(
                             vertical = verticalPaddingValue,
                             horizontal = horizontalPaddingValue

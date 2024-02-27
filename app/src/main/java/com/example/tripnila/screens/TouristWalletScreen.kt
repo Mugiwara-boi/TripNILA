@@ -59,6 +59,7 @@ fun TouristWalletScreen(
     )
 
     touristWalletViewModel.getWallet(touristId)
+//    touristWalletViewModel.setWallet(touristId)
     val currentBalance = touristWallet.currentBalance
 
     Surface(

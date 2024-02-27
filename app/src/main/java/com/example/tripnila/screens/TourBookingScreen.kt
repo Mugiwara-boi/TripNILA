@@ -26,9 +26,13 @@ import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
 import com.example.tripnila.common.AppConfirmAndPayDivider
 import com.example.tripnila.common.AppYourTripRow
+import com.example.tripnila.model.TouristWalletViewModel
 
 @Composable
-fun TourBookingScreen(){
+fun TourBookingScreen(
+    touristId: String,
+    touristWalletViewModel: TouristWalletViewModel,
+){
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -80,6 +84,8 @@ fun TourBookingScreen(){
                 )
                 YourTourDivider()
                 AppPaymentDivider(
+                    touristId = touristId,
+                    touristWalletViewModel = touristWalletViewModel,
                     bookingFee = 2755.00,
                     bookingDuration = 4,
                     tripnilaFee = 625.00,
@@ -126,5 +132,5 @@ fun YourTourDivider(modifier: Modifier = Modifier) {
 @Preview
 @Composable
 private fun TourBookingScreenPreview(){
-    TourBookingScreen()
+    TourBookingScreen(touristId = "touristId", touristWalletViewModel = TouristWalletViewModel())
 }
