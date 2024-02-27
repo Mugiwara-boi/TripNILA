@@ -1,11 +1,9 @@
 package com.example.tripnila.screens
 
+
 import android.graphics.Paint.Align
 import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
-import com.example.tripnila.data.AmenityBrief
-
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -62,6 +60,7 @@ import com.example.tripnila.common.AppReviewsCard
 import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.common.Tag
 import com.example.tripnila.common.UnderlinedText
+import com.example.tripnila.data.AmenityBrief
 import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.data.setImageForAmenity
@@ -191,8 +190,7 @@ fun BusinessDetailsScreen(
         ),
     )
 
-
-
+    
     Surface(
         modifier = Modifier
             .fillMaxSize(),
@@ -303,7 +301,7 @@ fun BusinessDetailsScreen(
                 item {
                     BusinessMenuCard(
                         menuImage = business.businessMenu.find { it.photoType == "Cover" }?.photoUrl  ?: "",
-                        promos = promos,
+                        entranceFee = business.entranceFee,
                         modifier = Modifier
                             .offset(y = (-5).dp)
                             .padding(bottom = 12.dp)
@@ -340,6 +338,7 @@ fun BusinessDetailsScreen(
                     BusinessBottomBookingBar()
                 }
             }
+
         }
 
     }
@@ -588,7 +587,7 @@ fun BusinessAmenitiesCard(
 fun BusinessMenuCard(
     modifier: Modifier = Modifier,
     menuImage: String,
-    promos: List<String>,
+    entranceFee: Double,
     withEditButton: Boolean = false,
 
 ) {
@@ -655,22 +654,31 @@ fun BusinessMenuCard(
 //                )
             }
             Text(
-                text = "Discount and promos",
+                text = "Entrance Fee",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .padding(top = 10.dp)
                     .align(Alignment.Start)
             )
-            promos.forEach { promoText ->
+            if(entranceFee != 0.0){
                 Text(
-                    text = promoText,
+                    text = "₱ $entranceFee",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                )
+            } else{
+                Text(
+                    text = "No Entrance Fee",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
                         .align(Alignment.Start)
                 )
             }
+
 
 
         }

@@ -38,7 +38,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
@@ -125,7 +124,19 @@ fun AddListingScreen2(
                         ),
                         PropertyDescription(
                             icon = R.drawable.hotel,
-                            label = "Park or Resort"
+                            label = "Park"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.hotel,
+                            label = "Resort"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.apartment,
+                            label = "Gaming Center"
+                        ),
+                        PropertyDescription(
+                            icon = R.drawable.apartment,
+                            label = "Museum or Historic Sites"
                         ),
                     )
                 }
@@ -228,7 +239,10 @@ fun AddListingScreen2(
                                             when (listingType) {
                                                 "Staycation" -> selectedPropertyLabel?.let { type -> addListingViewModel?.setStaycationType(type) }
                                                 "Tour" -> selectedPropertyLabel?.let { type -> hostTourViewModel?.setTourType(type) }
-                                                "Business" -> selectedPropertyLabel?.let { type -> addBusinessViewModel?.setBusinessType(type) }
+                                                "Business" -> {
+                                                    selectedPropertyLabel?.let { type -> addBusinessViewModel?.setBusinessType(type) }
+                                                    addBusinessViewModel?.setBusinessTag(type.label)
+                                                }
                                                 else -> throw IllegalStateException("Unknown")
                                             }
 

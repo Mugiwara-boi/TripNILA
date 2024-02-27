@@ -42,10 +42,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -66,7 +64,6 @@ import com.example.tripnila.data.PropertyDescription
 import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.HostTourViewModel
-import com.google.common.collect.Iterators.addAll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -282,8 +279,13 @@ fun AddListingScreen7(
                                                 selectedAmenities = selectedAmenities?.plus(offer.label)
 
                                                 when (listingType) {
-                                                    "Staycation" -> addListingViewModel?.addStaycationAmenity(offer.label)
-                                                    "Business" -> addBusinessViewModel?.addBusinessAmenity(offer.label)
+                                                    "Staycation" -> {
+                                                        addListingViewModel?.addStaycationAmenity(offer.label)
+
+                                                    }
+                                                    "Business" -> {
+                                                        addBusinessViewModel?.addBusinessAmenity(offer.label)
+                                                    }
                                                     else -> throw IllegalStateException("Unknown")
                                                 }
 
