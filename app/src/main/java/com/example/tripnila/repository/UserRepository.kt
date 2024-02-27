@@ -36,6 +36,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.security.MessageDigest
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -46,6 +47,7 @@ import java.util.SortedSet
 import java.util.TimeZone
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import java.util.*
 import kotlin.experimental.and
 
 
@@ -3081,6 +3083,8 @@ class UserRepository {
     ): List<Tag> {
         return try {
 
+            processedServiceIds.clear()
+
             // val startIndex = pageNumber * pageSize
 
             // startIndex = [0, 18, 24, 30, 36]
@@ -3128,12 +3132,6 @@ class UserRepository {
                 .get()
                 .await()
 
-            if (querySnapshot.isEmpty) {
-                Log.d("Query Snapshot", "Empty")
-            } else {
-                Log.d("Query Snapshot", "Not Empty")
-            }
-
             querySnapshot.documents.forEach { document ->
                 val tagId = document.id
                 val tagName = document.getString("tagName") ?: ""
@@ -3153,13 +3151,15 @@ class UserRepository {
                     Log.d("SEPARATOR", "---------------------------------------")
                     Log.d("FirestoreTag", "Tag: $tagName, ServiceId: $serviceId")
                     Log.d("ProcessedServiceIds", processedServiceIds.toString())
-                  //  Log.d("ServiceIdSet", serviceIdSet.toString())
+                    Log.d("ServiceIdSet", serviceIdSet.toString())
                 }
             }
 
+            Log.d("Result Size(BEFORE REMOVAL): ", result.toString())
             // If there are more documents than the requested page size, remove the extra one
             if (result.size > pageSize) {
                 result.removeAt(result.size - 1)
+                Log.d("Result Size(AFTER REMOVAL): ", result.toString())
             }
 
             // Log final result size and content
@@ -3410,50 +3410,186 @@ class UserRepository {
         return uniqueServiceIds
     }
 
-    suspend fun getAllServicesByTagWithPaging(hostId: String, tag: String, pageNumber: Int, pageSize: Int): List<HomePagingItem> {
+    suspend fun getAllServicesByTagWithPaging(
+        hostId: String,
+        tag: String,
+        pageNumber: Int,
+        pageSize: Int,
+
+        searchText: String,
+        includeStaycation: Boolean,
+        includeTour: Boolean,
+        houseSelected: Boolean,
+        apartmentSelected: Boolean,
+        condoSelected: Boolean,
+        campSelected: Boolean,
+        guestHouseSelected: Boolean,
+        hotelSelected: Boolean,
+        photoTourSelected: Boolean,
+        foodTripSelected: Boolean,
+        barHoppingSelected: Boolean,
+        selectedRating: Int,
+        minPrice: String,
+        maxPrice: String,
+        city: String,
+        capacity: String,
+        bedroomCount: String,
+        bedCount: String,
+        bathroomCount: String,
+        checkedAmenities: List<Boolean>,
+        checkedOffers: List<Boolean>,
+        startDate: Long? = null,
+        endDate: Long? = null
+    ): List<HomePagingItem> {
+
+        //val allAmenities = listOf("Swimming Pool", "Gym", "Parking", "Wi-Fi", "Restaurant", "Spa", "Bar", "Business Center")
+        val allAmenities = listOf("Wifi", "TV", "Kitchen", "Washing machine", "Dedicated workspace" , "Pool", "Gym equipment", "Hot tub", "City view")
+        val allOffers = listOf("Food", "Souvenir", "Transportation", "Drinks")
+
+        val checkedAmenityNames = mutableListOf<String>()
+        val checkedOfferNames = mutableListOf<String>()
+
+        for (index in checkedAmenities.indices) {
+            if (checkedAmenities[index]) {
+                checkedAmenityNames.add(allAmenities[index])
+            }
+        }
+
+        for (index in checkedOffers.indices) {
+            if (checkedOffers[index]) {
+                checkedOfferNames.add(allOffers[index])
+            }
+        }
+
 
         val serviceIds = getServiceIdsByTag(tag, pageNumber, pageSize)
-
         val itemsList = mutableListOf<HomePagingItem>()
 
         for (serviceId in serviceIds) {
-            // Fetch staycation document
-            val staycationDoc = staycationCollection.document(serviceId.serviceId).get().await()
-            val staycationImage = getServiceImages(serviceId.serviceId, "Staycation")
+            if (includeStaycation) {
+                val staycationDoc = staycationCollection.document(serviceId.serviceId).get().await()
+                val staycationImage = getServiceImages(serviceId.serviceId, "Staycation")
 
-            // Check if staycation document is not empty before creating HomePagingItem
-            if (staycationDoc.exists() && staycationDoc.getString("hostId") != hostId) {
-                val staycation = HomePagingItem(
-                    serviceId = serviceId.serviceId,
-                    serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
-                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
-                    serviceTitle = staycationDoc.getString("staycationTitle") ?: "",
-                    averageReviewRating = staycationDoc.getDouble("averageReviewRating") ?: 0.0,
-                    location = staycationDoc.getString("staycationLocation") ?: "",
-                    price = staycationDoc.getDouble("staycationPrice") ?: 0.0,
-                    hostId = staycationDoc.getString("hostId") ?: ""
-                )
-                itemsList.add(staycation)
+                if (staycationDoc.exists() && staycationDoc.getString("hostId") != hostId) {
+                    val staycationTitle = staycationDoc.getString("staycationTitle") ?: ""
+                    val staycationType = staycationDoc.getString("staycationType") ?: ""
+                    val staycationLocation = staycationDoc.getString("staycationLocation") ?: ""
+                    val staycationCapacity = staycationDoc.getLong("noOfGuests")?.toInt() ?: 0
+                    val staycationBeds = staycationDoc.getLong("noOfBeds")?.toInt() ?: 0
+                    val staycationBedrooms = staycationDoc.getLong("noOfBedrooms")?.toInt() ?: 0
+                    val staycationBathrooms = staycationDoc.getLong("noOfBathrooms")?.toInt() ?: 0
+                    val staycationPrice = staycationDoc.getLong("staycationPrice")?.toInt() ?: 0
+                    val bookings = getStaycationBookings(serviceId.serviceId)
+                    val amenities = getAmenities(serviceId.serviceId, "Staycation")
+                    val staycationAvailability = getStaycationAvailability(serviceId.serviceId)
+
+                    val inBetween = if (startDate != null && endDate != null) {
+                        allDatesAvailable(
+                            staycationAvailability.map { it.availableDate?.toDate() ?: Date(0) }.sorted(),
+                            startDate,
+                            endDate
+                        )
+                    } else {
+                        true
+                    }
+
+                   // Log.d("Staycation In Between", inBetween.toString())
+
+                    val validReviews = bookings
+                        .mapNotNull { it.bookingReview }
+                        .filter { it.bookingId != "" }
+
+                    val average = validReviews.map { it.rating }.average()
+                    val averageReviewRating = if (average.isNaN()) 0.0 else average
+                    val staycationAmenities = amenities.filter { checkedAmenityNames.contains(it.amenityName) }
+
+                    Log.d("Staycation Amenities After Filter", staycationAmenities.map { it.amenityName }.toString())
+
+                    if ((searchText == "" || staycationTitle.contains(searchText, ignoreCase = true)) &&
+                        (city == "" || staycationLocation.contains(city, ignoreCase = true)) &&
+                        (capacity == "" || staycationCapacity >= capacity.toInt()) &&
+                        (bedroomCount == "Any" || bedroomCount.toInt() <= staycationBedrooms) &&
+                        (bedCount == "Any" || bedCount.toInt() <= staycationBeds) &&
+                        (bathroomCount == "Any" || bathroomCount.toInt() <= staycationBathrooms) &&
+                        (staycationType == "House" && houseSelected ||
+                                staycationType == "Apartment" && apartmentSelected ||
+                                staycationType == "Condominium" && condoSelected ||
+                                staycationType == "Camp" && campSelected ||
+                                staycationType == "Guest House" && guestHouseSelected ||
+                                staycationType == "Hotel" && hotelSelected) &&
+                        averageReviewRating >= selectedRating &&
+                        (minPrice == "" || staycationPrice >= minPrice.toInt()) &&
+                        (maxPrice == "" || staycationPrice <= maxPrice.toInt()) &&
+                        inBetween
+                    // staycationAmenities.isNotEmpty()   UNCOMMENT THIS
+                    ) {
+                        val staycation = HomePagingItem(
+                            serviceId = serviceId.serviceId,
+                            serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
+                                ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                            serviceTitle = staycationTitle,
+                            averageReviewRating = averageReviewRating,
+                            location = staycationDoc.getString("staycationLocation") ?: "",
+                            price = staycationDoc.getDouble("staycationPrice") ?: 0.0,
+                            hostId = staycationDoc.getString("hostId") ?: ""
+                        )
+                        itemsList.add(staycation)
+                    }
+                }
             }
 
-            // Fetch tour document
-            val tourDoc = tourCollection.document(serviceId.serviceId).get().await()
-            val tourImage = getServiceImages(serviceId.serviceId, "Tour")
+            if (includeTour) {
+                val tourDoc = tourCollection.document(serviceId.serviceId).get().await()
+                val tourImage = getServiceImages(serviceId.serviceId, "Tour")
 
-            // Check if tour document is not empty before creating HomePagingItem
-            if (tourDoc.exists() && tourDoc.getString("hostId") != hostId) {
-                val tour = HomePagingItem(
-                    serviceId = serviceId.serviceId,
-                    serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
-                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
-                    serviceTitle = tourDoc.getString("tourTitle") ?: "",
-                    averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
-                    location = tourDoc.getString("tourLocation") ?: "",
-                    price = tourDoc.getDouble("tourPrice") ?: 0.0,
-                    tourDuration = tourDoc.getString("tourDuration")?.toInt(),
-                    hostId = tourDoc.getString("hostId") ?: ""
-                )
-                itemsList.add(tour)
+                if (tourDoc.exists() && tourDoc.getString("hostId") != hostId) {
+                    val tourTitle = tourDoc.getString("tourTitle") ?: ""
+                    val tourType = tourDoc.getString("tourType") ?: ""
+                    val tourLocation = tourDoc.getString("tourLocation") ?: ""
+                    val tourPrice = tourDoc.getLong("tourPrice")?.toInt() ?: 0
+                    val offers = getTourOffers(serviceId.serviceId)
+                    val tourAvailability = getTourAvailabilities(serviceId.serviceId)
+
+                    val tourOffers = offers.filter { checkedOfferNames.contains(it.typeOfOffer) }
+
+                    val tourAvailabilityDates = tourAvailability.map { localDate ->
+                        Date.from(localDate.date.atStartOfDay(ZoneId.systemDefault()).toInstant())
+                    }.sorted()
+
+                    val inBetween: Boolean = if (startDate != null && endDate != null) {
+                        allDatesAvailable(
+                            tourAvailabilityDates,
+                            startDate,
+                            endDate
+                        )
+                    } else {
+                        true
+                    }
+
+                    if ((searchText == "" || tourTitle.contains(searchText, ignoreCase = true)) &&
+                        (city == "" || tourLocation.contains(city, ignoreCase = true)) &&
+                        (tourType == "Photo Tour" && photoTourSelected ||
+                                tourType == "Food Trip" && foodTripSelected ||
+                                tourType == "Bar Hopping" && barHoppingSelected) &&
+                        (minPrice == "" || tourPrice >= minPrice.toInt()) &&
+                        (maxPrice == "" || tourPrice <= maxPrice.toInt()) &&
+                        tourOffers.isNotEmpty() &&
+                        inBetween
+                    ) {
+                        val tour = HomePagingItem(
+                            serviceId = serviceId.serviceId,
+                            serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
+                                ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                            serviceTitle = tourTitle,
+                            averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
+                            location = tourDoc.getString("tourLocation") ?: "",
+                            price = tourDoc.getDouble("tourPrice") ?: 0.0,
+                            tourDuration = tourDoc.getString("tourDuration")?.toInt(),
+                            hostId = tourDoc.getString("hostId") ?: ""
+                        )
+                        itemsList.add(tour)
+                    }
+                }
             }
         }
 
@@ -3526,54 +3662,260 @@ class UserRepository {
 
 
 
-    suspend fun getAllServicesByTagsWithPaging(hostId: String, tags: List<String>, pageNumber: Int, pageSize: Int, serviceIdSet: SortedSet<String>): List<HomePagingItem> {
+    suspend fun getAllServicesByTagsWithPaging(
+        hostId: String,
+        tags: List<String>,
+        pageNumber: Int,
+        pageSize: Int,
+        serviceIdSet: SortedSet<String>,
+
+        searchText: String,
+        includeStaycation: Boolean,
+        includeTour: Boolean,
+        houseSelected: Boolean,
+        apartmentSelected: Boolean,
+        condoSelected: Boolean,
+        campSelected: Boolean,
+        guestHouseSelected: Boolean,
+        hotelSelected: Boolean,
+        photoTourSelected: Boolean,
+        foodTripSelected: Boolean,
+        barHoppingSelected: Boolean,
+        selectedRating: Int,
+        minPrice: String,
+        maxPrice: String,
+        city: String,
+        capacity: String,
+        bedroomCount: String,
+        bedCount: String,
+        bathroomCount: String,
+        checkedAmenities: List<Boolean>,
+        checkedOffers: List<Boolean>,
+        startDate: Long? = null,
+        endDate: Long? = null
+
+    ): List<HomePagingItem> {
+
+        val allAmenities = listOf("Wifi", "TV", "Kitchen", "Washing machine", "Dedicated workspace" , "Pool", "Gym equipment", "Hot tub", "City view")
+        val allOffers = listOf("Food", "Souvenir", "Transportation", "Drinks")
+
+        val checkedAmenityNames = mutableListOf<String>()
+        val checkedOfferNames = mutableListOf<String>()
+
+        for (index in checkedAmenities.indices) {
+            if (checkedAmenities[index]) {
+                checkedAmenityNames.add(allAmenities[index])
+            }
+        }
+
+        for (index in checkedOffers.indices) {
+            if (checkedOffers[index]) {
+                checkedOfferNames.add(allOffers[index])
+            }
+        }
+
+        Log.d("Checked Amenity Names", checkedAmenityNames.toString())
+      //  Log.d("Checked Offer Names", checkedOfferNames.toString())
 
         val serviceIds = getServiceIdsByTags(tags, pageNumber, pageSize, serviceIdSet)
-
         val itemsList = mutableListOf<HomePagingItem>()
 
-        for (serviceId in serviceIds) {
-            // Fetch staycation document
-            val staycationDoc = staycationCollection.document(serviceId.serviceId).get().await()
-            val staycationImage = getServiceImages(serviceId.serviceId, "Staycation")
+        Log.d("serviceIds", serviceIds.toString())
 
-            // Check if staycation document is not empty before creating HomePagingItem
-            if (staycationDoc.exists() && staycationDoc.getString("hostId") != hostId) {
-                val staycation = HomePagingItem(
-                    serviceId = serviceId.serviceId,
-                    serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
-                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
-                    serviceTitle = staycationDoc.getString("staycationTitle") ?: "",
-                    averageReviewRating = staycationDoc.getDouble("averageReviewRating") ?: 0.0,
-                    location = staycationDoc.getString("staycationLocation") ?: "",
-                    price = staycationDoc.getDouble("staycationPrice") ?: 0.0,
-                    hostId = staycationDoc.getString("hostId") ?: ""
-                )
-                itemsList.add(staycation)
+        for (serviceId in serviceIds) {
+            if (includeStaycation) {
+                val staycationDoc = staycationCollection.document(serviceId.serviceId).get().await()
+                val staycationImage = getServiceImages(serviceId.serviceId, "Staycation")
+
+
+                if (staycationDoc.exists() && staycationDoc.getString("hostId") != hostId) {
+                    val staycationTitle = staycationDoc.getString("staycationTitle") ?: ""
+                    val staycationType = staycationDoc.getString("staycationType") ?: ""
+                    val staycationLocation = staycationDoc.getString("staycationLocation") ?: ""
+                    val staycationCapacity = staycationDoc.getLong("noOfGuests")?.toInt() ?: 0
+                    val staycationBeds = staycationDoc.getLong("noOfBeds")?.toInt() ?: 0
+                    val staycationBedrooms = staycationDoc.getLong("noOfBedrooms")?.toInt() ?: 0
+                    val staycationBathrooms = staycationDoc.getLong("noOfBathrooms")?.toInt() ?: 0
+                    val staycationPrice = staycationDoc.getLong("staycationPrice")?.toInt() ?: 0
+                    val bookings = getStaycationBookings(serviceId.serviceId)
+                    val amenities = getAmenities(serviceId.serviceId, "Staycation")
+                    val staycationAvailability = getStaycationAvailability(serviceId.serviceId)
+
+
+                  //  Log.d("StaycationId", serviceId.serviceId)
+//                    Log.d("Bookings", bookings.toString())
+//                    Log.d("Staycation Type", staycationType)
+                    Log.d("Staycation Amenities From DB", amenities.map { it.amenityName }.toString())
+//                    Log.d("Staycation Availability", staycationAvailability.map { it.availableDate }.toString())
+//                    Log.d("Staycation Availability ID", staycationAvailability.map { it.staycationAvailabilityId }.toString())
+//                    staycationAvailability.map { it.availableDate to it.staycationAvailabilityId }.forEach { (date, id) ->
+//                        if (date != null) {
+//                            Log.d("Staycation Availability", SimpleDateFormat("MMM d", Locale.getDefault()).format(truncateToDay(date.seconds * 1000L)) + " - " + id)
+//                        }
+//                    }
+
+                    val inBetween = if (startDate != null && endDate != null) {
+                        allDatesAvailable(
+                            staycationAvailability.map { it.availableDate?.toDate() ?: Date(0) }.sorted(),
+                            startDate,
+                            endDate
+                        )
+                    } else {
+                        true
+                    }
+
+                    //Log.d("Staycation In Between", inBetween.toString())
+
+                    val validReviews = bookings
+                        .mapNotNull { it.bookingReview }
+                        .filter { it.bookingId != "" }
+
+                    val average = validReviews.map { it.rating }.average()
+                    val averageReviewRating = if (average.isNaN()) 0.0 else average
+                    val staycationAmenities = amenities.filter { checkedAmenityNames.contains(it.amenityName) }
+
+                    Log.d("Staycation Amenities After Filter", staycationAmenities.map { it.amenityName }.toString())
+
+                    if ((searchText == "" || staycationTitle.contains(searchText, ignoreCase = true)) &&
+                        (city == "" || staycationLocation.contains(city, ignoreCase = true)) &&
+                        (capacity == "" || staycationCapacity >= capacity.toInt()) &&
+                        (bedroomCount == "Any" || bedroomCount.toInt() <= staycationBedrooms) &&
+                        (bedCount == "Any" || bedCount.toInt() <= staycationBeds) &&
+                        (bathroomCount == "Any" || bathroomCount.toInt() <= staycationBathrooms) &&
+                        (staycationType == "House" && houseSelected ||
+                                staycationType == "Apartment" && apartmentSelected ||
+                                staycationType == "Condominium" && condoSelected ||
+                                staycationType == "Camp" && campSelected ||
+                                staycationType == "Guest House" && guestHouseSelected ||
+                                staycationType == "Hotel" && hotelSelected) &&
+                        averageReviewRating >= selectedRating &&
+                        (minPrice == "" || staycationPrice >= minPrice.toInt()) &&
+                        (maxPrice == "" || staycationPrice <= maxPrice.toInt()) &&
+                        inBetween
+                       // staycationAmenities.isNotEmpty()   UNCOMMENT THIS
+                    ) {
+
+                        val staycation = HomePagingItem(
+                            serviceId = serviceId.serviceId,
+                            serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
+                                ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                            serviceTitle = staycationTitle,
+                            averageReviewRating = averageReviewRating,
+                            location = staycationDoc.getString("staycationLocation") ?: "",
+                            price = staycationDoc.getDouble("staycationPrice") ?: 0.0,
+                            hostId = staycationDoc.getString("hostId") ?: ""
+                        )
+                        itemsList.add(staycation)
+                    }
+                }
             }
 
-            // Fetch tour document
-            val tourDoc = tourCollection.document(serviceId.serviceId).get().await()
-            val tourImage = getServiceImages(serviceId.serviceId, "Tour")
+            if (includeTour) {
+                val tourDoc = tourCollection.document(serviceId.serviceId).get().await()
+                val tourImage = getServiceImages(serviceId.serviceId, "Tour")
 
-            // Check if tour document is not empty before creating HomePagingItem
-            if (tourDoc.exists() && tourDoc.getString("hostId") != hostId) {
-                val tour = HomePagingItem(
-                    serviceId = serviceId.serviceId,
-                    serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
-                        ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
-                    serviceTitle = tourDoc.getString("tourTitle") ?: "",
-                    averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
-                    location = tourDoc.getString("tourLocation") ?: "",
-                    price = tourDoc.getDouble("tourPrice") ?: 0.0,
-                    tourDuration = tourDoc.getString("tourDuration")?.toInt(),
-                    hostId = tourDoc.getString("hostId") ?: ""
-                )
-                itemsList.add(tour)
+                if (tourDoc.exists() && tourDoc.getString("hostId") != hostId) {
+                    val tourTitle = tourDoc.getString("tourTitle") ?: ""
+                    val tourType = tourDoc.getString("tourType") ?: ""
+                    val tourLocation = tourDoc.getString("tourLocation") ?: ""
+                    val tourPrice = tourDoc.getLong("tourPrice")?.toInt() ?: 0
+                    val offers = getTourOffers(serviceId.serviceId)
+                    val tourAvailability = getTourAvailabilities(serviceId.serviceId)
+
+                    val tourOffers = offers.filter { checkedOfferNames.contains(it.typeOfOffer) }
+
+//                    Log.d("Tour Type", tourType)
+//                    Log.d("Tour Availablity", tourAvailability.map { it.date }.toString())
+//
+//                    Log.d("Tour Availablity After Format", tourAvailabilityDates.toString())
+//
+//                    Log.d("Tour Offers After Filter", tourOffers.map { it.typeOfOffer }.toString())
+
+                    val tourAvailabilityDates = tourAvailability.map { localDate ->
+                        Date.from(localDate.date.atStartOfDay(ZoneId.systemDefault()).toInstant())
+                    }.sorted()
+
+                    val inBetween: Boolean = if (startDate != null && endDate != null) {
+                        allDatesAvailable(
+                            tourAvailabilityDates,
+                            startDate,
+                            endDate
+                        )
+                    } else {
+                        true
+                    }
+
+                  //  Log.d("Tour In Between", inBetween.toString())
+
+                    if ((searchText == "" || tourTitle.contains(searchText, ignoreCase = true)) &&
+                        (city == "" || tourLocation.contains(city, ignoreCase = true)) &&
+                        (tourType == "Photo Tour" && photoTourSelected ||
+                                tourType == "Food Trip" && foodTripSelected ||
+                                tourType == "Bar Hopping" && barHoppingSelected) &&
+                        (minPrice == "" || tourPrice >= minPrice.toInt()) &&
+                        (maxPrice == "" || tourPrice <= maxPrice.toInt()) &&
+                        tourOffers.isNotEmpty() &&
+                        inBetween
+                    ) {
+                        val tour = HomePagingItem(
+                            serviceId = serviceId.serviceId,
+                            serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
+                                ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                            serviceTitle = tourTitle,
+                            averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
+                            location = tourDoc.getString("tourLocation") ?: "",
+                            price = tourDoc.getDouble("tourPrice") ?: 0.0,
+                            tourDuration = tourDoc.getString("tourDuration")?.toInt(),
+                            hostId = tourDoc.getString("hostId") ?: ""
+                        )
+                        itemsList.add(tour)
+                    }
+                }
             }
         }
 
         return itemsList
+    }
+
+    private fun allDatesAvailable(availabilities: List<Date>, startDate: Long, endDate: Long): Boolean {
+        val startDateTruncated = truncateToDay(startDate)
+        val endDateTruncated = truncateToDay(endDate)
+//
+//        Log.d("startDateTruncated", SimpleDateFormat("MMM d", Locale.getDefault()).format(startDateTruncated) + " " + startDateTruncated.toString())
+//        Log.d("endDateTruncated", SimpleDateFormat("MMM d", Locale.getDefault()).format(endDateTruncated) + " " + endDateTruncated.toString())
+
+        // Iterate over each date between startDate and endDate
+        var currentDate = startDateTruncated
+        while (currentDate <= endDateTruncated) {
+            // Check if the current date exists in staycationAvailability
+            if (!availabilities.any { availability ->
+                    val availabilityDate = availability.time
+                    val availabilityDateTruncated = truncateToDay(availabilityDate)
+
+//                    Log.d("availabilityDateTruncated", SimpleDateFormat("MMM d", Locale.getDefault()).format(availabilityDateTruncated) + " " + availabilityDateTruncated.toString())
+
+                    availabilityDateTruncated == currentDate
+                }) {
+                // If any date is missing, return false
+                return false
+            }
+            // Move to the next day
+            currentDate += 24 * 60 * 60 * 1000 // Add one day in milliseconds
+        }
+        // If all dates are present, return true
+        return true
+    }
+
+
+    private fun truncateToDay(timestamp: Long): Long {
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = timestamp
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return calendar.timeInMillis
     }
 
 //    suspend fun getAllServicesByTags(tags: List<String>): List<HomePagingItem> {
