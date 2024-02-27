@@ -13,5 +13,9 @@ data class Tourist(
 
 data class TouristWallet(
     val currentBalance : Double = 0.0,
-    val touristId: String = ""
+    val touristId: String = "",
+    val paypalBalance: Double = 0.0,
+    val paymayaBalance: Double = 0.0,
+    val gcashBalance: Double = 0.0,
+    val pendingBalance: Double = 0.0,
 )

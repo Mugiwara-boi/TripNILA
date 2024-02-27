@@ -453,19 +453,33 @@ class UserRepository {
     suspend fun createHostWallet(hostId: String){
         val currentBalance = 0.0
         val pendingBalance = 0.0
+        val paypalBalance = 10000.0
+        val paymayaBalance = 10000.0
+        val gcashBalance = 10000.0
         val hostWallet = hashMapOf(
             "hostId" to hostId,
             "currentBalance" to currentBalance,
-            "pendingBalance" to pendingBalance
+            "pendingBalance" to pendingBalance,
+            "paypalBalance" to paypalBalance,
+            "paymayaBalance" to paymayaBalance,
+            "gcashBalance" to gcashBalance
         )
 
         hostWalletCollection.add(hostWallet).await()
     }
     suspend fun createTouristWallet(touristId: String){
         val currentBalance = 0.0
+        val pendingBalance = 0.0
+        val paypalBalance = 10000.0
+        val paymayaBalance = 10000.0
+        val gcashBalance = 10000.0
         val touristWallet = hashMapOf(
             "touristId" to touristId,
-            "currentBalance" to currentBalance
+            "currentBalance" to currentBalance,
+            "pendingBalance" to pendingBalance,
+            "paypalBalance" to paypalBalance,
+            "paymayaBalance" to paymayaBalance,
+            "gcashBalance" to gcashBalance
         )
         touristWalletCollection.add(touristWallet).await()
     }
@@ -479,10 +493,18 @@ class UserRepository {
 
             for (document in querySnapshot.documents) {
                 val currentBalance = document.getDouble("currentBalance") ?: 0.0
+                val pendingBalance = document.getDouble("pendingBalance") ?: 0.0
+                val paypalBalance = document.getDouble("paypalBalance") ?: 0.0
+                val paymayaBalance = document.getDouble("paymayaBalance") ?: 0.0
+                val gcashBalance = document.getDouble("gcashBalance") ?: 0.0
 
                 return TouristWallet(
                     touristId = touristId,
-                    currentBalance = currentBalance
+                    currentBalance = currentBalance,
+                    paypalBalance = paypalBalance,
+                    paymayaBalance = paymayaBalance,
+                    gcashBalance = gcashBalance,
+                    pendingBalance = pendingBalance
                 )
             }
 
@@ -495,7 +517,33 @@ class UserRepository {
         return TouristWallet()
     }
 
-    suspend fun getWalletByHostId(){
+    suspend fun addBalance(touristId: String, amount:Double, paypalBalance: Double, paymayaBalance: Double, gcashBalance: Double, pendingBalance: Double){
+        try{
+        touristWalletCollection
+            .whereEqualTo("touristId", touristId)
+            .get()
+            .addOnSuccessListener { documents ->
+                for (document in documents) {
+                    touristWalletCollection.document(document.id).delete()
+                }
+            }
+            .await()
+
+            val tagData = hashMapOf(
+                "touristId" to touristId,
+                "currentBalance" to amount,
+                "paypalBalance" to paypalBalance,
+                "gcashBalance" to gcashBalance,
+                "paymayaBalance" to paymayaBalance,
+                "pendingBalance" to pendingBalance
+            )
+
+            touristWalletCollection.add(tagData).await()
+
+
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
 
     }
     suspend fun getStaycationBookingsByStaycationId(staycationId: String) : List<StaycationBooking> {

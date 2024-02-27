@@ -85,14 +85,15 @@ fun WithdrawScreen(
                     )
                 }
                 item {
-                    WithdrawCard(
+                    /*WithdrawCard(
                         availableBalance = 7600.00,
+                        touristWalletViewModel = touristWalletViewModel,
                         modifier = Modifier
                             .padding(
                                 vertical = verticalPaddingValue,
                                 horizontal = horizontalPaddingValue
                             )
-                    )
+                    )*/
                 }
                 item {
                     RemainingBalanceCard(

@@ -410,6 +410,7 @@ fun NavGraphBuilder.homeGraph(
         ) {entry ->
             CashInScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
+                touristWalletViewModel = TouristWalletViewModel(),
                 onCancel = {
                     navController.popBackStack()
                 },

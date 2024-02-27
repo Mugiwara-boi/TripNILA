@@ -24,5 +24,8 @@ data class Host (
 data class HostWallet(
     val currentBalance : Double = 0.0,
     val pendingBalance : Double = 0.0,
-    val hostId: String = ""
+    val hostId: String = "",
+    val paypalBalance: Double = 0.0,
+    val paymayaBalance: Double = 0.0,
+    val gcashBalance: Double = 0.0,
 )
