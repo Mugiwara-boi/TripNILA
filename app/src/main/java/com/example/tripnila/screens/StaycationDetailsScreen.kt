@@ -963,8 +963,14 @@ fun StaycationAmenitiesCard(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StaycationAdditionalInformationCard(withEditButton: Boolean = false, modifier: Modifier = Modifier){
+
+    val openHouseRulesModal = remember { mutableStateOf(false)}
+    val bottomSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
 
     Box(
         modifier = modifier
@@ -1001,14 +1007,79 @@ fun StaycationAdditionalInformationCard(withEditButton: Boolean = false, modifie
                     )
                 }
             }
-            AdditionalInformationRow(textInfo = "House Rules", onClick = {/*TODO*/})
+            AdditionalInformationRow(textInfo = "House Rules", onClick = {openHouseRulesModal.value = true})
             AdditionalInformationRow(textInfo = "Health & safety", onClick = {/*TODO*/})
             AdditionalInformationRow(textInfo = "Cancellation & reschedule policy", onClick = {/*TODO*/})
             AdditionalInformationRow(textInfo = "Business Information", onClick = {/*TODO*/})
 
         }
     }
-}
+
+    if(openHouseRulesModal.value){
+        ModalBottomSheet(
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White,
+            dragHandle = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = { openHouseRulesModal.value = false },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Close"
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+/*                    ClickableText(
+                        text = buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(
+                                    fontSize = 16.sp,
+                                    textDecoration = TextDecoration.Underline
+                                )
+                            ) {
+                                append("Clear")
+                            }
+                        },
+                        onClick = {
+                            dateRangePickerState.setSelection(null, null)
+                            isSaveButtonClicked.value = false
+                        }
+
+                    )*/
+
+
+                }
+            },
+            onDismissRequest = { openHouseRulesModal.value = false },
+            sheetState = bottomSheetState,
+            modifier = Modifier
+                .fillMaxHeight(0.8f) //0.693
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Spacer(modifier = Modifier
+                    .weight(1f)
+                    //  .height(15.dp)
+                )
+
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars))
+            }
+
+        }
+    }
+    }
+
 
 @Composable
 fun StaycationBottomBookingBar(

@@ -2,7 +2,6 @@ package com.example.tripnila.screens
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,7 +57,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -71,7 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.tripnila.R
+import com.example.tripnila.common.AdditionalInformationRow
 import com.example.tripnila.common.AppOutlinedButton
 import com.example.tripnila.common.AppReviewsCard
 import com.example.tripnila.common.LoadingScreen
@@ -81,12 +79,10 @@ import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.data.Transaction
 import com.example.tripnila.model.StaycationManagerViewModel
 import java.text.SimpleDateFormat
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 @Composable
@@ -860,6 +856,122 @@ fun ConfirmDate(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StaycationEditAdditionalInformationCard(withEditButton: Boolean = false, modifier: Modifier = Modifier){
+
+    val openHouseRulesModal = remember { mutableStateOf(false)}
+    val bottomSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape = RoundedCornerShape(20.dp))
+            .background(color = Color.White)
+    ) {
+        Column(
+            modifier = Modifier
+                //                .padding(horizontal = 25.dp, vertical = 12.dp),
+                .padding(
+                    horizontal = 25.dp,
+                    vertical = 20.dp // 12
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Additional information",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .padding(bottom = 4.dp)
+                )
+                if (withEditButton) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    AppOutlinedButtonWithBadge(
+                        buttonLabel = "Edit",
+                        modifier = Modifier
+                            .width(40.dp)
+                    )
+                }
+            }
+            AdditionalInformationRow(textInfo = "House Rules", onClick = {openHouseRulesModal.value = true})
+            AdditionalInformationRow(textInfo = "Health & safety", onClick = {/*TODO*/})
+            AdditionalInformationRow(textInfo = "Cancellation & reschedule policy", onClick = {/*TODO*/})
+            AdditionalInformationRow(textInfo = "Business Information", onClick = {/*TODO*/})
+
+        }
+    }
+
+    if(openHouseRulesModal.value){
+        ModalBottomSheet(
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White,
+            dragHandle = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = { openHouseRulesModal.value = false },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Close"
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    /*                    ClickableText(
+                                            text = buildAnnotatedString {
+                                                withStyle(
+                                                    style = SpanStyle(
+                                                        fontSize = 16.sp,
+                                                        textDecoration = TextDecoration.Underline
+                                                    )
+                                                ) {
+                                                    append("Clear")
+                                                }
+                                            },
+                                            onClick = {
+                                                dateRangePickerState.setSelection(null, null)
+                                                isSaveButtonClicked.value = false
+                                            }
+
+                                        )*/
+
+
+                }
+            },
+            onDismissRequest = { openHouseRulesModal.value = false },
+            sheetState = bottomSheetState,
+            modifier = Modifier
+                .fillMaxHeight(0.8f) //0.693
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Spacer(modifier = Modifier
+                    .weight(1f)
+                    //  .height(15.dp)
+                )
+
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars))
+            }
+
+        }
+    }
+}
 
 
 @Composable

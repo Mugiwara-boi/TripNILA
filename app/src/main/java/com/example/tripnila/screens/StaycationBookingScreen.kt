@@ -100,14 +100,15 @@ fun StaycationBookingScreen(
     touristWalletViewModel: TouristWalletViewModel,
 ){
 
-    var staycation = detailViewModel?.staycation?.collectAsState()
-    var duration = detailViewModel?.nightsDifference?.collectAsState()
-    var selectedStart = detailViewModel?.startDate?.collectAsState()
-    var selectedEnd = detailViewModel?.endDate?.collectAsState()
+    val staycation = detailViewModel?.staycation?.collectAsState()
+    val duration = detailViewModel?.nightsDifference?.collectAsState()
+    val selectedStart = detailViewModel?.startDate?.collectAsState()
+    val selectedEnd = detailViewModel?.endDate?.collectAsState()
+    val adultCount = detailViewModel?.adultCount?.collectAsState()
 
     //var totalOccupancyLimit = staycation?.value?.noOfGuests
-    var infantOccupancyLimit = 5 // /*TODO*/
-    var petOccupancyLimit = 0 // /*TODO*/
+    val infantOccupancyLimit = 5 // /*TODO*/
+    val petOccupancyLimit = 0 // /*TODO*/
     val context = LocalContext.current
 
     val host = staycation?.value?.host?: Host()
@@ -122,18 +123,18 @@ fun StaycationBookingScreen(
         skipPartiallyExpanded = true
     )
     val snackbarHostState = remember { SnackbarHostState() }
-    var openCalendarBottomSheet = remember { mutableStateOf(false) }
-    var openGuestBottomSheet = remember { mutableStateOf(false) }
-    var isSaveButtonClicked = remember { mutableStateOf(true) }
+    val openCalendarBottomSheet = remember { mutableStateOf(false) }
+    val openGuestBottomSheet = remember { mutableStateOf(false) }
+    val isSaveButtonClicked = remember { mutableStateOf(true) }
     var isClearButtonClicked = remember { mutableStateOf(false) }
-    var titleText: MutableState<String?> = remember { mutableStateOf(null) }
-    var enableBottomSaveButton: MutableState<Boolean> = remember { mutableStateOf(true) }
+    val titleText: MutableState<String?> = remember { mutableStateOf(null) }
+    val enableBottomSaveButton: MutableState<Boolean> = remember { mutableStateOf(true) }
     val openAlertDialog = remember { mutableStateOf(false) }
 
-    var nights = remember { mutableStateOf(0) }
-    var hasNavigationBar = WindowInsets.areNavigationBarsVisible
+    val nights = remember { mutableStateOf(0) }
+    val hasNavigationBar = WindowInsets.areNavigationBarsVisible
 
-    var isInitial = remember { mutableStateOf(true) }
+    val isInitial = remember { mutableStateOf(true) }
     touristWalletViewModel.getHostWallet(hostWalletId)
 //    touristWalletViewModel.setWallet(touristId)
 
@@ -144,13 +145,13 @@ fun StaycationBookingScreen(
         isInitial.value = true
     }
 
-    LaunchedEffect(openAlertDialog) {
+    /*LaunchedEffect(openAlertDialog) {
         detailViewModel?.setAlertDialogMessage()
-    }
+    }*/
 
     LaunchedEffect(detailViewModel?.bookingResult?.collectAsState()?.value) {
         if (detailViewModel?.bookingResult?.value != null) {
-            snackbarHostState.showSnackbar(detailViewModel?.bookingResult?.value!!)
+            snackbarHostState.showSnackbar(detailViewModel.bookingResult.value!!)
         }
 
     }
@@ -275,12 +276,8 @@ fun StaycationBookingScreen(
                     BookingFilledButton(
                         buttonText = "Confirm and pay",
                         onClick = {
+                            detailViewModel?.setAlertDialogMessage()
                             openAlertDialog.value = true
-                            /*PaymentSingleton.ViewModelHolder.detailViewModel = detailViewModel
-                            val intent = Intent(context, PaymentScreen::class.java).apply {
-                                putExtra("touristId", touristId)
-                            }
-                            context.startActivity(intent)*/
                         },
                         modifier = Modifier
                             .padding(horizontal = 10.dp)
@@ -588,7 +585,6 @@ fun StaycationBookingScreen(
                                                 touristWalletViewModel.setBookingPayment(totalFee,touristId)
                                             }
                                             bookingJob.join()
-
                                             touristWalletViewModel.setPendingAmount(totalFee,hostWalletId)
                                         }
 
@@ -798,6 +794,13 @@ fun AppPaymentDivider(
     var selectedPaymentMethod by remember { mutableStateOf(-1) }
     var isSelectionEnabled by remember { mutableStateOf(true) }
 
+    val afterBalance = currentBalance - totalFee
+
+    if(afterBalance < 0){
+        detailViewModel?.setEnoughBalance(false)
+    }else{
+        detailViewModel?.setEnoughBalance(true)
+    }
     if (!forCancelBooking) {
         LaunchedEffect(selectedPaymentMethod) {
             detailViewModel?.setSelectedPaymentMethod(selectedPaymentMethod)
@@ -806,6 +809,7 @@ fun AppPaymentDivider(
             Log.d("selectedPaymentMethod", "$selectedPaymentMethod")
         }
     }
+
 
 //    if (!forCancelBooking) {
 //        LaunchedEffect(selectedPaymentMethod) {
@@ -917,8 +921,9 @@ fun AppPaymentDivider(
             )
             PaymentRow(
                 feeLabel = "After Balance",
-                feePrice = currentBalance - totalFee
+                feePrice = afterBalance
             )
+
 
 
             /*Text(

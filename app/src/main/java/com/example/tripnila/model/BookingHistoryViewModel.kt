@@ -16,6 +16,7 @@ import com.example.tripnila.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -60,6 +61,9 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
 
     private val _alertDialogMessage = MutableStateFlow<String?>(null)
     val alertDialogMessage: StateFlow<String?> get() = _alertDialogMessage
+
+    private val _completedBookings = MutableStateFlow<Map<String, Pair<String, Double>>>(emptyMap())
+    val completedBookings = _completedBookings.asStateFlow()
 
     private val _isLoadingCancelBooking = MutableStateFlow(false)
     val isLoadingCancelBooking: StateFlow<Boolean> = _isLoadingCancelBooking
@@ -118,12 +122,16 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
                 repository.updateBookingStatusToOngoingIfCheckInDatePassed()
                 _logCheckOutDatesResult.value = "Fetched successfully."
 
-                repository.updateBookingStatusToFinishedIfExpired()
+                val completedBooking = repository.updateBookingStatusToFinishedIfExpired()
                 _logCheckOutDatesResult.value = "Fetched successfully."
+                _completedBookings.value = repository.processCompletedBookings(completedBooking)
+                val hostMap = extractHostTotalMap(_completedBookings.value)
+                repository.updatePendingBalance(hostMap)
 
 //                val bookings = repository.getStaycationBookingsForTourist(touristId)
 //                _staycationBookingList.value = bookings
-
+                Log.d("Update", "${_completedBookings.value}")
+                Log.d("Update", "$hostMap")
             } catch (e: Exception) {
                 e.printStackTrace()
                 _logCheckOutDatesResult.value = "Fetch failed: ${e.message}"
@@ -131,6 +139,17 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
         }
     }
 
+    fun extractHostTotalMap(staycationDetailsMap: Map<String, Pair<String, Double>>): Map<String, Double> {
+        val hostTotalMap = mutableMapOf<String, Double>()
+
+        for ((_, pair) in staycationDetailsMap) {
+            val (hostId, totalAmount) = pair
+            val cleanedHostId = hostId.removePrefix("HOST-")
+            hostTotalMap[cleanedHostId] = hostTotalMap.getOrDefault(cleanedHostId, 0.0) + totalAmount
+        }
+
+        return hostTotalMap
+    }
 
 
 

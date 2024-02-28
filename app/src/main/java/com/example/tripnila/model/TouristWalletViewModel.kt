@@ -18,6 +18,9 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
     private val _hostWallet = MutableStateFlow(TouristWallet())
     val hostWallet = _hostWallet.asStateFlow()
 
+    private val _isEnoughBalance = MutableStateFlow(false)
+    val isEnoughBalance = _isEnoughBalance.asStateFlow()
+
     private val _amount = MutableStateFlow(0.0)
     val amount = _amount.asStateFlow()
 
@@ -40,6 +43,9 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
         Log.d("SelectedMethod", "${selectedMethod.value}")
     }
 
+    fun setEnoughBalance(enough: Boolean){
+        _isEnoughBalance.value = enough
+    }
     fun setTotalFee(amount:Double) {
         _totalFee.value = amount
         Log.d("TotalFee", "${totalFee.value}")
