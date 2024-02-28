@@ -1,7 +1,5 @@
 package com.example.tripnila.screens
 
-
-import android.graphics.Paint.Align
 import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -19,15 +17,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ConnectWithoutContact
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -65,7 +58,6 @@ import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.data.setImageForAmenity
 import com.example.tripnila.model.BusinessDetailViewModel
-import com.example.tripnila.model.InboxViewModel
 
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -142,8 +134,8 @@ fun BusinessDetailsScreen(
         )
     )
 
-    val promos = listOf("Senior citizen & PWD : 20%")
-    val tags = listOf("Food", "Bar")
+//    val promos = listOf("Senior citizen & PWD : 20%")
+//    val tags = listOf("Food", "Bar")
 
     val reviews = listOf(
         ReviewUiState(
@@ -190,7 +182,7 @@ fun BusinessDetailsScreen(
         ),
     )
 
-    
+
     Surface(
         modifier = Modifier
             .fillMaxSize(),

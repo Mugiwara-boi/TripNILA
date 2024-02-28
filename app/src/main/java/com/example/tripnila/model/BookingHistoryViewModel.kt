@@ -131,49 +131,19 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
         }
     }
 
-
-
-
-//    fun fetchStaycationBookingsForTouristWihPaging(touristId: String): Flow<PagingData<StaycationBooking>> {
-//        val pagingConfig = PagingConfig(
-//            pageSize = 1, // Adjust as needed
-//            enablePlaceholders = false
-//        )
-//
-//        return Pager(
-//            config = pagingConfig,
-//            pagingSourceFactory = { BookingHistoryPagingSource(repository,touristId) }
-//        ).flow.cachedIn(viewModelScope)                                                               //.cachedIn(viewModelScope)
-//    }
-
-
-    fun cancelStaycationBooking(bookingId: String) {
+    fun cancelStaycationBooking(bookingId: String, staycationId: String, checkInDate: Date, checkOutDate: Date) {
         viewModelScope.launch {
             try {
 
                 _isLoadingCancelBooking.value = true
 
-                val staycationBookings = _staycationBookingList.value
-                val booking = staycationBookings.find { it?.staycationBookingId == bookingId }
-                val checkInDate: Date? = booking?.checkInDate
-                val checkOutDate: Date? = booking?.checkOutDate
-                val staycationId = booking?.staycation?.staycationId
-
-
                 repository.cancelStaycationBooking(bookingId)
 
-                if (staycationId != null && checkInDate != null && checkOutDate != null) {
-                    // Call makeAvailabilityInRange with the required parameters
-                    repository.makeAvailabilityInRange(staycationId, checkInDate.time, checkOutDate.time)
+                Log.d("CANCELLING", "$staycationId ${checkInDate.time} ${checkOutDate.time}")
 
-
-                } else {
-                    // Handle the case where required parameters are null
-                }
-
+                repository.makeAvailabilityInRange(staycationId, checkInDate.time, checkOutDate.time)
 
                 _isSuccessCancelBooking.value = true
-               // _rentalStatus.value = "Cancelled"
 
             } catch (e: Exception) {
                 e.printStackTrace()

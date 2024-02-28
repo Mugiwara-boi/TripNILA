@@ -123,11 +123,13 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
 
     fun setStartDate(milliseconds: Long?) {
         _startDate.value = milliseconds
+
         updateFormattedDateRange()
     }
 
     fun setEndDate(milliseconds: Long?) {
         _endDate.value = milliseconds
+
         updateFormattedDateRange()
     }
 

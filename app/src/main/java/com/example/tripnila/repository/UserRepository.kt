@@ -5,6 +5,8 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.tripnila.data.Amenity
 import com.example.tripnila.data.Business
 import com.example.tripnila.data.Chat
@@ -63,7 +65,7 @@ class UserRepository {
     private val serviceAmenityCollection = db.collection("service_amenity")
     private val promotionCollection = db.collection("promotion")
     private val servicePromotionCollection = db.collection("service_promotion")
-    val serviceTagCollection = db.collection("service_tag")
+    private val serviceTagCollection = db.collection("service_tag")
     private val servicePhotoCollection = db.collection("service_photo")
     private val staycationNearbyAttractionCollection = db.collection("staycation_nearby_attraction")
     private val reviewCollection = db.collection("review")
@@ -2841,14 +2843,26 @@ class UserRepository {
 
     suspend fun addStaycationBooking(bookingStatus: String, checkInDateMillis: Long, checkOutDateMillis: Long, timeZone: TimeZone, noOfGuests: Int, noOfInfants: Int, noOfPets: Int, staycationId: String, totalAmount: Double, touristId: String, commission: Double, paymentStatus: String, paymentMethod: String): Boolean {
         try {
+
             val checkInDate = Date(checkInDateMillis)
             val checkOutDate = Date(checkOutDateMillis)
+
+            val calendar = Calendar.getInstance()
+            calendar.time = checkInDate
+            calendar.add(Calendar.HOUR_OF_DAY, 2)
+            val checkInDatePlus2Hours = calendar.time
+
+            calendar.time = checkOutDate
+            calendar.add(Calendar.HOUR_OF_DAY, 4)
+            val checkOutDatePlus4Hours = calendar.time
 
             val bookingData = hashMapOf(
                 "bookingDate" to FieldValue.serverTimestamp(),
                 "bookingStatus" to bookingStatus,
-                "checkInDate" to formatDateInTimeZone(checkInDate, timeZone),
-                "checkOutDate" to formatDateInTimeZone(checkOutDate, timeZone),
+             //   "checkInDate" to formatDateInTimeZone(checkInDate, timeZone),
+              //  "checkOutDate" to formatDateInTimeZone(checkOutDate, timeZone),
+                "checkInDate" to checkInDatePlus2Hours,
+                "checkOutDate" to checkOutDatePlus4Hours,
                 "noOfGuests" to noOfGuests,
                 "noOfInfants" to noOfInfants,
                 "noOfPets" to noOfPets,
@@ -2867,8 +2881,8 @@ class UserRepository {
 
             deleteAvailabilityInRange(
                 staycationId = staycationId,
-                checkInDate = checkInDateMillis,
-                checkOutDate = checkOutDateMillis
+                checkInDateMillis = checkInDateMillis,
+                checkOutDateMillis = checkOutDateMillis
             )
 
             addPaymentData(
@@ -2944,10 +2958,24 @@ class UserRepository {
         }
     }
 
-    suspend fun makeAvailabilityInRange(staycationId: String, checkInDate: Long, checkOutDate: Long) {
+    suspend fun makeAvailabilityInRange(staycationId: String, checkInDateMillis: Long, checkOutDateMillis: Long) {
         try {
-            // Calculate the range of dates between checkInDate and checkOutDate
-            val dateRange = (checkInDate until checkOutDate step TimeUnit.DAYS.toMillis(1))
+
+//            val checkInDateMillis = 1709258400000
+//            val checkOutDateMillis = 1709870400000
+
+            val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")) // Create a calendar with UTC time zone
+            calendar.timeInMillis = checkInDateMillis // Set the check-in date
+            calendar.add(Calendar.HOUR_OF_DAY, -10) // Subtract 10 hours
+
+            val startDate = calendar.time // Get the updated start date
+
+            calendar.timeInMillis = checkOutDateMillis // Set the check-out date
+            calendar.add(Calendar.HOUR_OF_DAY, -10) // Subtract 10 hours
+
+            val endDate = calendar.time // Get the updated end date
+
+            val dateRange = (startDate.time until endDate.time step TimeUnit.DAYS.toMillis(1))
                 .map { Date(it) }
 
             // Create availability records for each date in the range
@@ -2958,8 +2986,12 @@ class UserRepository {
                     // Add other fields as needed
                 )
 
+                Log.d("Availability Data", availabilityData.toString())
+
                 // Add the availability record to the collection
-                staycationAvailabilityCollection.add(availabilityData).await()
+                val documentReference = staycationAvailabilityCollection.add(availabilityData).await()
+
+                Log.d("Document Added", "Document ID: ${documentReference.id}")
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -2969,12 +3001,27 @@ class UserRepository {
 
 
 
-    suspend fun deleteAvailabilityInRange(staycationId: String, checkInDate: Long, checkOutDate: Long) {
+
+    private suspend fun deleteAvailabilityInRange(staycationId: String, checkInDateMillis: Long, checkOutDateMillis: Long) {
         try {
+
+            val checkInDate = Date(checkInDateMillis)
+            val checkOutDate = Date(checkOutDateMillis)
+
+            val calendar = Calendar.getInstance()
+
+            calendar.time = checkInDate
+            calendar.add(Calendar.HOUR_OF_DAY, -8)
+            val checkInDateMinus8Hours = calendar.time
+
+            calendar.time = checkOutDate
+            calendar.add(Calendar.HOUR_OF_DAY, -8)
+            val checkOutDateMinus8Hours = calendar.time
+
             val query = staycationAvailabilityCollection
                 .whereEqualTo("staycationId", staycationId)
-                .whereGreaterThanOrEqualTo("availableDate", Date(checkInDate))
-                .whereLessThan("availableDate", Date(checkOutDate))
+                .whereGreaterThanOrEqualTo("availableDate", checkInDateMinus8Hours)
+                .whereLessThanOrEqualTo("availableDate", checkOutDateMinus8Hours)
 
             val documents = query.get().await()
 
@@ -3113,17 +3160,17 @@ class UserRepository {
 
             val result = mutableListOf<Tag>()
 
-            Log.d("Page Number(Start): ", pageNumber.toString())
-            Log.d("Start Index(Start): ", startIndex.toString())
-            Log.d("Page Size(Start): ", pageSize.toString())
+//            Log.d("Page Number(Start): ", pageNumber.toString())
+//            Log.d("Start Index(Start): ", startIndex.toString())
+//            Log.d("Page Size(Start): ", pageSize.toString())
 
             var query = serviceTagCollection
                 .whereIn("tagName", tagNames)
                 .orderBy("serviceId")
 
-            // Log initial result size and content
-            Log.d("Result Size(Start): ", result.size.toString())
-            Log.d("Result (Start): ", result.map { it.serviceId }.toString())
+//            // Log initial result size and content
+//            Log.d("Result Size(Start): ", result.size.toString())
+//            Log.d("Result (Start): ", result.map { it.serviceId }.toString())
 
             // If it's not the first page, start after the last document of the previous page
             if (pageNumber > 0) {
@@ -3138,7 +3185,7 @@ class UserRepository {
 
                 if (lastDocumentSnapshot != null) {
                     query = query.startAfter(lastDocumentSnapshot)
-                    Log.d("Start after document: ", lastDocumentSnapshot.toString())
+                  //  Log.d("Start after document: ", lastDocumentSnapshot.toString())
                 }
             }
 
@@ -3152,10 +3199,10 @@ class UserRepository {
                 val tagName = document.getString("tagName") ?: ""
                 val serviceId = document.getString("serviceId") ?: ""
 
-                Log.d("NOTE", "STARTED")
-                Log.d("ProcessedServiceIds", processedServiceIds.toString())
-                Log.d("ServiceIdSet", serviceIdSet.toString())
-                Log.d("ServiceId", serviceId)
+//                Log.d("NOTE", "STARTED")
+//                Log.d("ProcessedServiceIds", processedServiceIds.toString())
+//                Log.d("ServiceIdSet", serviceIdSet.toString())
+//                Log.d("ServiceId", serviceId)
 
                 if (serviceIdSet.contains(serviceId) && serviceId !in processedServiceIds) {
                     val tag = Tag(tagId = tagId, tagName = tagName, serviceId = serviceId)
@@ -3163,26 +3210,25 @@ class UserRepository {
                     processedServiceIds.add(serviceId)
 
                     // Log added tag and related information
-                    Log.d("SEPARATOR", "---------------------------------------")
-                    Log.d("FirestoreTag", "Tag: $tagName, ServiceId: $serviceId")
-                    Log.d("ProcessedServiceIds", processedServiceIds.toString())
-                    Log.d("ServiceIdSet", serviceIdSet.toString())
+//                    Log.d("SEPARATOR", "---------------------------------------")
+//                    Log.d("FirestoreTag", "Tag: $tagName, ServiceId: $serviceId")
+//                    Log.d("ProcessedServiceIds", processedServiceIds.toString())
+//                    Log.d("ServiceIdSet", serviceIdSet.toString())
                 }
             }
 
-            Log.d("Result Size(BEFORE REMOVAL): ", result.toString())
+        //    Log.d("Result Size(BEFORE REMOVAL): ", result.toString())
             // If there are more documents than the requested page size, remove the extra one
             if (result.size > pageSize) {
                 result.removeAt(result.size - 1)
-                Log.d("Result Size(AFTER REMOVAL): ", result.toString())
             }
 
-            // Log final result size and content
-            Log.d("Page Number(Last): ", pageNumber.toString())
-            Log.d("Start Index(Last): ", startIndex.toString())
-            Log.d("Page Size(Last): ", pageSize.toString())
-            Log.d("Result Size(Last): ", result.size.toString())
-            Log.d("Result (Last): ", result.map { it.serviceId }.toString())
+//            // Log final result size and content
+//            Log.d("Page Number(Last): ", pageNumber.toString())
+//            Log.d("Start Index(Last): ", startIndex.toString())
+//            Log.d("Page Size(Last): ", pageSize.toString())
+//            Log.d("Result Size(Last): ", result.size.toString())
+//            Log.d("Result (Last): ", result.map { it.serviceId }.toString())
 
             result
         } catch (e: Exception) {
@@ -3729,13 +3775,13 @@ class UserRepository {
             }
         }
 
-        Log.d("Checked Amenity Names", checkedAmenityNames.toString())
+      //  Log.d("Checked Amenity Names", checkedAmenityNames.toString())
       //  Log.d("Checked Offer Names", checkedOfferNames.toString())
 
         val serviceIds = getServiceIdsByTags(tags, pageNumber, pageSize, serviceIdSet)
         val itemsList = mutableListOf<HomePagingItem>()
 
-        Log.d("serviceIds", serviceIds.toString())
+       // Log.d("serviceIds", serviceIds.toString())
 
         for (serviceId in serviceIds) {
             if (includeStaycation) {
@@ -3757,12 +3803,12 @@ class UserRepository {
                     val staycationAvailability = getStaycationAvailability(serviceId.serviceId)
 
 
-                  //  Log.d("StaycationId", serviceId.serviceId)
+                //    Log.d("StaycationId", serviceId.serviceId)
 //                    Log.d("Bookings", bookings.toString())
 //                    Log.d("Staycation Type", staycationType)
-                    Log.d("Staycation Amenities From DB", amenities.map { it.amenityName }.toString())
-//                    Log.d("Staycation Availability", staycationAvailability.map { it.availableDate }.toString())
-//                    Log.d("Staycation Availability ID", staycationAvailability.map { it.staycationAvailabilityId }.toString())
+                 //   Log.d("Staycation Amenities From DB", amenities.map { it.amenityName }.toString())
+                //    Log.d("Staycation Availability", staycationAvailability.map { it.availableDate }.toString())
+                //    Log.d("Staycation Availability ID", staycationAvailability.map { it.staycationAvailabilityId }.toString())
 //                    staycationAvailability.map { it.availableDate to it.staycationAvailabilityId }.forEach { (date, id) ->
 //                        if (date != null) {
 //                            Log.d("Staycation Availability", SimpleDateFormat("MMM d", Locale.getDefault()).format(truncateToDay(date.seconds * 1000L)) + " - " + id)
@@ -3789,7 +3835,7 @@ class UserRepository {
                     val averageReviewRating = if (average.isNaN()) 0.0 else average
                     val staycationAmenities = amenities.filter { checkedAmenityNames.contains(it.amenityName) }
 
-                    Log.d("Staycation Amenities After Filter", staycationAmenities.map { it.amenityName }.toString())
+                //    Log.d("Staycation Amenities After Filter", staycationAmenities.map { it.amenityName }.toString())
 
                     if ((searchText == "" || staycationTitle.contains(searchText, ignoreCase = true)) &&
                         (city == "" || staycationLocation.contains(city, ignoreCase = true)) &&
@@ -3895,7 +3941,8 @@ class UserRepository {
     private fun allDatesAvailable(availabilities: List<Date>, startDate: Long, endDate: Long): Boolean {
         val startDateTruncated = truncateToDay(startDate)
         val endDateTruncated = truncateToDay(endDate)
-//
+
+
 //        Log.d("startDateTruncated", SimpleDateFormat("MMM d", Locale.getDefault()).format(startDateTruncated) + " " + startDateTruncated.toString())
 //        Log.d("endDateTruncated", SimpleDateFormat("MMM d", Locale.getDefault()).format(endDateTruncated) + " " + endDateTruncated.toString())
 
@@ -3907,7 +3954,7 @@ class UserRepository {
                     val availabilityDate = availability.time
                     val availabilityDateTruncated = truncateToDay(availabilityDate)
 
-//                    Log.d("availabilityDateTruncated", SimpleDateFormat("MMM d", Locale.getDefault()).format(availabilityDateTruncated) + " " + availabilityDateTruncated.toString())
+                //    Log.d("availabilityDateTruncated", SimpleDateFormat("MMM d", Locale.getDefault()).format(availabilityDateTruncated) + " " + availabilityDateTruncated.toString())
 
                     availabilityDateTruncated == currentDate
                 }) {
@@ -4700,4 +4747,42 @@ class UserRepository {
         }
     }
 
+}
+
+@Preview
+@Composable
+private fun QueryTests() {
+
+  // val checkInDate: Date = Fri Mar 01 10:00:00 GMT+08:00 2024
+
+//    val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")) // Create a calendar with the desired time zone
+//
+//    calendar.timeInMillis = checkInDateMillis // Set the milliseconds representing the date
+//    val checkInDate = calendar.time // Get the Date object
+//
+//    calendar.timeInMillis = checkOutDateMillis // Set the milliseconds representing the date
+//    val checkOutDate = calendar.time // Get the Date object
+
+    val checkInDateMillis = 1709258400000
+    val checkOutDateMillis = 1709870400000
+
+    val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")) // Create a calendar with UTC time zone
+    calendar.timeInMillis = checkInDateMillis // Set the check-in date
+    calendar.add(Calendar.HOUR_OF_DAY, -10) // Subtract 10 hours
+
+    val startDate = calendar.time // Get the updated start date
+
+    calendar.timeInMillis = checkOutDateMillis // Set the check-out date
+    calendar.add(Calendar.HOUR_OF_DAY, -10) // Subtract 10 hours
+
+    val endDate = calendar.time // Get the updated end date
+
+    val dateRange = (startDate.time until endDate.time step TimeUnit.DAYS.toMillis(1))
+        .map { Date(it) }
+
+    for (date in dateRange) {
+        println(date)
+    }
+
+   // println(checkInDate) // Output: Fri Mar 01 10:00:00 GMT+08:00 2024
 }

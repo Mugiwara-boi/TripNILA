@@ -68,6 +68,7 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -85,7 +86,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -197,8 +200,6 @@ fun HomeScreen(
     val bedCount by homeViewModel.bedCount.collectAsState()
     val bathroomCount by homeViewModel.bathroomCount.collectAsState()
 
-    //"Swimming Pool",
-
     val allAmenities = listOf("Wifi", "TV", "Kitchen", "Washing machine", "Dedicated workspace" , "Pool", "Gym equipment", "Hot tub", "City view")
     val checkedAmenities by homeViewModel.checkedAmenities.collectAsState()
     val onAmenityCheckedChange: (Int, Boolean) -> Unit = { index, isChecked ->
@@ -226,7 +227,6 @@ fun HomeScreen(
         initialSelectedEndDateMillis = endDate
     )
 
-    var onFilterServices by remember { mutableStateOf(false) }
 
     LaunchedEffect(dateRangePickerState.selectedStartDateMillis, dateRangePickerState.selectedEndDateMillis) {
 
@@ -254,6 +254,42 @@ fun HomeScreen(
                         selectedItemIndex = newIndex
                     }
                 )
+            },
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Home",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { openModalBottomSheet = true },
+                        ) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(R.drawable.filter),
+                                contentDescription = "Close",
+                                tint = Color(0xFF333333),
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .drawWithContent {
+                            drawContent()
+                            drawLine(
+                                color = Color(0xFFF8F8F9),
+                                start = Offset(0f, size.height),
+                                end = Offset(size.width, size.height),
+                                strokeWidth = 2f
+                            )
+                    }
+                )
+
+
+
             }
         ) {
 
@@ -263,28 +299,6 @@ fun HomeScreen(
                     .fillMaxSize()
             ) {
                 //TripNilaIcon(modifier = Modifier.offset(x = (-15).dp, y = (-7).dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .padding(start = 7.dp, end = 7.dp, top = 10.dp)
-                        .fillMaxWidth()
-                        .height(60.dp)
-                ) {
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    IconButton(
-                        onClick = { openModalBottomSheet = true },
-                    ) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.filter),
-                            contentDescription = "Close",
-                            tint = Color(0xFF333333),
-                            modifier = Modifier.size(40.dp)
-                        )
-                    }
-                }
                 ScrollableTabRow(
                     selectedTabIndex = preferences.indexOf(selectedTab),
                     edgePadding = 3.dp,
@@ -1959,7 +1973,8 @@ private fun HomeScreenPreview() {
 
     val homeViewModel = viewModel(modelClass = HomeViewModel::class.java)
 
-    HomeScreen("ITZbCFfF7Fzqf1qPBiwx", homeViewModel, { a,b -> }, rememberNavController())
+
+    HomeScreen("mgPPHdYnYlJXMFxCaJOj", homeViewModel, { a,b -> }, rememberNavController())
 
 
 

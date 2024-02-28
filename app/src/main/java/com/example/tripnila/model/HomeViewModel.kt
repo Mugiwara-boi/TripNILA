@@ -336,7 +336,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
     }
 
     private fun createForYouPager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = 15)) {
+        return Pager(PagingConfig(pageSize = 20)) {
             ForYouPagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
