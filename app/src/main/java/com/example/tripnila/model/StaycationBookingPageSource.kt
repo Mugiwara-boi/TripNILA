@@ -1,5 +1,6 @@
 package com.example.tripnila.model
 
+import android.util.Log
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.example.tripnila.data.Staycation
@@ -47,6 +48,12 @@ class StaycationBookingPagingSource(
 
                 val staycation = userRepository.getStaycationDetailsById(staycationId) ?: Staycation()
                 val review = userRepository.getBookingReview(bookingId, touristId)
+
+                Log.d("Check In Date (DATE)", checkInDate.toString())
+                Log.d("Check Out Date (DATE)", checkOutDate.toString())
+
+                Log.d("Check In Date (TIME)", checkInDate.time.toString())
+                Log.d("Check Out Date (TIME)", checkOutDate.time.toString())
 
                 val staycationBooking = StaycationBooking(
                     staycationBookingId = bookingId,

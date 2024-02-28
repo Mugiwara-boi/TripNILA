@@ -21,7 +21,8 @@ data class BookingHistory(
     val noOfGuests: Int,
     val noOfInfants: Int,
     val noOfPets: Int,
-    val hostTouristId: String = ""
+    val hostTouristId: String = "",
+    val staycationId: String
 )
 data class MonthTotal(
     val month: Int,

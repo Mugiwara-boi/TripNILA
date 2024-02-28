@@ -3,6 +3,7 @@ package com.example.tripnila.screens
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +27,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
@@ -35,6 +38,8 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DateRangePicker
@@ -83,6 +88,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import coil.compose.rememberImagePainter
 import com.example.tripnila.R
 import com.example.tripnila.common.AdditionalInformationRow
@@ -102,20 +108,24 @@ import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.util.Calendar
+import java.util.Date
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class,
+    ExperimentalFoundationApi::class
+)
 @Composable
 fun StaycationDetailsScreen(
     staycationId: String,
     touristId: String,
-    detailViewModel: DetailViewModel? = null,
+    detailViewModel: DetailViewModel,
     onNavToBooking: (String, String) -> Unit,
     onBack: () -> Unit,
     onNavToChat: (String, String) -> Unit
 ) {
 
-    val staycation = detailViewModel?.staycation?.collectAsState()
+    val staycation = detailViewModel.staycation.collectAsState()
     val context = LocalContext.current
 
     val dateRangePickerState = rememberDateRangePickerState()
@@ -130,16 +140,23 @@ fun StaycationDetailsScreen(
     val enableBottomSaveButton: MutableState<Boolean> = remember { mutableStateOf(false) }
     val nights = remember { mutableStateOf(0) }
     val hasNavigationBar = WindowInsets.areNavigationBarsVisible
+    val pagerState = rememberPagerState(
+        initialPage = 0,
+        initialPageOffsetFraction = 0f
+    ) {
+        staycation.value?.staycationImages?.size ?: 0
+    }
 
-    val staycationReviews = staycation?.value?.staycationBookings?.mapNotNull { it.bookingReview }
+
+    val staycationReviews = staycation.value?.staycationBookings?.mapNotNull { it.bookingReview }
     val reviews: List<ReviewUiState> = staycationReviews?.filter { it.bookingId != "" }
         ?.map { review ->
             review.let {
                 ReviewUiState(
-                    rating = it.rating.toDouble() ?: 0.0,
-                    comment = it.comment ?: "",
-                    touristImage = it?.reviewer?.profilePicture ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
-                    touristName = "${it?.reviewer?.firstName} ${it.reviewer?.lastName}",
+                    rating = it.rating.toDouble(),
+                    comment = it.comment,
+                    touristImage = it.reviewer.profilePicture,
+                    touristName = "${it.reviewer.firstName} ${it.reviewer.lastName}",
                     reviewDate = it.reviewDate.toString()
                 )
             }
@@ -166,7 +183,7 @@ fun StaycationDetailsScreen(
 
 
     LaunchedEffect(staycationId) {
-        detailViewModel?.getStaycationById(staycationId)
+        detailViewModel.getStaycationById(staycationId)
     }
 
 
@@ -177,37 +194,13 @@ fun StaycationDetailsScreen(
         isSaveButtonClicked.value
     ) {
 
-        val manilaZoneId = ZoneId.of("Asia/Manila")
+        val selectedStartDateMillis = dateRangePickerState.selectedStartDateMillis
 
-        var selectedStartDateMillis = dateRangePickerState.selectedStartDateMillis
-
-        var selectedEndDateMillis = dateRangePickerState.selectedEndDateMillis
+        val selectedEndDateMillis = dateRangePickerState.selectedEndDateMillis
 
         Log.d("Before", "$selectedStartDateMillis")
         Log.d("Before", "$selectedEndDateMillis")
 
-
-//        if (selectedStartDateMillis != null && selectedEndDateMillis != null){
-//            val startDate = Calendar.getInstance()
-//            val endDate = Calendar.getInstance()
-//
-//            // Set the time in milliseconds
-//
-//            // Set the time in milliseconds
-//            startDate.setTimeInMillis(selectedStartDateMillis)
-//            endDate.setTimeInMillis(selectedEndDateMillis)
-//
-//            val manilaTimeZone: TimeZone = TimeZone.getTimeZone("Asia/Manila")
-//
-//            startDate.setTimeZone(manilaTimeZone)
-//            endDate.setTimeZone(manilaTimeZone)
-//
-//            val selectedStartDateMillisManila: Long = startDate.timeInMillis
-//            val selectedEndDateMillisManila: Long = endDate.timeInMillis
-//
-//            Log.d("After", "$selectedStartDateMillisManila")
-//            Log.d("After", "$selectedEndDateMillisManila")
-//        }
 
         val countNights = if (selectedStartDateMillis != null && selectedEndDateMillis != null) {
             calculateNights(selectedStartDateMillis, selectedEndDateMillis)
@@ -239,19 +232,35 @@ fun StaycationDetailsScreen(
         }
 
         if (isSaveButtonClicked.value && countNights != null) {
-            bottomBookingText.value = countNights?.let { "for $it nights" } ?: "Check availability"
-            enableBottomBookingButton.value = countNights != null && countNights > 0
+            bottomBookingText.value = countNights.let { "for $it nights" }
+            enableBottomBookingButton.value = true && countNights > 0
         }
 
        // isSaveButtonClicked.value = false
+//
+//        Log.d("AFTER", "$selectedStartDateMillis")
+//        Log.d("BEFORE", "$selectedEndDateMillis")
+//
+//        val calendar = Calendar.getInstance()
+//        calendar.time = selectedStartDateMillis?.let { Date(it) } ?: Date(0)
+//        calendar.add(Calendar.HOUR_OF_DAY, -8)
+//        val checkInDatePlus2Hours = calendar.time
+//
+//        calendar.time = selectedEndDateMillis?.let { Date(it) } ?: Date(0)
+//        calendar.add(Calendar.HOUR_OF_DAY, -8)
+//        val checkOutDatePlus4Hours = calendar.time
+//
+//        Log.d("AFTER(DATE)", checkInDatePlus2Hours.toString())
+//        Log.d("BEFORE(DATE)", checkOutDatePlus4Hours.toString())
 
-        detailViewModel?.setNightsDifference(countNights)
-        detailViewModel?.setStartDate(dateRangePickerState.selectedStartDateMillis)
-        detailViewModel?.setEndDate(dateRangePickerState.selectedEndDateMillis)
+        detailViewModel.setNightsDifference(countNights)
+        detailViewModel.setStartDate(dateRangePickerState.selectedStartDateMillis)
+        detailViewModel.setEndDate(dateRangePickerState.selectedEndDateMillis)
 
     }
 
-    if (staycation?.value == null) {
+    // staycation?.value == null ||
+    if (staycation.value?.staycationId != staycationId) {
         LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
     } else {
 
@@ -288,25 +297,70 @@ fun StaycationDetailsScreen(
                         .padding(it)
                 ) {
                     item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.staycation1),
-                                contentDescription = "h5 1",
-                                contentScale = ContentScale.FillWidth
-                            )
-                            //TopBarIcons()
-                            DetailsTopAppBar(
-                                onBack = {
-                                    onBack()
+                        HorizontalPager(
+                            state = pagerState, // Specify the count of items in the pager
+                            modifier = Modifier.fillMaxSize()
+                        ) { page ->
+                            val image = staycation.value!!.staycationImages.sortedBy { it.photoType }.getOrNull(page)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(240.dp)
+                            ) {
+                                if (image != null) {
+                                    AsyncImage(
+                                        model = image.photoUrl,
+                                        contentDescription = "",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    AsyncImage(
+                                        model = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                                        contentDescription = "",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
                                 }
-                            )
+                                DetailsTopAppBar(
+                                    onBack = {
+                                        onBack()
+                                    }
+                                )
+
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color.Black.copy(alpha = 0.69f)
+                                    ),
+                                    shape = RoundedCornerShape(20.dp),
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(horizontal = 15.dp, vertical = 25.dp)
+                                        .width(30.dp)
+                                        .height(20.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.fillMaxSize(),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            text = "${page + 1}/${staycation.value!!.staycationImages.size}",
+                                            color = Color.White,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                        )
+                                    }
+
+                                }
+
+
+                            }
+
                         }
                     }
                     item {
-                        staycation?.value?.let { staycation ->
+                        staycation.value?.let { staycation ->
                             StaycationDescriptionCard1(
                                 staycation = staycation,
                                 modifier = Modifier
@@ -322,7 +376,7 @@ fun StaycationDetailsScreen(
                         )
                     }
                     item {
-                        staycation?.value?.let { staycation ->
+                        staycation.value?.let { staycation ->
                             StaycationDescriptionCard3(
                                 staycation = staycation,
                                 modifier = Modifier
@@ -350,8 +404,8 @@ fun StaycationDetailsScreen(
                         )
                     }
                     item {
-                        staycation?.value?.totalReviews?.let { totalReviews ->
-                            staycation?.value?.averageReviewRating?.let { averageRating ->
+                        staycation.value?.totalReviews?.let { totalReviews ->
+                            staycation.value?.averageReviewRating?.let { averageRating ->
                                 AppReviewsCard(
                                     totalReviews = totalReviews,
                                     averageRating = averageRating,
@@ -364,7 +418,7 @@ fun StaycationDetailsScreen(
                         }
                     }
                     item {
-                        staycation?.value?.let { staycation ->
+                        staycation.value?.let { staycation ->
                             StaycationAmenitiesCard(
                                 staycation = staycation,
                                 // amenities = amenities,
@@ -465,12 +519,19 @@ fun StaycationDetailsScreen(
                                 todayContentColor = Color.Black
                             ),
                             dateValidator = { date ->
-                                val adjustedDates = staycation?.value?.availableDates?.map {
+
+                                val adjustedDates = staycation.value?.availableDates?.map {
                                     it.availableDate?.toDate()?.time?.plus(28800000) ?: 0
                                 } ?: emptyList()
 
-                                val threshold = 86400000
-                                adjustedDates.any { Math.abs(date - it) <= threshold }
+                                adjustedDates.contains(date)
+
+//                                val adjustedDates = staycation.value?.availableDates?.map {
+//                                    it.availableDate?.toDate()?.time?.plus(28800000) ?: 0
+//                                } ?: emptyList()
+//
+//                                val threshold = 86400000
+//                                adjustedDates.any { Math.abs(date - it) <= threshold }
                             },
                         )
 
@@ -1277,32 +1338,32 @@ fun DetailsTopAppBar(
             navigationIconContentColor = Color.White,
             actionIconContentColor = Color.White
         ),
-        actions = {
-            IconButton(onClick = { /*TODO*/ }) {
-                Icon(
-                    imageVector = Icons.Outlined.Share,
-                    contentDescription = "Share",
-                )
-            }
-            Spacer(
-                modifier = Modifier
-                    .width(15.dp)
-            )
-
-            IconToggleButton(
-                checked = isFavorite,
-                onCheckedChange = {
-                    isFavorite = !isFavorite
-                }
-            ) {
-                Icon(
-                    imageVector = if(isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = "",
-                    tint = if(isFavorite) Color.Red else Color.White
-
-                )
-            }
-        }
+//        actions = {
+//            IconButton(onClick = { /*TODO*/ }) {
+//                Icon(
+//                    imageVector = Icons.Outlined.Share,
+//                    contentDescription = "Share",
+//                )
+//            }
+//            Spacer(
+//                modifier = Modifier
+//                    .width(15.dp)
+//            )
+//
+//            IconToggleButton(
+//                checked = isFavorite,
+//                onCheckedChange = {
+//                    isFavorite = !isFavorite
+//                }
+//            ) {
+//                Icon(
+//                    imageVector = if(isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+//                    contentDescription = "",
+//                    tint = if(isFavorite) Color.Red else Color.White
+//
+//                )
+//            }
+//        }
 
     )
 }
@@ -1520,24 +1581,15 @@ private fun StaycationDetailsPreview() {
         // Your implementation here
     }
 
-//    StaycationDetailsScreen(
-//        detailViewModel = detailViewModel,
-//        staycationId = "LxpNxRFdwkQzBxujF3gx",
-//        touristId = "5JCZ1j5hODQ7BcURS2GI",
-//        onNavToBooking = onNavToBooking,
-//        onBack = {
-//
-//        }
-//
-//
-//    )
+    StaycationDetailsScreen(
+        detailViewModel = detailViewModel,
+        staycationId = "33022",
+        touristId = "5JCZ1j5hODQ7BcURS2GI",
+        onNavToBooking = onNavToBooking,
+        onBack = {
 
-
-
-
-
-
-
-
+        },
+        onNavToChat = onNavToBooking
+    )
 }
 

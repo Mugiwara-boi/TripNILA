@@ -245,7 +245,8 @@ fun BookingHistoryScreen(
                             noOfPets = staycationBooking.noOfPets,
                             noOfInfants = staycationBooking.noOfInfants,
                             noOfGuests = staycationBooking.noOfGuests,
-                            hostTouristId = staycationBooking.staycation?.host?.touristId ?: ""
+                            hostTouristId = staycationBooking.staycation?.host?.touristId ?: "",
+                            staycationId = staycationBooking.staycation?.staycationId ?: ""
                         )
 
                         bookingHistoryViewModel?.let { bookingHistoryViewModel ->
@@ -393,13 +394,14 @@ fun BookingHistoryCard(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
 
-                        )
+                    )
                     Text(
                         text = bookingHistory.date,
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF999999)
                     )
+                    // TEMP
                 }
                 Tag(tag = bookingHistory.rentalStatus)
               //  bookingHistoryViewModel.rentalStatus.collectAsState().value?.let { Tag(tag = it) }
@@ -715,9 +717,14 @@ fun BookingHistoryCard(
                                     coroutineScope.launch {
                                         openAlertDialog.value = false
 
-
-                                        bookingHistoryViewModel?.cancelStaycationBooking(bookingId = bookingHistory.bookingId)
+                                        bookingHistoryViewModel?.cancelStaycationBooking(
+                                            bookingId = bookingHistory.bookingId,
+                                            staycationId = bookingHistory.staycationId,
+                                            checkInDate = bookingHistory.checkInDate,
+                                            checkOutDate = bookingHistory.checkOutDate
+                                        )
                                         touristWalletViewModel.setRefundedBalance(touristId = touristId, hostWalletId = bookingHistory.hostTouristId)
+
 
 //                                        delay(5000)
 //                                        isOpen = false

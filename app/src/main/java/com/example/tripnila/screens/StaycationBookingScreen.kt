@@ -106,6 +106,7 @@ fun StaycationBookingScreen(
     val selectedEnd = detailViewModel?.endDate?.collectAsState()
     val adultCount = detailViewModel?.adultCount?.collectAsState()
 
+
     //var totalOccupancyLimit = staycation?.value?.noOfGuests
     val infantOccupancyLimit = 5 // /*TODO*/
     val petOccupancyLimit = 0 // /*TODO*/
@@ -134,6 +135,7 @@ fun StaycationBookingScreen(
     val nights = remember { mutableStateOf(0) }
     val hasNavigationBar = WindowInsets.areNavigationBarsVisible
 
+
     val isInitial = remember { mutableStateOf(true) }
     touristWalletViewModel.getHostWallet(hostWalletId)
 //    touristWalletViewModel.setWallet(touristId)
@@ -142,12 +144,9 @@ fun StaycationBookingScreen(
         // Set initial values for dateRangePickerState
         dateRangePickerState.setSelection(selectedStart?.value, selectedEnd?.value)
         detailViewModel?.setAdultCount(1)
-        isInitial.value = true
+        
     }
 
-    /*LaunchedEffect(openAlertDialog) {
-        detailViewModel?.setAlertDialogMessage()
-    }*/
 
     LaunchedEffect(detailViewModel?.bookingResult?.collectAsState()?.value) {
         if (detailViewModel?.bookingResult?.value != null) {
@@ -337,7 +336,6 @@ fun StaycationBookingScreen(
                 ) {
                     Spacer(modifier = Modifier
                         .weight(1f)
-                        //  .height(15.dp)
                     )
                     DateRangePicker(
                         modifier = Modifier
