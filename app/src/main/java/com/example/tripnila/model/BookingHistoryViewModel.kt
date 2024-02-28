@@ -32,6 +32,8 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
     val selectedBookingHistory: StateFlow<BookingHistory?> = _selectedBookingHistory
 
 
+    private val _hostId = MutableStateFlow("")
+    val hostId = _hostId.asStateFlow()
 
     fun getStaycationBookingsForTourist(touristId: String): Flow<PagingData<StaycationBooking>> {
         return Pager(
@@ -203,6 +205,13 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
             }
         }
     }
+
+    fun getHostId(staycationId:String){
+        viewModelScope.launch {
+            _hostId.value = repository.getHostIdFromStaycation(staycationId)!!
+        }
+    }
+
 
     fun setStaycationReview(bookingId: String) {
         viewModelScope.launch {

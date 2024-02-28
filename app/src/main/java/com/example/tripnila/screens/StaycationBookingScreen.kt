@@ -778,8 +778,12 @@ fun AppPaymentDivider(
     }
     val totalFee by touristWalletViewModel.totalFee.collectAsState()
     val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
+    val percentRefunded by touristWalletViewModel.percentRefunded.collectAsState()
+    val percentRefundedPercentage = percentRefunded * 100
+    touristWalletViewModel.setPercentRefunded(daysBeforeCheckIn!!)
     var isWalletFetched = false
     if(!isWalletFetched){
+        touristWalletViewModel.setRefundAmount(totalFee)
 
         touristWalletViewModel.getWallet(touristId)
 //        touristWalletViewModel.setWallet(touristId)
@@ -883,7 +887,7 @@ fun AppPaymentDivider(
                         .weight(1f)
                 )
                 Text(
-                    text = "₱ ${formattedNumberWithDecimalFormat.format(totalFee * 0.80)}",
+                    text = "₱ ${formattedNumberWithDecimalFormat.format(totalFee * percentRefunded)}",
                     fontWeight = FontWeight.SemiBold,
                     color = Orange
                 )
@@ -901,7 +905,7 @@ fun AppPaymentDivider(
                         .weight(1f)
                 )
                 Text(
-                    text = "80%",
+                    text = "$percentRefundedPercentage%",
                     fontWeight = FontWeight.Medium,
                     fontSize = 12.sp,
                     color = Color(0xFF999999),

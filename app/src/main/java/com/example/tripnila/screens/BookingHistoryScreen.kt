@@ -325,6 +325,7 @@ fun BookingHistoryCard(
         }
     )
 
+    touristWalletViewModel.getHostWallet(bookingHistory.hostTouristId)
     LaunchedEffect(isSuccessAddingReview) {
         if (isSuccessAddingReview == true) {
 
@@ -716,6 +717,7 @@ fun BookingHistoryCard(
 
 
                                         bookingHistoryViewModel?.cancelStaycationBooking(bookingId = bookingHistory.bookingId)
+                                        touristWalletViewModel.setRefundedBalance(touristId = touristId, hostWalletId = bookingHistory.hostTouristId)
 
 //                                        delay(5000)
 //                                        isOpen = false

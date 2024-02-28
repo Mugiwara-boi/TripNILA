@@ -2779,6 +2779,19 @@ class UserRepository {
         }
     }
 
+    suspend fun getHostIdFromStaycation(staycationId: String): String? {
+        return try {
+            val documentSnapshot = staycationCollection.document(staycationId).get().await()
+
+            if (documentSnapshot.exists()) {
+                documentSnapshot.getString("hostId")
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     suspend fun getHostInfo(hostId: String): Tourist? {
         return try {

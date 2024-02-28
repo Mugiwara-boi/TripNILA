@@ -24,6 +24,18 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
     private val _amount = MutableStateFlow(0.0)
     val amount = _amount.asStateFlow()
 
+    private val _refundAmount = MutableStateFlow(0.0)
+    val refundAmount = _refundAmount.asStateFlow()
+
+    private val _refundedPendingBalance = MutableStateFlow(0.0)
+    val refundedPendingBalance = _refundedPendingBalance.asStateFlow()
+
+    private val _refundedCurrentBalance = MutableStateFlow(0.0)
+    val refundedCurrentBalance = _refundedCurrentBalance.asStateFlow()
+
+    private val _percentRefunded = MutableStateFlow(0.0)
+    val percentRefunded = _percentRefunded.asStateFlow()
+
     private val _totalFee = MutableStateFlow(0.0)
     val totalFee = _totalFee.asStateFlow()
 
@@ -43,6 +55,11 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
         Log.d("SelectedMethod", "${selectedMethod.value}")
     }
 
+    fun setRefundAmount(amount:Double){
+        _refundAmount.value = amount
+        Log.d("RefundAmount", "${_refundAmount.value}")
+    }
+
     fun setEnoughBalance(enough: Boolean){
         _isEnoughBalance.value = enough
     }
@@ -51,6 +68,39 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
         Log.d("TotalFee", "${totalFee.value}")
     }
 
+    fun setPercentRefunded(days:Int){
+        if(days > 7){
+            _percentRefunded.value = 1.0
+        } else {
+            _percentRefunded.value = 0.8
+        }
+    }
+
+    fun setRefundedBalance(touristId: String, hostWalletId: String){
+        val refundedAmount = _refundAmount.value * _percentRefunded.value
+        _refundedCurrentBalance.value = _refundAmount.value - refundedAmount
+        _refundedPendingBalance.value = _refundAmount.value
+        val newBalance = _touristWallet.value.currentBalance + refundedAmount
+        _touristWallet.value = _touristWallet.value.copy(currentBalance = newBalance)
+        updateBalance(touristId)
+        setRefundedAmountToHostWallet(hostWalletId)
+        Log.d("RefundedAmount", "$refundedAmount")
+        Log.d("NewBalanceAfterRefundedAmount", "${_touristWallet.value.currentBalance}")
+        Log.d("NewRefundedCurrentBalance", "${_refundedCurrentBalance.value}")
+        Log.d("NewRefundedPendingBalance", "${_refundedPendingBalance.value}")
+    }
+
+    fun setRefundedAmountToHostWallet(hostWalletId: String){
+        val refundedPending = _hostWallet.value.pendingBalance - _refundedPendingBalance.value
+        val refundedCurrent = _hostWallet.value.currentBalance + _refundedCurrentBalance.value
+        _hostWallet.value = _hostWallet.value.copy(pendingBalance = refundedPending)
+        _hostWallet.value = _hostWallet.value.copy(currentBalance = refundedCurrent)
+        updateHostBalance(hostWalletId)
+        Log.d("RefundedPendingAmount", "$refundedPending")
+        Log.d("RefundedCurrentAmount", "$refundedPending")
+        Log.d("RefundedAmountToHostCurrent", "${_hostWallet.value.currentBalance}")
+        Log.d("RefundedAmountToHostPending", "${_hostWallet.value.pendingBalance}")
+    }
     /*fun getMethodBalance(method:String){
         val paypalBalance = _touristWallet.value.paypalBalance
         val paymayaBalance = _touristWallet.value.paymayaBalance
