@@ -21,7 +21,6 @@ import com.example.tripnila.model.HostTourViewModel
 import com.example.tripnila.model.InboxViewModel
 import com.example.tripnila.model.InsightViewModel
 import com.example.tripnila.model.ItineraryViewModel
-import com.example.tripnila.model.LocationViewModel
 import com.example.tripnila.model.LocationViewModelFactory
 import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.PreferenceViewModel
@@ -29,6 +28,7 @@ import com.example.tripnila.model.ProfileViewModel
 import com.example.tripnila.model.SignupViewModel
 import com.example.tripnila.model.StaycationManagerViewModel
 import com.example.tripnila.model.TourManagerViewModel
+import com.example.tripnila.model.TouristWalletViewModel
 import com.example.tripnila.screens.AccountVerificationScreen
 import com.example.tripnila.screens.AddBusinessScreen10
 import com.example.tripnila.screens.AddBusinessScreen4
@@ -62,13 +62,12 @@ import com.example.tripnila.screens.InsightsScreen
 import com.example.tripnila.screens.ItineraryScreen
 import com.example.tripnila.screens.LoginScreen
 import com.example.tripnila.screens.PreferenceScreen
-import com.example.tripnila.screens.TouristProfileScreen
 import com.example.tripnila.screens.SignupScreen
 import com.example.tripnila.screens.StaycationBookingScreen
 import com.example.tripnila.screens.StaycationDetailsScreen
 import com.example.tripnila.screens.StaycationManagerScreen
-import com.example.tripnila.screens.TourDatesScreen
 import com.example.tripnila.screens.TourManagerScreen
+import com.example.tripnila.screens.TouristProfileScreen
 import com.example.tripnila.screens.TouristWalletScreen
 import com.example.tripnila.screens.WithdrawScreen
 
@@ -284,6 +283,7 @@ fun NavGraphBuilder.homeGraph(
                 touristId = entry.arguments?.getString("touristId") ?: "",
                 staycationId = entry.arguments?.getString("staycationId") ?: "",
                 detailViewModel = detailViewModel,
+                touristWalletViewModel = TouristWalletViewModel()
             )
         }
 
@@ -344,6 +344,7 @@ fun NavGraphBuilder.homeGraph(
             BookingHistoryScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
                 bookingHistoryViewModel = bookingHistoryViewModel,
+                touristWalletViewModel = TouristWalletViewModel(),
                 navController = navController,
                 onNavToChat = { senderTouristId, receiverTouristId ->
                     navigateToChat(navController, senderTouristId, receiverTouristId)
@@ -393,6 +394,7 @@ fun NavGraphBuilder.homeGraph(
         ) {entry ->
             TouristWalletScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
+                touristWalletViewModel = TouristWalletViewModel(),
                 onBack = {
                     navController.popBackStack()
                 },
@@ -410,6 +412,7 @@ fun NavGraphBuilder.homeGraph(
         ) {entry ->
             CashInScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
+                touristWalletViewModel = TouristWalletViewModel(),
                 onCancel = {
                     navController.popBackStack()
                 },
@@ -460,6 +463,7 @@ fun NavGraphBuilder.hostGraph(
                 onNavToTourManager = { hostId, tourId ->
                     navigateToTourManager(navController, hostId, tourId)
                 },
+                touristWalletViewModel = TouristWalletViewModel(),
                 hostDashboardViewModel = hostDashboardViewModel,
                 onNavToInsights = { hostId ->
                     navigateToInsights(navController,hostId)
@@ -846,6 +850,7 @@ fun NavGraphBuilder.hostGraph(
         ) {entry ->
             HostWalletScreen(
                 hostId = entry.arguments?.getString("hostId") ?: "",
+                touristWalletViewModel = TouristWalletViewModel(),
                 onBack = {
                     navController.popBackStack()
                 },
@@ -863,6 +868,7 @@ fun NavGraphBuilder.hostGraph(
         ) {entry ->
             WithdrawScreen(
                 hostId = entry.arguments?.getString("hostId") ?: "",
+                touristWalletViewModel = TouristWalletViewModel(),
                 onCancel = {
                     navController.popBackStack()
                 },
