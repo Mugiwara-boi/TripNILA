@@ -778,7 +778,7 @@ fun AppPaymentDivider(
     val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
     val percentRefunded by touristWalletViewModel.percentRefunded.collectAsState()
     val percentRefundedPercentage = percentRefunded * 100
-    touristWalletViewModel.setPercentRefunded(daysBeforeCheckIn!!)
+
     var isWalletFetched = false
     if(!isWalletFetched){
         touristWalletViewModel.setRefundAmount(totalFee)
@@ -872,6 +872,7 @@ fun AppPaymentDivider(
             )
         }
         if (forCancelBooking) {
+            touristWalletViewModel.setPercentRefunded(daysBeforeCheckIn!!)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
