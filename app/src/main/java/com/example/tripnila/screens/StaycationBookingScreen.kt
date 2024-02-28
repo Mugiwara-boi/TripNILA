@@ -112,14 +112,16 @@ fun StaycationBookingScreen(
     detailViewModel: DetailViewModel? = null,
 ){
 
-    var staycation = detailViewModel?.staycation?.collectAsState()
-    var duration = detailViewModel?.nightsDifference?.collectAsState()
-    var selectedStart = detailViewModel?.startDate?.collectAsState()
-    var selectedEnd = detailViewModel?.endDate?.collectAsState()
+    val staycation = detailViewModel?.staycation?.collectAsState()
+    val duration = detailViewModel?.nightsDifference?.collectAsState()
+    val selectedStart = detailViewModel?.startDate?.collectAsState()
+    val selectedEnd = detailViewModel?.endDate?.collectAsState()
+    val adultCount = detailViewModel?.adultCount?.collectAsState()
+    val selectedPaymentMethod = detailViewModel?.selectedPaymentMethod?.collectAsState()
 
     //var totalOccupancyLimit = staycation?.value?.noOfGuests
-    var infantOccupancyLimit = 5 // /*TODO*/
-    var petOccupancyLimit = 0 // /*TODO*/
+    val infantOccupancyLimit = 5 // /*TODO*/
+    val petOccupancyLimit = 0 // /*TODO*/
     val context = LocalContext.current
 
     val dateRangePickerState = rememberDateRangePickerState()
@@ -129,18 +131,18 @@ fun StaycationBookingScreen(
         skipPartiallyExpanded = true
     )
     val snackbarHostState = remember { SnackbarHostState() }
-    var openCalendarBottomSheet = remember { mutableStateOf(false) }
-    var openGuestBottomSheet = remember { mutableStateOf(false) }
-    var isSaveButtonClicked = remember { mutableStateOf(true) }
+    val openCalendarBottomSheet = remember { mutableStateOf(false) }
+    val openGuestBottomSheet = remember { mutableStateOf(false) }
+    val isSaveButtonClicked = remember { mutableStateOf(true) }
     var isClearButtonClicked = remember { mutableStateOf(false) }
-    var titleText: MutableState<String?> = remember { mutableStateOf(null) }
-    var enableBottomSaveButton: MutableState<Boolean> = remember { mutableStateOf(true) }
+    val titleText: MutableState<String?> = remember { mutableStateOf(null) }
+    val enableBottomSaveButton: MutableState<Boolean> = remember { mutableStateOf(true) }
     val openAlertDialog = remember { mutableStateOf(false) }
 
-    var nights = remember { mutableStateOf(0) }
-    var hasNavigationBar = WindowInsets.areNavigationBarsVisible
+    val nights = remember { mutableStateOf(0) }
+    val hasNavigationBar = WindowInsets.areNavigationBarsVisible
 
-    var isInitial = remember { mutableStateOf(true) }
+    val isInitial = remember { mutableStateOf(true) }
 
 
     LaunchedEffect(touristId) {
@@ -150,13 +152,13 @@ fun StaycationBookingScreen(
         isInitial.value = true
     }
 
-    LaunchedEffect(openAlertDialog) {
-        detailViewModel?.setAlertDialogMessage()
-    }
+//    LaunchedEffect(openAlertDialog) {
+//        detailViewModel?.setAlertDialogMessage()
+//    }
 
     LaunchedEffect(detailViewModel?.bookingResult?.collectAsState()?.value) {
         if (detailViewModel?.bookingResult?.value != null) {
-            snackbarHostState.showSnackbar(detailViewModel?.bookingResult?.value!!)
+            snackbarHostState.showSnackbar(detailViewModel.bookingResult.value!!)
         }
 
     }
@@ -279,12 +281,18 @@ fun StaycationBookingScreen(
                     BookingFilledButton(
                         buttonText = "Confirm and pay",
                         onClick = {
-                            //openAlertDialog.value = true
-                            PaymentSingleton.ViewModelHolder.detailViewModel = detailViewModel
-                            val intent = Intent(context, PaymentScreen::class.java).apply {
-                                putExtra("touristId", touristId)
-                            }
-                            context.startActivity(intent)
+                            detailViewModel?.setAlertDialogMessage()
+                            openAlertDialog.value = true
+                            Log.d("Start Date", selectedStart?.value.toString())
+                            Log.d("End Date", selectedEnd?.value.toString())
+                            Log.d("Guests", adultCount?.value.toString())
+                            Log.d("SelectedPaymentMethod", selectedPaymentMethod?.value.toString())
+
+//                            PaymentSingleton.ViewModelHolder.detailViewModel = detailViewModel
+//                            val intent = Intent(context, PaymentScreen::class.java).apply {
+//                                putExtra("touristId", touristId)
+//                            }
+//                            context.startActivity(intent)
                         },
                         modifier = Modifier
                             .padding(horizontal = 10.dp)
@@ -344,7 +352,6 @@ fun StaycationBookingScreen(
                 ) {
                     Spacer(modifier = Modifier
                         .weight(1f)
-                        //  .height(15.dp)
                     )
                     DateRangePicker(
                         modifier = Modifier

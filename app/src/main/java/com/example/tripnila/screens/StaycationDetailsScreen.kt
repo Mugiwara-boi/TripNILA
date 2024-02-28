@@ -358,23 +358,6 @@ fun StaycationDetailsScreen(
                             }
 
                         }
-
-//                        Box(
-//                            modifier = Modifier
-//                                .fillMaxWidth()
-//                        ) {
-//                            Image(
-//                                painter = painterResource(id = R.drawable.staycation1),
-//                                contentDescription = "h5 1",
-//                                contentScale = ContentScale.FillWidth
-//                            )
-//                            //TopBarIcons()
-//                            DetailsTopAppBar(
-//                                onBack = {
-//                                    onBack()
-//                                }
-//                            )
-//                        }
                     }
                     item {
                         staycation.value?.let { staycation ->

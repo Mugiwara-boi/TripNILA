@@ -88,7 +88,7 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
     }
 
     fun isGuestsValid(): Boolean {
-        return _guestCount.value != null
+        return _guestCount.value != 0
     }
 
     fun isPaymentMethodSelected(): Boolean {
@@ -124,11 +124,15 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
     fun setStartDate(milliseconds: Long?) {
         _startDate.value = milliseconds
 
+        Log.d("Set Start Date", milliseconds.toString())
+
         updateFormattedDateRange()
     }
 
     fun setEndDate(milliseconds: Long?) {
         _endDate.value = milliseconds
+
+        Log.d("Set End Date", milliseconds.toString())
 
         updateFormattedDateRange()
     }
