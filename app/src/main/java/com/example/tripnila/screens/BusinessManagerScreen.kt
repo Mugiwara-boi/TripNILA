@@ -217,7 +217,7 @@ fun BusinessManagerScreen(
                 }
                 item {
                     BusinessMenuCard(
-                        menuImage = business?.businessMenu?.find { it.photoType == "Cover" }?.photoUrl  ?: "",
+                        menuImage = business?.businessMenu?.find { it.photoType == "Cover" }?.photoUrl  ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
                         entranceFee = entranceFee,
                         withEditButton = false,
                         modifier = Modifier

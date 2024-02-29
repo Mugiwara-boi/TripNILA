@@ -11,6 +11,7 @@ class PreferencePagingSource(
     private val hostId: String,
     private val repository: UserRepository,
     private val tag: String,
+    private val initialLoadSize: Int,
 
     private val searchText: String,
     private val includeStaycation: Boolean,
@@ -50,6 +51,7 @@ class PreferencePagingSource(
                 tag = tag,
                 pageNumber = currentPageNumber,
                 pageSize = pageSize,
+                initialLoadSize = initialLoadSize,
                 searchText = searchText,
                 includeStaycation = includeStaycation,
                 includeTour = includeTour,

@@ -335,8 +335,11 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
         swimmingPagingData = swimmingPager!!.flow.cachedIn(viewModelScope)
     }
 
+    private val pageSize = 5
+    private val initialLoadSize = 10
+
     private fun createForYouPager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = 20)) {
+        return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             ForYouPagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
@@ -365,13 +368,14 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 checkedAmenities = _checkedAmenities.value,
                 checkedOffers = _checkedOffers.value,
                 startDate = _startDate.value,
-                endDate = _endDate.value
+                endDate = _endDate.value,
+                initialLoadSize = initialLoadSize
             )
         }
     }
 
     private fun createSportsPager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = 15)) {
+        return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             PreferencePagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
@@ -399,13 +403,14 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 checkedAmenities = _checkedAmenities.value,
                 checkedOffers = _checkedOffers.value,
                 startDate = _startDate.value,
-                endDate = _endDate.value
+                endDate = _endDate.value,
+                initialLoadSize = initialLoadSize
             )
         }
     }
 
     private fun createFoodTripPager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = 15)) {
+        return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             PreferencePagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
@@ -433,13 +438,14 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 checkedAmenities = _checkedAmenities.value,
                 checkedOffers = _checkedOffers.value,
                 startDate = _startDate.value,
-                endDate = _endDate.value
+                endDate = _endDate.value,
+                initialLoadSize = initialLoadSize
             )
         }
     }
 
     private fun createShopPager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = 15)) {
+        return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             PreferencePagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
@@ -467,13 +473,14 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 checkedAmenities = _checkedAmenities.value,
                 checkedOffers = _checkedOffers.value,
                 startDate = _startDate.value,
-                endDate = _endDate.value
+                endDate = _endDate.value,
+                initialLoadSize = initialLoadSize
             )
         }
     }
 
     private fun createNaturePager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = 15)) {
+        return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             PreferencePagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
@@ -501,13 +508,14 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 checkedAmenities = _checkedAmenities.value,
                 checkedOffers = _checkedOffers.value,
                 startDate = _startDate.value,
-                endDate = _endDate.value
+                endDate = _endDate.value,
+                initialLoadSize = initialLoadSize
             )
         }
     }
 
     private fun createGamingPager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = 15)) {
+        return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             PreferencePagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
@@ -535,13 +543,14 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 checkedAmenities = _checkedAmenities.value,
                 checkedOffers = _checkedOffers.value,
                 startDate = _startDate.value,
-                endDate = _endDate.value
+                endDate = _endDate.value,
+                initialLoadSize = initialLoadSize
             )
         }
     }
 
     private fun createKaraokePager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = 15)) {
+        return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             PreferencePagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
@@ -569,13 +578,14 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 checkedAmenities = _checkedAmenities.value,
                 checkedOffers = _checkedOffers.value,
                 startDate = _startDate.value,
-                endDate = _endDate.value
+                endDate = _endDate.value,
+                initialLoadSize = initialLoadSize
             )
         }
     }
 
     private fun createHistoryPager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = 15)) {
+        return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             PreferencePagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
@@ -603,13 +613,14 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 checkedAmenities = _checkedAmenities.value,
                 checkedOffers = _checkedOffers.value,
                 startDate = _startDate.value,
-                endDate = _endDate.value
+                endDate = _endDate.value,
+                initialLoadSize = initialLoadSize
             )
         }
     }
 
     private fun createClubsPager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = 15)) {
+        return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             PreferencePagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
@@ -637,13 +648,14 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 checkedAmenities = _checkedAmenities.value,
                 checkedOffers = _checkedOffers.value,
                 startDate = _startDate.value,
-                endDate = _endDate.value
+                endDate = _endDate.value,
+                initialLoadSize = initialLoadSize
             )
         }
     }
 
     private fun createSightseeingPager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = 15)) {
+        return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             PreferencePagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
@@ -671,13 +683,14 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 checkedAmenities = _checkedAmenities.value,
                 checkedOffers = _checkedOffers.value,
                 startDate = _startDate.value,
-                endDate = _endDate.value
+                endDate = _endDate.value,
+                initialLoadSize = initialLoadSize
             )
         }
     }
 
     private fun createSwimmingPager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = 15)) {
+        return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             PreferencePagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
@@ -705,7 +718,8 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 checkedAmenities = _checkedAmenities.value,
                 checkedOffers = _checkedOffers.value,
                 startDate = _startDate.value,
-                endDate = _endDate.value
+                endDate = _endDate.value,
+                initialLoadSize = initialLoadSize
             )
         }
     }

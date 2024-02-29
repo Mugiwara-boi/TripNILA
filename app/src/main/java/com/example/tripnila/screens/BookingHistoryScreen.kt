@@ -598,9 +598,9 @@ fun BookingHistoryCard(
                             fontWeight = FontWeight.Medium
                         )
                         AppConfirmAndPayDivider(
-                            image = R.drawable.staycation1,
-                            itinerary = bookingHistory?.bookedRental ?: "",
-                            price = bookingHistory?.staycationPrice ?: 0.0,
+                            image = bookingHistory.rentalImage,//R.drawable.staycation1,
+                            itinerary = bookingHistory.bookedRental,
+                            price = bookingHistory.staycationPrice,
                             unit = "night"
                         )
 
@@ -609,7 +609,7 @@ fun BookingHistoryCard(
                             YourTripCancellationDivider(bookingHistory)
                         }
 
-                        var checkInLocalDate = bookingHistory?.checkInDate?.let { date ->
+                        val checkInLocalDate = bookingHistory?.checkInDate?.let { date ->
                             Instant.ofEpochMilli(date.time).atZone(ZoneId.systemDefault()).toLocalDate()
                         }
                         val daysBeforeCheckIn: Int = checkInLocalDate?.let {
@@ -621,8 +621,8 @@ fun BookingHistoryCard(
                             bookingHistoryViewModel = bookingHistoryViewModel,
                             bookingFee = bookingHistory?.staycationPrice ?: 0.0,
                             bookingDuration = bookingHistory!!.bookingDuration?.toInt() ?: 0,
-                            maintenanceFee = bookingHistory?.staycationPrice?.times(0.02) ?: 0.0,
-                            tripnilaFee = bookingHistory?.staycationPrice?.times(0.05) ?: 0.0,
+                            maintenanceFee = bookingHistory?.staycationPrice?.times(0.10) ?: 0.0,
+                       //     tripnilaFee = bookingHistory?.staycationPrice?.times(0.05) ?: 0.0,
                             daysBeforeCheckIn = daysBeforeCheckIn,
                         )
                         CancellationAgreementText()

@@ -44,22 +44,7 @@ class LoginViewModel(private val repository: UserRepository = UserRepository()) 
         return _loginUiState.value.username.isNotBlank() && _loginUiState.value.password.isNotBlank()
     }
 
-//    private suspend fun hasCurrentUserPreferences(user: Tourist?): Boolean {
-//        return user?.let {
-//            try {
-//                val preferences = repository.getTouristPreferences(it.touristId)
-//                Log.d("LoginViewModel", "$it")
-//                preferences.isNotEmpty()
-//            } catch (e: Exception) {
-//                // Handle exceptions if needed
-//                e.printStackTrace()
-//                false
-//            }
-//        } ?: false
-//    }
-//
-
-    fun loginUser() {
+    fun loginUser(context: Context) {
         viewModelScope.launch {
             try {
                 Log.d("LoginViewModel", "Attempting login with username: ${_loginUiState.value.username}")
@@ -79,12 +64,31 @@ class LoginViewModel(private val repository: UserRepository = UserRepository()) 
                 )
                 Log.d("LoginViewModel", "Login result2: ${_loginUiState.value}")
 
+                if (user) {
+                    // Show success message using Toast
+                    Toast.makeText(
+                        context,
+                        "Login successful",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    // Show error message using Toast
+                    Toast.makeText(
+                        context,
+                        "Login failed: Incorrect username or password",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
                 _loginUiState.value = _loginUiState.value.copy(isSuccessLogin = user)
 
                 _currentUser.value = repository.getCurrentUser()
+
             } catch (e: Exception) {
                 _loginUiState.value = _loginUiState.value.copy(loginError = e.localizedMessage)
                 e.printStackTrace()
+
+
             } finally {
                 _loginUiState.value = _loginUiState.value.copy(isLoading = false)
                 Log.d("LoginViewModel", "Login result3: ${_loginUiState.value}") //_loginUiState.value.isSuccessLogin

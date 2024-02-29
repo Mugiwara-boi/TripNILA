@@ -139,6 +139,7 @@ fun HomeScreen(
     touristId: String,
     homeViewModel: HomeViewModel,
     onNavToDetailScreen: (String, String) -> Unit,
+    onNavToTourDetails: (String, String) -> Unit,
     navController: NavHostController
 ){
 
@@ -384,11 +385,12 @@ fun HomeScreen(
                                                 service = service,
                                                 cardHeight = cardHeight.dp,
                                                 imageHeight = imageHeight.dp,
-                                                onItemClick = {
-                                                    onNavToDetailScreen.invoke(
-                                                        touristId,
-                                                        service.serviceId
-                                                    )
+                                                onItemClick = { serviceType ->
+                                                    if (serviceType == "Tour") {
+                                                        onNavToTourDetails(touristId, service.serviceId)
+                                                    } else {
+                                                        onNavToDetailScreen(touristId, service.serviceId)
+                                                    }
                                                 }
                                             )
                                         }
@@ -1118,7 +1120,7 @@ fun HomeScreen(
 @Composable
 fun StaggeredGridListing(
     serviceList: LazyPagingItems<HomePagingItem>,
-    onItemClick: (String) -> Unit
+    onItemClick: (String,String) -> Unit
 ) {
 
     val loadState = serviceList.loadState
@@ -1152,8 +1154,8 @@ fun StaggeredGridListing(
                         service = service,
                         cardHeight = cardHeight.dp,
                         imageHeight = imageHeight.dp,
-                        onItemClick = {
-                            onItemClick.invoke(service.serviceId)
+                        onItemClick = { serviceType ->
+                            onItemClick.invoke(service.serviceId, serviceType)
                         }
                     )
                 }
@@ -1299,7 +1301,7 @@ fun ServiceListingCard(
     service: HomePagingItem,
     cardHeight: Dp,
     imageHeight: Dp,
-    onItemClick: () -> Unit
+    onItemClick: (String) -> Unit
 ){
 
     val serviceImage = service.serviceCoverPhoto //?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png"
@@ -1309,7 +1311,9 @@ fun ServiceListingCard(
             //  .height(cardHeight)
             .fillMaxWidth()
             // .width(171.dp)
-            .clickable { onItemClick.invoke() },
+            .clickable {
+                onItemClick(service.serviceType)
+            },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -1350,7 +1354,7 @@ fun ServiceListingCard(
                     Text(
                         modifier = Modifier
                             .fillMaxWidth(0.55f),
-                        text = service.serviceTitle,
+                        text = service.serviceId,
                         fontWeight = FontWeight.Medium,
                         fontSize = 11.sp,
                         lineHeight = 11.sp,
@@ -1974,7 +1978,7 @@ private fun HomeScreenPreview() {
     val homeViewModel = viewModel(modelClass = HomeViewModel::class.java)
 
 
-    HomeScreen("mgPPHdYnYlJXMFxCaJOj", homeViewModel, { a,b -> }, rememberNavController())
+    HomeScreen("mgPPHdYnYlJXMFxCaJOj", homeViewModel, { a,b -> }, { c,d ->}, rememberNavController())
 
 
 

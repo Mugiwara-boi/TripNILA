@@ -575,8 +575,8 @@ fun calculateNights(startDateMillis: Long, endDateMillis: Long): Long {
 }
 @Composable
 fun TopBarIcons(
+    modifier: Modifier = Modifier,
     forStaycationManager: Boolean = false,
-    modifier: Modifier = Modifier
 ) {
 
     val iconColor = Color.White  //Color(0xFFC0C0C0)
@@ -636,16 +636,21 @@ fun TopBarIcons(
 
 @Composable
 fun StaycationDescriptionCard1(
+    modifier: Modifier = Modifier,
     staycation: Staycation? = null,
     withEditButton: Boolean = false,
     onEdit: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
 ) {
-    Box(
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
         modifier = modifier
             .fillMaxWidth()
-            .clip(shape = RoundedCornerShape(20.dp))
-            .background(color = Color.White)
     ) {
         Column(
             modifier = Modifier
@@ -721,7 +726,7 @@ fun StaycationDescriptionCard1(
 //                    }
                 }
 
-                if (staycation?.staycationTags?.size ?: 0 > maxTagsToShow) {
+                if ((staycation?.staycationTags?.size ?: 0) > maxTagsToShow) {
                     Tag(tag = "+${staycation?.staycationTags?.size?.minus(maxTagsToShow)}")
                 }
             }
@@ -743,12 +748,16 @@ fun StaycationDescriptionCard2(
     modifier: Modifier = Modifier,
     staycation: Staycation? = null,
 ){
-    Box(
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
         modifier = modifier
             .fillMaxWidth()
-            //.height(height = 81.dp)
-            .clip(shape = RoundedCornerShape(20.dp))
-            .background(color = Color.White)
     ){
         Row(
             modifier = Modifier
@@ -785,13 +794,6 @@ fun StaycationDescriptionCard3(
     withEditButton: Boolean = false,
 ) {
 
-//    val imageLoader = rememberImageP(
-//        data = if (host.hasImage) host.imageUrl else "placeholder_url",
-//        builder = {
-//            crossfade(true)
-//            placeholder(R.drawable.placeholder)
-//        }
-//    )
 
     val amenities = listOf(
         AmenityBrief(
@@ -816,11 +818,16 @@ fun StaycationDescriptionCard3(
         )
     )
 
-    Box(
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
         modifier = modifier
             .fillMaxWidth()
-            .clip(shape = RoundedCornerShape(20.dp))
-            .background(color = Color.White)
     ) {
         Row(
             modifier = Modifier
@@ -831,18 +838,26 @@ fun StaycationDescriptionCard3(
                 ),
         ) {
             Box {
-                val hostImage = null
-                val placeholderImage = "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
-
-                val imageLoader = rememberImagePainter(
-                    data = hostImage ?: placeholderImage,
-                    builder = {
-                        crossfade(true)
-                    }
-                )
-                Image(
-                    painter = imageLoader,
-                    contentDescription = "Host",
+//                val hostImage = null
+//                val placeholderImage = "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
+//
+//                val imageLoader = rememberImagePainter(
+//                    data = hostImage ?: placeholderImage,
+//                    builder = {
+//                        crossfade(true)
+//                    }
+//                )
+//                Image(
+//                    painter = imageLoader,
+//                    contentDescription = "Host",
+//                    contentScale = ContentScale.Crop,
+//                    modifier = Modifier
+//                        .size(50.dp)
+//                        .clip(shape = RoundedCornerShape(50.dp))
+//                )
+                AsyncImage(
+                    model = staycation?.host?.profilePicture,
+                    contentDescription = "",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(50.dp)
@@ -878,10 +893,10 @@ fun StaycationDescriptionCard3(
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    val amenities = amenities
-                    val numRows = (amenities?.size?.plus(1))?.div(2)
 
-                    for (row in 0 until numRows!!) {
+                    val numRows = (amenities.size.plus(1)).div(2)
+
+                    for (row in 0 until numRows) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                         ) {
@@ -905,12 +920,16 @@ fun AttractionsNearbyCard(modifier: Modifier = Modifier, attractionUiStates: Lis
     /*TODO*/
     // NOT FUNCTIONING
 
-    Box(
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
         modifier = modifier
             .fillMaxWidth()
-            //.height(height = 139.dp)
-            .clip(shape = RoundedCornerShape(20.dp))
-            .background(color = Color.White)
     ){
         Column(
             modifier = Modifier
@@ -956,11 +975,16 @@ fun StaycationAmenitiesCard(
 ) {
     val amenities = staycation?.amenities?.take(6) ?: emptyList()
 
-    Box(
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
         modifier = modifier
             .fillMaxWidth()
-            .clip(shape = RoundedCornerShape(20.dp))
-            .background(color = Color.White)
     ) {
         Column(
             modifier = Modifier
@@ -1025,13 +1049,22 @@ fun StaycationAmenitiesCard(
 
 
 @Composable
-fun StaycationAdditionalInformationCard(withEditButton: Boolean = false, modifier: Modifier = Modifier){
+fun StaycationAdditionalInformationCard(
+    modifier: Modifier = Modifier,
+    withEditButton: Boolean = false,
 
-    Box(
+){
+
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
         modifier = modifier
             .fillMaxWidth()
-            .clip(shape = RoundedCornerShape(20.dp))
-            .background(color = Color.White)
     ) {
         Column(
             modifier = Modifier
@@ -1118,7 +1151,7 @@ fun StaycationBottomBookingBar(
                                 append("₱ $formattedNumber")
 
                             }
-                            append(" / night")
+                            append("/night")
                         }
                     )
                     ClickableText(
@@ -1162,6 +1195,7 @@ fun StaycationBottomBookingBar(
 
 @Composable
 fun BookingOutlinedButton(
+    modifier: Modifier = Modifier,
     buttonText: String,
     containerColor: Color = Color.White,
     buttonShape: RoundedCornerShape = RoundedCornerShape(10.dp),
@@ -1172,7 +1206,6 @@ fun BookingOutlinedButton(
     contentColor: Color = Orange,
     onClick: () -> Unit,
     enableButton: Boolean = true,
-    modifier: Modifier = Modifier
 ){
 
     OutlinedButton(
@@ -1195,6 +1228,7 @@ fun BookingOutlinedButton(
 
 @Composable
 fun BookingFilledButton(
+    modifier: Modifier = Modifier,
     buttonText: String,
     buttonShape: RoundedCornerShape = RoundedCornerShape(10.dp),
     onClick: () -> Unit,
@@ -1207,7 +1241,7 @@ fun BookingFilledButton(
     strokeWidth: Dp = 3.dp,
     enabled: Boolean = true,
     circularProgressIndicatorSize: Dp = 20.dp,
-    modifier: Modifier = Modifier
+
 ){
 
     Button(
@@ -1246,7 +1280,7 @@ fun DetailsTopAppBar(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ){
-    var isFavorite by remember { mutableStateOf(false) }
+  //  var isFavorite by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(state = rememberTopAppBarState())
 
     TopAppBar(
@@ -1439,14 +1473,14 @@ fun ConfirmCalendar(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    var annotatedText = if (nights == 0 || nights == null) {
+                    val annotatedText = if (nights == 0 || nights == null) {
                         buildAnnotatedString {
                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                 //append("₱ ${"%.2f".format(staycation?.staycationPrice)}")
                                 append("₱ $formattedNumber")
 
                             }
-                            append(" / night")
+                            append("/night")
                         }
                     } else {
                         buildAnnotatedString {

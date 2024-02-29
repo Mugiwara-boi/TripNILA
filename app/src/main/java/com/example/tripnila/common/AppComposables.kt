@@ -43,6 +43,7 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
@@ -105,6 +106,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import coil.compose.AsyncImage
 import coil.compose.rememberImagePainter
 import com.example.tripnila.R
 import com.example.tripnila.data.BottomNavigationItem
@@ -888,11 +890,16 @@ fun AppReviewsCard(
     reviews: List<ReviewUiState>,
 ){
 
-    Box(
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
         modifier = modifier
             .fillMaxWidth()
-            .clip(shape = RoundedCornerShape(20.dp))
-            .background(color = Color.White)
     ){
         Column(
             modifier = Modifier
@@ -1197,12 +1204,16 @@ fun AppLocationCard(
     locationDescription: String,
     withEditButton: Boolean = false
 ){
-    Box(
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
         modifier = modifier
             .fillMaxWidth()
-            //.height(height = 110.dp)
-            .clip(shape = RoundedCornerShape(20.dp))
-            .background(color = Color.White)
     ) {
         Column(
             modifier = Modifier
@@ -1310,7 +1321,7 @@ fun AdditionalInformationRow(textInfo: String, onClick: () -> Unit, modifier: Mo
 @Composable
 fun AppConfirmAndPayDivider(
     itinerary: String,
-    image: Int,
+    image: String,
     price: Double,
     unit: String,
     modifier: Modifier = Modifier
@@ -1333,11 +1344,16 @@ fun AppConfirmAndPayDivider(
                 defaultElevation = 10.dp
             )
         ){
-            Image(
-                painter = painterResource(id = image),
-                contentDescription = "Image",
+            AsyncImage(
+                model = image,
+                contentDescription = null,
                 contentScale = ContentScale.FillBounds
             )
+//            Image(
+//                painter = painterResource(id = image),
+//                contentDescription = "Image",
+//                contentScale = ContentScale.FillBounds
+//            )
         }
         Column(
             modifier = Modifier

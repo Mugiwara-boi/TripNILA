@@ -74,7 +74,7 @@ fun InboxScreen(
         inboxViewModel?.setCurrentUser(touristId)
     }
     var selectedItemIndex by rememberSaveable {
-        mutableIntStateOf(2)
+        mutableIntStateOf(1)
     }
 
     val lazyPagingItems = inboxViewModel?.inboxPagingData?.collectAsLazyPagingItems()

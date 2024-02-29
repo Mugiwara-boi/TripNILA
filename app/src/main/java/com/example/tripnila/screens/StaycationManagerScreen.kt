@@ -271,12 +271,16 @@ fun StaycationManagerScreen(
 
 @Composable
 fun AppTransactionsCard(transactions: List<Transaction>, modifier: Modifier = Modifier){
-    Box(
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
         modifier = modifier
             .fillMaxWidth()
-            //.height(height = 110.dp)
-            .clip(shape = RoundedCornerShape(20.dp))
-            .background(color = Color.White)
     ) {
         Column(
             modifier = Modifier
