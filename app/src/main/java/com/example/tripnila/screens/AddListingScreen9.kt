@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.SpanStyle
@@ -41,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tripnila.R
 import com.example.tripnila.model.AddListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,6 +56,9 @@ fun AddListingScreen9(
 
     var staycationTitle = remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationTitle) }
     var staycationDescription = remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationDescription) }
+    var mutableContact = remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationDescription) }
+    var mutableEmail = remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationDescription) }
+    val localFocusManager = LocalFocusManager.current
 
     Surface(
         modifier = Modifier
@@ -141,13 +146,61 @@ fun AddListingScreen9(
                             }
                         )
                     }
+                    item{
+                        Text(
+                            text = "Provide some contact information",
+                            color = Color(0xff333333),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    item {
+
+                        Column {
+                            mutableContact?.let { contact ->
+                                BasicTextFieldWithLeadingIcon(
+                                    inputText = contact,
+                                    onTextChange = { newText ->
+//                                        addBusinessViewModel?.setContact(newText)
+                                    },
+                                    icon = R.drawable.telephone,
+                                    placeholder = "09********",
+                                    keyboardOptions = KeyboardOptions(
+                                        imeAction = ImeAction.Next
+                                    ),
+                                    keyboardActions = KeyboardActions {
+//                                        localFocusManager.moveFocus(FocusDirection.Down)
+                                    },
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            BasicTextFieldWithLeadingIcon(
+                                inputText = mutableEmail,
+                                onTextChange = { newText ->
+//                                    addBusinessViewModel?.setEmail(newText)
+                                },
+                                icon = R.drawable.email,
+                                placeholder = "abc@lbgrill.com",
+                                keyboardOptions = KeyboardOptions(
+                                    imeAction = ImeAction.Next
+                                ),
+                                keyboardActions = KeyboardActions {
+                                    localFocusManager.moveFocus(FocusDirection.Down)
+                                },
+                            )
+
+                        }
+                    }
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    AddListingStepIndicator(modifier = Modifier, currentPage = 1, pageCount = 4)
                 }
-                Spacer(modifier = Modifier.weight(1f))
-                AddListingStepIndicator(modifier = Modifier, currentPage = 1, pageCount = 4)
+
+
             }
         }
     }
-}
+
 
 @Composable
 fun LongBasicTextFieldWithCharacterLimit(

@@ -1,6 +1,5 @@
 package com.example.tripnila.screens
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedCard
@@ -27,7 +29,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,16 +40,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tripnila.common.Orange
 import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.HostTourViewModel
 import kotlinx.coroutines.launch
@@ -82,6 +80,8 @@ fun AddListingScreen11(
         "Tour" -> remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourPrice?.toInt()) }
         else -> throw IllegalStateException("Unknown")
     }
+    var noCancel by remember { mutableStateOf(false) }
+    var noResched by remember { mutableStateOf(false) }
 
     LaunchedEffect(isLoading){
         if (isLoading != null) {
@@ -209,6 +209,56 @@ fun AddListingScreen11(
                     }
                     item {
                         price.value?.toDouble()?.let { value -> ProfitCard(forStaycation = listingType == "Staycation", basePrice = value) }
+                    }
+                    item{
+                        Row(modifier = Modifier
+                            .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "No Reschedule",
+                                color = Color(0xff333333),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Checkbox(
+                                checked = noResched,
+                                onCheckedChange = { isChecked ->
+                                    noResched = isChecked
+                                },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = Orange
+                                ),
+                                modifier = Modifier.offset(x = 13.dp)
+
+                            )
+
+                        }
+                        Row(modifier = Modifier
+                            .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "No Cancellation",
+                                color = Color(0xff333333),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Checkbox(
+                                checked = noCancel,
+                                onCheckedChange = { isChecked ->
+                                    noCancel = isChecked
+                                },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = Orange
+                                ),
+                                modifier = Modifier.offset(x = 13.dp)
+
+                            )
+
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.weight(1f))
