@@ -487,6 +487,7 @@ fun NavGraphBuilder.homeGraph(
             TourBookingScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
                 tourDetailsViewModel = tourDetailsViewModel,
+              //  touristWalletViewModel = TouristWalletViewModel(),
                 onBack = {
                     navController.popBackStack()
                 },

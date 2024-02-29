@@ -81,6 +81,7 @@ import com.example.tripnila.model.TouristWalletViewModel
 fun TourBookingScreen(
     touristId: String = "",
     tourDetailsViewModel: TourDetailsViewModel,
+  //  touristWalletViewModel: TouristWalletViewModel,
     onBack: () -> Unit
 ){
 
@@ -101,7 +102,7 @@ fun TourBookingScreen(
     val bookingFee = tour.tourPrice
     val productBookingFee = bookingFee * selectedPersonCount
     val tripNilaFee = productBookingFee * 0.05
-    val totalFee = productBookingFee + tripNilaFee
+    val totalFeeState = productBookingFee + tripNilaFee
 
     var openBottomSheet by remember { mutableStateOf(false) }
     val bottomSheetState = rememberModalBottomSheetState( skipPartiallyExpanded = true)
@@ -236,7 +237,7 @@ fun TourBookingScreen(
                                     .weight(1f)
                             )
                             Text(
-                                text = "₱ ${formattedNumberWithDecimalFormat.format(totalFee)}",
+                                text = "₱ ${formattedNumberWithDecimalFormat.format(totalFeeState)}",
                                 fontWeight = FontWeight.SemiBold
                             )
                         }

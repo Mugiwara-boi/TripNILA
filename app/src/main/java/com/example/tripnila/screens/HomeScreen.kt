@@ -1354,7 +1354,7 @@ fun ServiceListingCard(
                     Text(
                         modifier = Modifier
                             .fillMaxWidth(0.55f),
-                        text = service.serviceId,
+                        text = service.serviceTitle,
                         fontWeight = FontWeight.Medium,
                         fontSize = 11.sp,
                         lineHeight = 11.sp,
