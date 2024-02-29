@@ -20,6 +20,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,18 +31,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.WalletTransaction
+import com.example.tripnila.model.TouristWalletViewModel
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TouristWalletScreen(
     touristId: String = "",
+    touristWalletViewModel: TouristWalletViewModel,
     onBack: () -> Unit,
     onNavToCashIn: (String) -> Unit
 ){
     val horizontalPaddingValue = 16.dp
     val verticalPaddingValue = 10.dp
-
+    val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
     val walletTransactions = listOf(
         WalletTransaction(
             transactionType = "Cash in",
@@ -53,6 +57,10 @@ fun TouristWalletScreen(
             amount = 1000.00
         ),
     )
+
+    touristWalletViewModel.getWallet(touristId)
+//    touristWalletViewModel.setWallet(touristId)
+    val currentBalance = touristWallet.currentBalance
 
     Surface(
         modifier = Modifier
@@ -82,7 +90,7 @@ fun TouristWalletScreen(
                 item {
                     AvailableBalanceCardWithCashinButton(
                         userName = "Joshua Araneta",
-                        userBalance = 7600.00,
+                        userBalance = currentBalance,
                         onCashin = {
                             onNavToCashIn(touristId)
                         },
@@ -263,5 +271,5 @@ fun AvailableBalanceCardWithCashinButton(
 @Preview
 @Composable
 private fun UserWalletScreenPreview(){
-    TouristWalletScreen(onNavToCashIn = {_ ->}, onBack = {})
+    TouristWalletScreen(onNavToCashIn = {_ ->}, touristWalletViewModel = TouristWalletViewModel(), onBack = {})
 }

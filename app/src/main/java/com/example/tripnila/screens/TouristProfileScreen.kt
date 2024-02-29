@@ -211,7 +211,7 @@ fun TouristProfileScreen(
                 item {
                     OptionsRow(
                         icon = R.drawable.payment,
-                        rowText = "Payment and payouts",
+                        rowText = "Wallet",
                         onClick = {
                             onNavToTouristWallet(touristId)
                         },

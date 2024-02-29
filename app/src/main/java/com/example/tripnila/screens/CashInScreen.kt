@@ -1,6 +1,5 @@
 package com.example.tripnila.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
@@ -24,16 +23,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -45,20 +48,25 @@ import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.PaymentMethod
-import com.example.tripnila.data.WalletTransaction
-import java.text.DecimalFormat
-import java.text.NumberFormat
-import java.util.Locale
+import com.example.tripnila.model.TouristWalletViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CashInScreen(
     touristId: String = "",
+    touristWalletViewModel: TouristWalletViewModel,
     onCancel: () -> Unit,
 ) {
-
+    val coroutineScope = rememberCoroutineScope()
     val horizontalPaddingValue = 16.dp
     val verticalPaddingValue = 10.dp
+    val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
+    val cashIn by touristWalletViewModel.amount.collectAsState()
+    touristWalletViewModel.getWallet(touristId)
+//    touristWalletViewModel.setWallet(touristId)
+    val currentBalance = touristWallet.currentBalance
+    val context = LocalContext.current
 
     Surface(
         modifier = Modifier
@@ -77,7 +85,14 @@ fun CashInScreen(
                     rightButtonText = "Confirm",
 
                     onNext = {
-                        //onNavToNext(listingType)
+                        coroutineScope.launch {
+                            touristWalletViewModel.addBalance(touristId)
+//                                if (alreadySubmitted == true) {
+//
+//                                }
+
+                        }
+
                     },
                     onCancel = {
                         onCancel()
@@ -95,6 +110,7 @@ fun CashInScreen(
             ) {
                 item {
                     CashInChoosePaymentMethodCard(
+                        touristWalletViewModel = touristWalletViewModel,
                         modifier = Modifier
                             .padding(
                                 vertical = verticalPaddingValue,
@@ -103,8 +119,8 @@ fun CashInScreen(
                     )
                 }
                 item {
-                    WithdrawCard(
-                        availableBalance = 7600.00,
+                    CashInCard(
+                        touristWalletViewModel = touristWalletViewModel,
                         modifier = Modifier
                             .padding(
                                 vertical = verticalPaddingValue,
@@ -130,7 +146,8 @@ fun CashInScreen(
 
 @Composable
 fun CashInChoosePaymentMethodCard(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    touristWalletViewModel: TouristWalletViewModel,
 ){
 
     var selectedPaymentMethod by remember { mutableIntStateOf(-1) }
@@ -140,6 +157,8 @@ fun CashInChoosePaymentMethodCard(
         PaymentMethod(R.drawable.gcash),
         PaymentMethod(R.drawable.paymaya)
     )
+
+
 
     Card(
         colors = CardDefaults.cardColors(
@@ -184,6 +203,12 @@ fun CashInChoosePaymentMethodCard(
                                 } else {
                                     // Otherwise, select the clicked card
                                     selectedPaymentMethod = paymentMethods.indexOf(paymentMethod)
+                                    when(selectedPaymentMethod){
+                                        0 -> touristWalletViewModel.setSelectedMethod("paypal")
+                                        1 -> touristWalletViewModel.setSelectedMethod("gcash")
+                                        2 -> touristWalletViewModel.setSelectedMethod("paymaya")
+                                    }
+
                                 }
 
                             },
@@ -219,15 +244,47 @@ fun CashInChoosePaymentMethodCard(
         }
     }
 }
-
 @Composable
-fun WithdrawCard(
+fun CashInCard(
     modifier: Modifier = Modifier,
-    availableBalance: Double
+    touristWalletViewModel: TouristWalletViewModel
 ) {
+    var text by remember {
+        mutableDoubleStateOf(0.00)
+    }
 
-    val formattedBalance = DecimalFormat("#,##0.${"0".repeat(2)}").format(availableBalance)
+    val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
+    val selectedMethod by touristWalletViewModel.selectedMethod.collectAsState()
+    val paypalBalance = touristWallet.paypalBalance
+    val gcashBalance = touristWallet.gcashBalance
+    val paymayaBalance = touristWallet.paymayaBalance
 
+    var availableBalance by remember{ mutableDoubleStateOf(0.0) }
+
+    var isFocused by remember { mutableStateOf(false) }
+
+    val localFocusManager = LocalFocusManager.current
+
+    val inputAmount = text
+    val courotineScope = rememberCoroutineScope()
+    // Format the input amount with two decimal places
+    val formattedAmount = String.format("%.2f", inputAmount)
+
+    val enoughBalance = inputAmount <= availableBalance
+    val balanceTextColor = if (enoughBalance) Color.Green else Color.Red
+    val balanceText = if (enoughBalance) "There's enough balance." else "There's insufficient balance."
+
+    var formattedBalance by remember{ mutableStateOf("") }
+
+    LaunchedEffect(selectedMethod){
+        availableBalance = when(selectedMethod) {
+            "paypal" -> paypalBalance
+            "gcash" -> gcashBalance
+            "paymaya" -> paymayaBalance
+            else -> 0.0
+        }
+//        formattedBalance = DecimalFormat("#,##0.${"0".repeat(2)}").format(availableBalance)
+    }
     Card(
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -247,37 +304,107 @@ fun WithdrawCard(
                 )
         ) {
             Text(
-                text = "Available Balance",
+                text = "Current Balance",
                 color = Color(0xff333333),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium
             )
             Text(
-                text = "₱ $formattedBalance",
+                text = "₱ $availableBalance",
                 color = Color(0xff333333),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )
             Spacer(modifier = Modifier.height(5.dp))
             Text(
-                text = "Withdraw amount",
+                text = "Cash in amount",
                 color = Color(0xff333333),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium
             )
             Spacer(modifier = Modifier.height(3.dp))
-            WithdrawTextField(
-                availableBalance = availableBalance
+            BasicTextField(
+
+                value = formattedAmount,
+                onValueChange = { newValue ->
+                    // Filter out non-numeric characters
+                    text = newValue.toDoubleOrNull() ?: 0.0
+                    val isEnoughBalance = text <= availableBalance
+                    courotineScope.launch {
+                        if (isEnoughBalance) {
+                            touristWalletViewModel.setAmount(text)
+
+                        }else{
+                            val cash =0.0
+                            touristWalletViewModel.setAmount(cash)
+                        }
+                    }
+                },
+                textStyle = TextStyle(
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black
+                ),
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Done,
+                    keyboardType = KeyboardType.Number
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        localFocusManager.clearFocus()
+                    }
+                ),
+                singleLine = true,
+                decorationBox = { innerTextField ->
+                    Row(
+                        modifier = Modifier
+                            .background(
+                                color = Color.White,
+                                shape = RoundedCornerShape(size = 10.dp)
+                            )
+                            .border(
+                                width = 2.dp,
+                                color = if (isFocused) Orange else Color(0xFFC2C2C2),
+                                shape = RoundedCornerShape(size = 10.dp)
+                            )
+                            .padding(all = 8.dp), // inner padding
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "₱ ",
+                            fontWeight = FontWeight.Medium,
+                        )
+
+                        innerTextField()
+                    }
+                },
+                modifier = modifier
+                    .width(128.dp)
+                    .padding(start = 0.dp)
+                    .onFocusChanged { focusState ->
+                        isFocused = focusState.isFocused
+                    }
+            )
+
+            Text(
+                text = balanceText,
+                color = balanceTextColor,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(start = 8.dp) // Add padding to separate from the input field
             )
         }
     }
 }
 
+
 @Composable
 fun WithdrawTextField(
     modifier: Modifier = Modifier,
-    availableBalance: Double
+    availableBalance: Double,
+    touristWalletViewModel: TouristWalletViewModel
 ) {
+
+
     var text by remember {
         mutableDoubleStateOf(0.00)
     }
@@ -287,7 +414,7 @@ fun WithdrawTextField(
     val localFocusManager = LocalFocusManager.current
 
     val inputAmount = text
-
+    val courotineScope = rememberCoroutineScope()
     // Format the input amount with two decimal places
     val formattedAmount = String.format("%.2f", inputAmount)
 
@@ -300,6 +427,12 @@ fun WithdrawTextField(
         onValueChange = { newValue ->
             // Filter out non-numeric characters
             text = newValue.toDoubleOrNull() ?: 0.0
+            courotineScope.launch {
+                if (balanceText == "There's enough balance.") {
+                    touristWalletViewModel.setAmount(text)
+
+                }
+            }
         },
         textStyle = TextStyle(
             fontWeight = FontWeight.Medium,
@@ -351,51 +484,7 @@ fun WithdrawTextField(
     )
 }
 
-@Composable
-fun RemainingBalanceCard(
-    modifier: Modifier = Modifier,
-    remainingBalance: Double
-) {
 
-    val formattedBalance = DecimalFormat("#,##0.${"0".repeat(2)}").format(remainingBalance)
-
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF8F8F9)
-        ),
-        border = BorderStroke(1.dp, Color(0xff999999)),
-        shape = RoundedCornerShape(10.dp),
-        modifier = modifier
-            .fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(
-                    horizontal = 15.dp,
-                    vertical = 15.dp // 12
-                )
-                .fillMaxWidth()
-        ) {
-            Text(
-                text = "Remaining Balance",
-                color = Color(0xff333333),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = "₱ $formattedBalance",
-                color = Orange,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
-
-        }
-
-    }
-}
 
 
 @Preview
@@ -407,5 +496,7 @@ private fun CashInComposablePreview() {
 @Preview
 @Composable
 private fun CashInScreenPreview() {
-    CashInScreen(onCancel = {})
+    CashInScreen(onCancel = {},
+        touristWalletViewModel = TouristWalletViewModel()
+    )
 }

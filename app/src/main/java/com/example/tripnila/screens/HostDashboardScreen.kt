@@ -65,6 +65,7 @@ import com.example.tripnila.common.Orange
 import com.example.tripnila.data.HostProperty
 import com.example.tripnila.data.Transaction
 import com.example.tripnila.model.HostDashboardViewModel
+import com.example.tripnila.model.TouristWalletViewModel
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.ZoneId
@@ -74,6 +75,7 @@ import java.util.Locale
 @Composable
 fun HostDashboardScreen(
     touristId: String,
+    touristWalletViewModel: TouristWalletViewModel,
     hostDashboardViewModel: HostDashboardViewModel? = null,
     onNavToAddListing: (String, String, String) -> Unit,
     onNavToHostTour: (String, String, String) -> Unit,
@@ -89,8 +91,12 @@ fun HostDashboardScreen(
 
     LaunchedEffect(touristId) {
         hostDashboardViewModel?.getHostDetailsByTouristId(touristId)
-    }
 
+    }
+    touristWalletViewModel.getWallet(touristId)
+//    touristWalletViewModel.setWallet(touristId)
+    val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
+    val currentBalance = touristWallet.currentBalance
     val host = hostDashboardViewModel?.host?.collectAsState()?.value
 
     val horizontalPaddingValue = 16.dp
@@ -169,7 +175,7 @@ fun HostDashboardScreen(
                     item {
                         HostWalletCard(
                             hostName = "${host?.firstName} ${host?.lastName}" ,
-                            hostBalance = 7600.00,
+                            hostBalance = currentBalance,
                             onArrowClick = {
                                 host?.hostId?.let { hostId -> onNavToHostWallet(hostId) }
                             },

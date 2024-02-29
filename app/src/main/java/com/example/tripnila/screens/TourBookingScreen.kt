@@ -74,6 +74,7 @@ import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.example.tripnila.model.TouristWalletViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -87,21 +88,19 @@ fun TourBookingScreen(
     val selectedDate by tourDetailsViewModel.selectedDate.collectAsState()
     val selectedPersonCount by tourDetailsViewModel.personCount.collectAsState()
     val bookingResult by tourDetailsViewModel.bookingResult.collectAsState()
-
     val limit = selectedDate?.remainingSlot
 
     val formattedNumber = NumberFormat.getNumberInstance()
     val formattedNumberWithDecimalFormat = NumberFormat.getNumberInstance() as DecimalFormat
+
     formattedNumberWithDecimalFormat.apply {
         maximumFractionDigits = 2
         minimumFractionDigits = 2
     }
 
     val bookingFee = tour.tourPrice
-
     val productBookingFee = bookingFee * selectedPersonCount
     val tripNilaFee = productBookingFee * 0.05
-    //
     val totalFee = productBookingFee + tripNilaFee
 
     var openBottomSheet by remember { mutableStateOf(false) }
@@ -522,5 +521,5 @@ fun YourTourDivider(
 @Composable
 private fun TourBookingScreenPreview(){
 
-
+  //  TourBookingScreen(touristId = "touristId", touristWalletViewModel = TouristWalletViewModel())
 }

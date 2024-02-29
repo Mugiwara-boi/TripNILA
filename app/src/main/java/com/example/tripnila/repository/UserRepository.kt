@@ -27,6 +27,7 @@ import com.example.tripnila.data.Tag
 import com.example.tripnila.data.Tour
 import com.example.tripnila.data.TourSchedule
 import com.example.tripnila.data.Tourist
+import com.example.tripnila.data.TouristWallet
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
@@ -75,7 +76,8 @@ class UserRepository {
     private val touristProfileCollection = db.collection("tourist_profile")
     private val reviewPhotoCollection = db.collection("review_photo")
     private val serviceCollection = db.collection("service")
-
+    private val hostWalletCollection = db.collection("host_wallet")
+    private val touristWalletCollection = db.collection("tourist_wallet")
     private val businessCollection = db.collection("business")
     private val businessMenuCollection = db.collection("business_menu")
     private val businessAvailabilityCollection = db.collection("business_availability")
@@ -454,7 +456,102 @@ class UserRepository {
         return staycations
     }
 
+    suspend fun createHostWallet(hostId: String){
+        val currentBalance = 0.0
+        val pendingBalance = 0.0
+        val paypalBalance = 10000.0
+        val paymayaBalance = 10000.0
+        val gcashBalance = 10000.0
+        val hostWallet = hashMapOf(
+            "hostId" to hostId,
+            "currentBalance" to currentBalance,
+            "pendingBalance" to pendingBalance,
+            "paypalBalance" to paypalBalance,
+            "paymayaBalance" to paymayaBalance,
+            "gcashBalance" to gcashBalance
+        )
 
+        hostWalletCollection.add(hostWallet).await()
+    }
+    suspend fun createTouristWallet(touristId: String){
+        val currentBalance = 0.0
+        val pendingBalance = 0.0
+        val paypalBalance = 10000.0
+        val paymayaBalance = 10000.0
+        val gcashBalance = 10000.0
+        val touristWallet = hashMapOf(
+            "touristId" to touristId,
+            "currentBalance" to currentBalance,
+            "pendingBalance" to pendingBalance,
+            "paypalBalance" to paypalBalance,
+            "paymayaBalance" to paymayaBalance,
+            "gcashBalance" to gcashBalance
+        )
+        touristWalletCollection.add(touristWallet).await()
+    }
+    suspend fun getTouristWallet(touristId: String): TouristWallet{
+
+        try {
+            val querySnapshot = touristWalletCollection
+                .whereEqualTo("touristId", touristId)
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                val currentBalance = document.getDouble("currentBalance") ?: 0.0
+                val pendingBalance = document.getDouble("pendingBalance") ?: 0.0
+                val paypalBalance = document.getDouble("paypalBalance") ?: 0.0
+                val paymayaBalance = document.getDouble("paymayaBalance") ?: 0.0
+                val gcashBalance = document.getDouble("gcashBalance") ?: 0.0
+
+                return TouristWallet(
+                    touristId = touristId,
+                    currentBalance = currentBalance,
+                    paypalBalance = paypalBalance,
+                    paymayaBalance = paymayaBalance,
+                    gcashBalance = gcashBalance,
+                    pendingBalance = pendingBalance
+                )
+            }
+
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+
+        return TouristWallet()
+    }
+
+    suspend fun addBalance(touristId: String, amount:Double, paypalBalance: Double, paymayaBalance: Double, gcashBalance: Double, pendingBalance: Double){
+        try{
+        touristWalletCollection
+            .whereEqualTo("touristId", touristId)
+            .get()
+            .addOnSuccessListener { documents ->
+                for (document in documents) {
+                    touristWalletCollection.document(document.id).delete()
+                }
+            }
+            .await()
+
+            val tagData = hashMapOf(
+                "touristId" to touristId,
+                "currentBalance" to amount,
+                "paypalBalance" to paypalBalance,
+                "gcashBalance" to gcashBalance,
+                "paymayaBalance" to paymayaBalance,
+                "pendingBalance" to pendingBalance
+            )
+
+            touristWalletCollection.add(tagData).await()
+
+
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+
+    }
     suspend fun getStaycationBookingsByStaycationId(staycationId: String) : List<StaycationBooking> {
 
         val bookings = mutableListOf<StaycationBooking>()
@@ -2479,13 +2576,14 @@ class UserRepository {
     }
 
 
-    suspend fun updateBookingStatusToFinishedIfExpired() {
+   /* suspend fun updateBookingStatusToFinishedIfExpired() {
         try {
             val currentTimestamp = Timestamp.now()
 
             val query = staycationBookingCollection
                 .whereLessThan("checkOutDate", currentTimestamp)
                 .whereEqualTo("bookingStatus", "Ongoing")
+
 
             val result = query.get().await()
 
@@ -2514,7 +2612,101 @@ class UserRepository {
         } catch (e: Exception) {
             Log.e("BookingStatusUpdate", "An error occurred: $e")
         }
+    }*/
+
+    suspend fun updateBookingStatusToFinishedIfExpired(): Map<String, Double> {
+
+        try {
+            val currentTimestamp = Timestamp.now()
+
+            val query = staycationBookingCollection
+                .whereLessThan("checkOutDate", currentTimestamp)
+                .whereEqualTo("bookingStatus", "Ongoing")
+
+            val result = query.get().await()
+
+            Log.d("BookingStatusUpdate", "Found ${result.size()} bookings to check")
+
+            val staycationDataMap = mutableMapOf<String, Double>() // Map to store staycationId and totalAmount
+
+            for (document in result.documents) {
+                val checkOutTimestamp = document.getTimestamp("checkOutDate")
+                val staycationId = document.getString("staycationId")
+                val totalAmount = document.getDouble("totalAmount")
+
+
+                if (checkOutTimestamp != null && staycationId != null && totalAmount != null) {
+                    Log.d("BookingStatusUpdate", "BookingId: ${document.id}, CheckOutDate: $checkOutTimestamp")
+
+                    val bookingId = document.id
+                    val updateTask = staycationBookingCollection.document(bookingId)
+                            .update("bookingStatus", "Completed")
+                            .addOnSuccessListener {
+                                // Update successful
+                                Log.d(
+                                    "UserRepository",
+                                    "Booking $bookingId status updated to Finished"
+                                )
+
+                                Log.d(
+                                    "UserRepository",
+                                    "Staycation ID: $staycationId, Total Amount: $totalAmount"
+                                )
+                                Log.d( "UserRepository","staycationDataMap updated: $staycationDataMap")
+                            }
+                            .addOnFailureListener { e ->
+                                // Handle the error
+                                Log.d(
+                                    "UserRepository",
+                                    "Error updating booking status for $bookingId: $e"
+                                )
+                            }
+
+                }
+                staycationDataMap[staycationId.toString()] = totalAmount!!
+            }
+            Log.d("StaycationDataMap", "staycationDataMap: $staycationDataMap")
+            return staycationDataMap
+
+
+        } catch (e: Exception) {
+            Log.e("BookingStatusUpdate", "An error occurred: $e")
+        }
+        return emptyMap()
     }
+
+    suspend fun processCompletedBookings(staycationDataMap: Map<String, Double>): Map<String, Pair<String, Double>> {
+        val staycationDetailsMap = mutableMapOf<String, Pair<String, Double>>()
+
+        for ((staycationId, totalAmount) in staycationDataMap) {
+            try {
+                val staycationDocument = staycationCollection.document(staycationId).get().await()
+
+
+                if (staycationDocument.exists()) {
+                    // Retrieve the hostId from the document
+
+                    val hostId = staycationDocument.getString("hostId")
+                    if (hostId != null) {
+                        // Add the staycationId, hostId, and totalAmount to the map
+                        staycationDetailsMap[staycationId] = Pair(hostId, totalAmount)
+                    } else {
+                        // If hostId is null, log an error
+                        Log.e("GetStaycationDetails", "HostId is null for staycationId $staycationId")
+                    }
+                } else {
+                    // No document found for the given staycationId
+                    Log.e("GetStaycationDetails", "No document found for staycationId $staycationId")
+                }
+            } catch (e: Exception) {
+                // Handle exceptions
+                Log.e("GetStaycationDetails", "Error getting details for staycationId $staycationId: $e")
+            }
+        }
+
+        return staycationDetailsMap
+    }
+
 
     suspend fun getStaycationDetailsById(staycationId: String): Staycation? {
         try {
@@ -2576,6 +2768,58 @@ class UserRepository {
         return null
     }
 
+    suspend fun updatePendingBalance(hostMap: Map<String, Double>) {
+        try {
+            for ((hostId, totalAmount) in hostMap) {
+                // Query the touristWalletCollection to get the touristWallet document
+                val query = touristWalletCollection.whereEqualTo("touristId", hostId)
+                val snapshot = query.get().await()
+
+                // Check if the query returned any documents
+                if (!snapshot.isEmpty) {
+                    val document = snapshot.documents.first()
+
+                    // Get the current pendingBalance and currentBalance
+                    val pendingBalance = document.getDouble("pendingBalance") ?: 0.0
+                    val currentBalance = document.getDouble("currentBalance") ?: 0.0
+
+                    // Calculate the new balances
+                    val newPendingBalance = pendingBalance - totalAmount
+                    val newCurrentBalance = currentBalance + totalAmount
+
+                    // Update the touristWallet document
+                    document.reference.update(
+                        mapOf(
+                            "pendingBalance" to newPendingBalance,
+                            "currentBalance" to newCurrentBalance
+                        )
+                    ).await()
+
+                    // Log the update success
+                    Log.d("UpdateTouristWallet", "Tourist wallet updated successfully")
+                } else {
+                    Log.d("UpdateTouristWallet", "No tourist wallet found for hostId: $hostId")
+                }
+            }
+        } catch (e: Exception) {
+            // Handle exceptions
+            Log.e("UpdateTouristWallet", "Error updating tourist wallet: $e")
+        }
+    }
+
+    suspend fun getHostIdFromStaycation(staycationId: String): String? {
+        return try {
+            val documentSnapshot = staycationCollection.document(staycationId).get().await()
+
+            if (documentSnapshot.exists()) {
+                documentSnapshot.getString("hostId")
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     suspend fun getHostInfo(hostId: String): Tourist? {
         return try {
@@ -5204,12 +5448,13 @@ class UserRepository {
 
             val touristDocRef = touristCollection.add(userData).await()
             val touristId = touristDocRef.id
-
+            val hostId = "HOST-$touristId"
             val hostData = hashMapOf(
                 "touristId" to touristId
             )
             hostCollection.document("HOST-$touristId").set(hostData).await()
-
+            createHostWallet(hostId)
+            createTouristWallet(touristId)
             true
         } catch (e: Exception) {
             e.printStackTrace()
