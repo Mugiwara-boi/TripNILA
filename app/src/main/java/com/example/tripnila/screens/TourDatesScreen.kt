@@ -3,6 +3,7 @@ package com.example.tripnila.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -23,9 +27,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,201 +44,206 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.TourAvailableDates
+import com.example.tripnila.model.TourDetailsViewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 
 @Composable
 fun TourDatesScreen(
-
+    touristId: String = "",
+    tourId: String = "",
+    tourDetailsViewModel: TourDetailsViewModel,
+    onNavToTourBookingScreen: (String) -> Unit,
+    onBack: () -> Unit
 ){
 
-    val availableDates = listOf(
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
+    val tour by tourDetailsViewModel.tour.collectAsState()
+    val personCount by tourDetailsViewModel.personCount.collectAsState()
 
-        )
+    val tourAvailableDates = tour.schedule
+
+    val currentDate = LocalDate.now()
+    val availableDates = tourAvailableDates
+        .filter { tourSchedule ->
+            val remainingSlot = tourSchedule.slot - tourSchedule.bookedSlot
+            tourSchedule.date > currentDate && remainingSlot >= personCount // Keep only schedules with remaining slots
+        }
+        .map { tourSchedule ->
+            val remainingSlot = tourSchedule.slot - tourSchedule.bookedSlot
+            TourAvailableDates(
+                availabilityId = tourSchedule.tourScheduleId,
+                day = tourSchedule.date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH),
+                date = tourSchedule.date.format(DateTimeFormatter.ofPattern("MMM d")),
+                startingTime = tourSchedule.startTime,
+                endingTime = tourSchedule.endTime,
+                description = if (remainingSlot == 1) "$remainingSlot slot left" else "$remainingSlot slots left",
+                price = tour.tourPrice,
+                localDate = tourSchedule.date,
+                remainingSlot = remainingSlot
+            )
+        }.sortedBy { it.localDate }
+
+    //availableDates = availableDates.plus(availableDates)
+
+
+//    val availableDates = tourAvailableDates.map {  tourSchedule ->
+//        val remainingSlot = tourSchedule.slot - tourSchedule.bookedSlot
+//        TourAvailableDates(
+//            availabilityId = tourSchedule.tourScheduleId,
+//            day = tourSchedule.date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH),
+//            date = tourSchedule.date.format(DateTimeFormatter.ofPattern("MMM d")),
+//            startingTime = tourSchedule.startTime,
+//            endingTime = tourSchedule.endTime,
+//            description = if (remainingSlot == 0 || remainingSlot == 1) "$remainingSlot slot left" else "$remainingSlot slots left",
+//            price = tour.tourPrice,
+//            localDate = tourSchedule.date
+//        )
+//    }
+
+//
+//    val availableDates = tourAvailableDates
+//        .filter { tourSchedule -> tourSchedule.date > currentDate }
+//        .map { tourSchedule ->
+//            TourAvailableDates(
+//                availabilityId = tourSchedule.tourScheduleId,
+//                day = tourSchedule.date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH),
+//                date = tourSchedule.date.format(DateTimeFormatter.ofPattern("MMM d")),
+//                startingTime = tourSchedule.startTime,
+//                endingTime = tourSchedule.endTime,
+//                description = "Book for private group",
+//                price = tour.tourPrice,
+//                localDate = tourSchedule.date
+//            )
+//        }
+
+    val selectedDate by tourDetailsViewModel.selectedDate.collectAsState()
+
 
     Surface(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.tour1),
-                contentDescription = "Tour Image",
-                contentScale = ContentScale.FillWidth
-            )
+        Scaffold(
+            bottomBar = {
+                AddListingBottomBookingBar(
+                    enableRightButton = selectedDate != null,
+                    onCancel = {
+                        onBack()
+                    },
+                    onNext = {
+                        onNavToTourBookingScreen(touristId)
+                    }
+                )
+            }
+    ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight()
-                    .background(color = Color(0xff1a1a1a).copy(alpha = 0.42f))
-            )
-        }
-        Box(
-            modifier = Modifier
-                .padding(top = 170.dp) // 160
-                .fillMaxHeight()
-                .fillMaxWidth()
-                .clip(shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                .background(color = Color.White)
-        ){
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
-                        horizontal = 25.dp,
-                        vertical = 20.dp // 12
-                    )
-                    .background(Color.White)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Choose dates",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = "Close",
-                        tint = Color(0xFFCECECE),
-                        modifier = Modifier
-                            .size(30.dp)
-                            .offset(x = 5.dp, y = (-5).dp)
-                    )
-                }
-                Column(
+                AsyncImage(
+                    model = tour.tourImages.find { it.photoType == "Cover" }?.photoUrl,
+                    contentDescription = "Tour Image",
+                    contentScale = ContentScale.FillWidth
+                )
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp, start = 28.dp, end = 28.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-
+                        .fillMaxHeight()
+                        .background(color = Color(0xff1a1a1a).copy(alpha = 0.42f))
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .padding(top = 170.dp) // 160
+                    .padding(it)
+                    .fillMaxHeight()
+                    .fillMaxWidth()
+                    .clip(shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                    .background(color = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            start = 25.dp,
+                            end = 25.dp,
+                            top = 20.dp // 12
+                        )
+                        .background(Color.White)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                    val chunkedDates = availableDates.chunked(2) // Split availableDates into pairs
+                        Text(
+                            text = "Choose schedule",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Close",
+                            tint = Color(0xFFCECECE),
+                            modifier = Modifier
+                                .size(30.dp)
+                                .offset(x = 5.dp, y = (-5).dp)
+                                .clickable {
+                                    onBack()
+                                }
+                        )
+                    }
 
-                    for (pair in chunkedDates) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            pair.forEach { availableDate ->
-                                TourDateCardWithoutButton(availableDate = availableDate)
-                            }
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(20.dp), //Arrangement.spacedBy(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        items(availableDates) { availableDate ->
+                            TourDateCardWithoutButton(
+                                availableDate = availableDate,
+                                isClicked = availableDate == selectedDate,
+                                onClick = {
+                                    if (availableDate == selectedDate) {
+                                        tourDetailsViewModel.removeSelectedDate()
+                                    } else {
+                                        tourDetailsViewModel.setSelectedDate(availableDate)
+                                    }
+                                }
+                            )
                         }
                     }
                 }
-                Spacer(modifier = Modifier.weight(1f))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp),
-                ) {
-                    BookingOutlinedButton(
-                        buttonText = "Cancel",
-                        onClick = {},
-                        modifier = Modifier.width(120.dp)
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    BookingFilledButton(
-                        buttonText = "Next",
-                        onClick = {},
-                        modifier = Modifier.width(120.dp)
-                    )
-                }
             }
         }
+
+
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TourDateCardWithoutButton(
+    modifier: Modifier = Modifier,
     availableDate: TourAvailableDates,
-    modifier: Modifier = Modifier
+    isClicked: Boolean,
+    onClick: () -> Unit
 ){
 
-    var isClicked by remember { mutableStateOf(false) }
+  //  var isClicked by remember { mutableStateOf(false) }
 
     OutlinedCard(
         modifier = modifier
@@ -247,7 +258,8 @@ fun TourDateCardWithoutButton(
             defaultElevation = 10.dp
         ),
         onClick = {
-            isClicked = !isClicked
+           // isClicked = !isClicked
+            onClick()
         }
 
     ) {
@@ -266,6 +278,12 @@ fun TourDateCardWithoutButton(
                 fontSize = 8.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFF999999)
+            )
+            Text(
+                text = availableDate.description,
+                fontSize = 8.sp,
+                fontWeight = FontWeight.Medium,
+                textDecoration = TextDecoration.Underline
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
@@ -287,14 +305,6 @@ fun TourDateCardWithoutButton(
 
 @Preview
 @Composable
-private fun TourDatesItemsPreview(){
-
-
-
-}
-
-@Preview
-@Composable
 private fun TourDatesScreenPreview(){
-    TourDatesScreen()
+ //   TourDatesScreen()
 }

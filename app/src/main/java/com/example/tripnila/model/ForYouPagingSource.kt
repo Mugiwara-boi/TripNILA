@@ -12,6 +12,7 @@ class ForYouPagingSource(
     private val repository: UserRepository,
     private val tags: List<String>,
     private val serviceIdSet: SortedSet<String>,
+    private val initialLoadSize: Int,
 
     private val searchText: String,
     private val includeStaycation: Boolean,
@@ -55,6 +56,8 @@ class ForYouPagingSource(
                 tags = tags,
                 pageNumber = currentPageNumber,
                 pageSize = pageSize,
+                initialLoadSize = initialLoadSize,
+
                 serviceIdSet = serviceIdSet,
                 searchText = searchText,
                 includeStaycation = includeStaycation,

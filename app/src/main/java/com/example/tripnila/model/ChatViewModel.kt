@@ -11,10 +11,12 @@ import com.example.tripnila.data.Photo
 import com.example.tripnila.data.Tourist
 import com.example.tripnila.repository.UserRepository
 import com.google.firebase.firestore.auth.User
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class ChatViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
 
@@ -30,39 +32,52 @@ class ChatViewModel(private val repository: UserRepository = UserRepository()) :
     private val _otherUser = MutableStateFlow(Tourist())
     val otherUser = _otherUser.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
+    private val _isLoading = MutableStateFlow(true)
     val isLoading = _isLoading.asStateFlow()
 
-    fun setCurrentUser(touristId: String) {
-
+    suspend fun setUsers(senderTouristId: String, receiverTouristId: String) {
         _isLoading.value = true
+        _messages.value = emptyList()
 
-        _currentUser.value = _currentUser.value.copy(touristId = touristId)
+        _currentUser.value = _currentUser.value.copy(touristId = senderTouristId)
+
+        val receiver = repository.getTouristProfile(receiverTouristId)
+        _otherUser.value = receiver ?: Tourist()
+
+        getChatByUserIds()
+
     }
 
-    fun getChatByUserIds() {
+    private fun getChatByUserIds() {
         viewModelScope.launch {
             try {
-                val chat = repository.getChatByUserIds(_currentUser.value.touristId, _otherUser.value.touristId) ?: Chat("", _currentUser.value.touristId, _otherUser.value.touristId)
+                val chat = repository.getChatByUserIds(_currentUser.value.touristId, _otherUser.value.touristId)
                 _chatId.value = chat.chatId
 
                 val messages = repository.getMessages(_chatId.value)
                 _messages.value = messages
 
+                delay(500)
+
+                _isLoading.value = false
             } catch (e: Exception) {
                 e.printStackTrace()
-            } finally {
-                _isLoading.value = false
             }
+
         }
     }
 
     fun sendMessage(content: String, imageUris: List<Uri>) {
 
-        viewModelScope.launch() {
+        viewModelScope.launch {
 
             val photos = imageUris.map { uri ->
                 Photo(photoUri = uri)
+            }
+
+            if (_chatId.value == "") {
+                _chatId.value = repository.addNewChat(_currentUser.value.touristId, _otherUser.value.touristId)
+
             }
 
             val newMessage = repository.sendMessage(_chatId.value, _currentUser.value.touristId, content, photos)
@@ -78,19 +93,22 @@ class ChatViewModel(private val repository: UserRepository = UserRepository()) :
         }
 
     }
-
-    fun setReceiverInfo(touristId: String) {
-        viewModelScope.launch {
-            try {
-                val receiver = repository.getTouristProfile(touristId)
-                _otherUser.value = receiver ?: Tourist()
-
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
+//
+//    fun setReceiverInfo(touristId: String) {
+//        viewModelScope.launch {
+//            try {
+//
+//                val receiver = repository.getTouristProfile(touristId)
+//                _otherUser.value = receiver ?: Tourist()
+//
+//                getChatByUserIds()
+//
+//
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//            }
+//        }
+//    }
 
 
 //    fun getMessages(chatId: String) {

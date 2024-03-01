@@ -15,6 +15,7 @@ data class HomePagingItem(
     val location: String,
     val price: Double,
     val tourDuration: Int? = null,
-    val hostId: String = ""
+    val hostId: String = "",
+    val serviceType: String
 )
 

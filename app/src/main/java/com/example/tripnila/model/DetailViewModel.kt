@@ -226,6 +226,22 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
         _loadingState.value = true
         try {
             viewModelScope.launch {
+
+
+                val bookingFee = _staycation.value?.staycationPrice ?: 0.0
+
+                val productBookingFee = bookingFee * _nightsDifference.value!!
+                val tripNilaFee = productBookingFee.times(0.05)
+                val maintenanceFee = _staycation.value?.staycationPrice?.times(0.10)
+
+                val totalFee = productBookingFee + maintenanceFee!! + tripNilaFee
+
+                Log.d("Total Fee", totalFee.toString())
+                Log.d("Maintenance Fee", maintenanceFee.toString())
+                Log.d("TripNila Fee", tripNilaFee.toString())
+                Log.d("Guest x Booking Fee", productBookingFee.toString())
+                Log.d("Booking Fee", bookingFee.toString())
+
                 val bookingStatus = "Pending" // Set the status accordingly
                 val checkInDateMillis = _startDate.value ?: return@launch
                 val checkOutDateMillis = _endDate.value ?: return@launch
@@ -234,8 +250,8 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
                 val noOfInfants = _infantCount.value ?: return@launch
                 val noOfPets = _petCount.value ?: return@launch
                 val staycationId = _staycation.value?.staycationId ?: return@launch
-                val totalAmount = calculateTotalAmount() // Implement your own logic
-                val commission = calculateCommission() // Implement your own logic
+//                val totalAmount = totalFee // Implement your own logic
+//                val commission = maintenanceFee // Implement your own logic
                 val paymentStatus = "Pending" // Set the initial payment status
                 val paymentMethod = when (_selectedPaymentMethod?.value) {
                     0 -> {
@@ -261,9 +277,9 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
                     noOfPets = noOfPets,
                     noOfInfants = noOfInfants,
                     staycationId = staycationId,
-                    totalAmount = totalAmount ?: 0.0,
+                    totalAmount = totalFee,
                     touristId = touristId,
-                    commission = commission ?: 0.0,
+                    commission = tripNilaFee,
                     paymentStatus = paymentStatus,
                     paymentMethod = paymentMethod
                 )

@@ -126,16 +126,11 @@ fun ChatScreen(
 
     val listState = rememberLazyListState()
 
-    LaunchedEffect(senderTouristId) {
-        chatViewModel.setCurrentUser(senderTouristId)
-        chatViewModel.setReceiverInfo(receiverTouristId)
+
+    LaunchedEffect(receiverTouristId) {
+        chatViewModel.setUsers(senderTouristId, receiverTouristId)
     }
 
-    LaunchedEffect(otherUser) {
-        if(otherUser.touristId != "") {
-            chatViewModel.getChatByUserIds()
-        }
-    }
 
     LaunchedEffect(messages) {
         if (messages.isNotEmpty()) {
@@ -177,7 +172,7 @@ fun ChatScreen(
                         .fillMaxSize()
                         .padding(it)
                 ) {
-                    if (messages.isEmpty()) {
+                    if (messages.isEmpty() && !isLoading) {
                         item {
                             Column(
                                 modifier = Modifier

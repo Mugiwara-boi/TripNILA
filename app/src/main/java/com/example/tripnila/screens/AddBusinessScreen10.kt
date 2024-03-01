@@ -439,9 +439,11 @@ fun ScheduleCard(
                     horizontalArrangement = Arrangement.End
                 ) {
                     // dismiss button
-                    TextButton(onClick = {
-                        showOpeningDialog = false
-                    }) {
+                    TextButton(
+                        onClick = {
+                            showOpeningDialog = false
+                        }
+                    ) {
                         Text(text = "Dismiss")
                     }
 

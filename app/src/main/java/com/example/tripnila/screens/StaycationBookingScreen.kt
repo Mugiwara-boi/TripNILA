@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,6 +30,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -78,6 +81,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.AppConfirmAndPayDivider
 import com.example.tripnila.common.AppYourTripRow
@@ -97,6 +101,7 @@ fun StaycationBookingScreen(
     touristId: String,
     staycationId: String,
     detailViewModel: DetailViewModel? = null,
+    onBack: () -> Unit,
     touristWalletViewModel: TouristWalletViewModel,
 ){
 
@@ -202,13 +207,12 @@ fun StaycationBookingScreen(
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) }
         ) {
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.staycation1),
+                AsyncImage(
+                    model = staycation?.value?.staycationImages?.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
                     contentDescription = "Staycation Image",
                     contentScale = ContentScale.FillWidth
                 )
@@ -218,7 +222,6 @@ fun StaycationBookingScreen(
                         .fillMaxHeight()
                         .background(color = Color(0xff1a1a1a).copy(alpha = 0.42f))
                 )
-
             }
             Box(
                 modifier = Modifier
@@ -238,17 +241,36 @@ fun StaycationBookingScreen(
                         .padding(it)
                         .background(Color.White)
                 ) {
-                    Text(
-                        text = "Confirm and pay",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Confirm and pay",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Close",
+                            tint = Color(0xFFCECECE),
+                            modifier = Modifier
+                                .size(30.dp)
+                                .offset(x = 5.dp, y = (-5).dp)
+                                .clickable {
+                                    onBack()
+                                }
+                        )
+                    }
+
+
                     AppConfirmAndPayDivider(
-                        image = R.drawable.staycation1, // PLACEHOLDER
+                        image = staycation?.value?.staycationImages?.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
                         itinerary = staycation?.value?.staycationTitle ?: "",
                         price = staycation?.value?.staycationPrice ?: 0.0,
                         unit = "night"
                     )
+
                     detailViewModel?.let { detailViewModel ->
                         YourTripDivider(
                             detailViewModel = detailViewModel,
@@ -267,8 +289,8 @@ fun StaycationBookingScreen(
                         touristWalletViewModel = touristWalletViewModel,
                         bookingFee = staycation?.value?.staycationPrice ?: 2500.00,
                         bookingDuration = duration?.value?.toInt() ?: 5,
-                        maintenanceFee = staycation?.value?.staycationPrice?.times(0.02) ?: 250.00,
-                        tripnilaFee = staycation?.value?.staycationPrice?.times(0.05) ?: 625.00
+                        maintenanceFee = staycation?.value?.staycationPrice?.times(0.10) ?: 250.00,
+                      //  tripnilaFee = staycation?.value?.staycationPrice?.times(0.05) ?: 625.00
                     )
                     PaymentAgreementText()
                     Spacer(modifier = Modifier.padding(vertical = 15.dp))
@@ -611,9 +633,9 @@ fun ConfirmGuest(
     detailViewModel: DetailViewModel,
 ) {
 
-    var guestCount = detailViewModel.guestCount.collectAsState().value
-    var infantCount = detailViewModel.infantCount.collectAsState().value
-    var petCount = detailViewModel.petCount.collectAsState().value
+    val guestCount = detailViewModel.guestCount.collectAsState().value
+    val infantCount = detailViewModel.infantCount.collectAsState().value
+    val petCount = detailViewModel.petCount.collectAsState().value
 
     val guestInfoText = buildAnnotatedString {
         append("$guestCount ${guestCount?.let { detailViewModel.pluralize("Guest", it) }}")
@@ -688,9 +710,9 @@ fun YourTripDivider(
    val formattedDateRange = detailViewModel.formattedDateRange.collectAsState().value
    // val guestCount = detailViewModel.guestCount.collectAsState().value
 
-    var guestCount = detailViewModel.guestCount.collectAsState().value
-    var infantCount = detailViewModel.infantCount.collectAsState().value
-    var petCount = detailViewModel.petCount.collectAsState().value
+    val guestCount = detailViewModel.guestCount.collectAsState().value
+    val infantCount = detailViewModel.infantCount.collectAsState().value
+    val petCount = detailViewModel.petCount.collectAsState().value
 
     val guestInfoText = buildAnnotatedString {
         append("$guestCount ${guestCount?.let { detailViewModel.pluralize("guest", it) }}")
@@ -756,6 +778,7 @@ fun YourTripDivider(
 
 @Composable
 fun AppPaymentDivider(
+    modifier: Modifier = Modifier,
     touristId: String,
     detailViewModel: DetailViewModel? = null,
     touristWalletViewModel: TouristWalletViewModel,
@@ -763,10 +786,9 @@ fun AppPaymentDivider(
     bookingFee: Double,
     bookingDuration: Int,
     maintenanceFee: Double? = null,
-    tripnilaFee: Double,
     daysBeforeCheckIn: Int? = null,
     forCancelBooking: Boolean = false,
-    modifier: Modifier = Modifier
+
 ) {
     val formattedNumber = NumberFormat.getNumberInstance()
     val formattedNumberWithDecimalFormat = NumberFormat.getNumberInstance() as DecimalFormat
@@ -774,6 +796,7 @@ fun AppPaymentDivider(
         maximumFractionDigits = 2
         minimumFractionDigits = 2
     }
+
     val totalFee by touristWalletViewModel.totalFee.collectAsState()
     val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
     val percentRefunded by touristWalletViewModel.percentRefunded.collectAsState()
@@ -790,7 +813,10 @@ fun AppPaymentDivider(
 
     val currentBalance = touristWallet.currentBalance
     val productBookingFee = bookingFee * bookingDuration
-    val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripnilaFee
+    val tripNilaFee = productBookingFee * 0.05
+    val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripNilaFee
+
+  //  val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripnilaFee
     touristWalletViewModel.setTotalFee(totalFeeState)
 
     var selectedPaymentMethod by remember { mutableStateOf(-1) }
@@ -849,7 +875,7 @@ fun AppPaymentDivider(
 
         PaymentRow(
             feeLabel = "Tripnila service fee",
-            feePrice = tripnilaFee
+            feePrice = tripNilaFee
         )
         Divider(
             color = Color(0xFFDEDEDE),

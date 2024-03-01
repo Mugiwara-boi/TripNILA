@@ -86,6 +86,7 @@ import com.example.tripnila.model.ProfileViewModel
 import com.example.tripnila.model.SignupViewModel
 import com.example.tripnila.model.StaycationManagerViewModel
 import com.example.tripnila.model.StaycationViewModel
+import com.example.tripnila.model.TourDetailsViewModel
 import com.example.tripnila.model.TourManagerViewModel
 import com.example.tripnila.repository.UserRepository
 import com.example.tripnila.screens.BookingHistoryCard
@@ -139,6 +140,7 @@ class MainActivity : ComponentActivity() {
                 val chatViewModel = viewModel(modelClass = ChatViewModel::class.java)
 
                 val insightViewModel = viewModel(modelClass = InsightViewModel::class.java)
+                val tourDetailsViewModel = viewModel(modelClass = TourDetailsViewModel::class.java)
 
 
                 Navigation(
@@ -161,6 +163,7 @@ class MainActivity : ComponentActivity() {
                     inboxViewModel = inboxViewModel,
                     chatViewModel = chatViewModel,
                     insightViewModel = insightViewModel,
+                    tourDetailsViewModel = tourDetailsViewModel
                 )
             }
 

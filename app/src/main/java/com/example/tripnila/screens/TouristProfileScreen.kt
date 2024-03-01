@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -95,7 +96,7 @@ fun TouristProfileScreen(
     val horizontalPaddingValue = 16.dp
 
     var selectedItemIndex by rememberSaveable {
-        mutableStateOf(3)
+        mutableIntStateOf(2)
     }
 
 
