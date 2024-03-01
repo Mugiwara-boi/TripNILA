@@ -29,6 +29,7 @@ import androidx.compose.material.icons.sharp.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -340,13 +341,9 @@ fun AddBusinessScreen8(
                     }
                     item{
 
-                        Row() {
-                            Checkbox(
-                                checked = hasEntranceFee,
-                                onCheckedChange = { isChecked ->
-                                    hasEntranceFee = isChecked
-                                }
-                            )
+                        Row(modifier = Modifier
+                            .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = "Do you have any entrance fee?",
                                 color = Color(0xff333333),
@@ -354,6 +351,19 @@ fun AddBusinessScreen8(
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
                             )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Checkbox(
+                                checked = hasEntranceFee,
+                                onCheckedChange = { isChecked ->
+                                    hasEntranceFee = isChecked
+                                },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = Orange
+                                ),
+                                modifier = Modifier.offset(x = 13.dp)
+
+                            )
+
                         }
 
                             if (hasEntranceFee) {

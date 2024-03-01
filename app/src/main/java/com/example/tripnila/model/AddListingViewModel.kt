@@ -81,6 +81,32 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
         _staycation.value = _staycation.value.copy(staycationDescription = description)
         Log.d("Staycation", "${_staycation.value.staycationDescription}")
     }
+
+    fun setStaycationAdditionalInfo(description: String) {
+        _staycation.value = _staycation.value.copy(additionalInfo = description)
+        Log.d("Staycation", "${_staycation.value.additionalInfo}")
+    }
+
+    fun setStaycationPhone(contact: String) {
+        _staycation.value = _staycation.value.copy(phoneNo = contact)
+        Log.d("Staycation", "${_staycation.value.phoneNo}")
+    }
+
+    fun setStaycationEmail(email: String) {
+        _staycation.value = _staycation.value.copy(email = email)
+        Log.d("Staycation", "${_staycation.value.email}")
+    }
+
+    fun setStaycationMaxGuest(guest: Int) {
+        _staycation.value = _staycation.value.copy(maxNoOfGuests = guest)
+        Log.d("Staycation", "${_staycation.value.maxNoOfGuests}")
+    }
+
+    fun setStaycationAdditionalFeePerGuest(amount: Double) {
+        _staycation.value = _staycation.value.copy(additionalFeePerGuest = amount)
+        Log.d("Staycation", "${_staycation.value.additionalFeePerGuest}")
+    }
+
     fun setStaycationAmenities(amenity: List<String>) {
         val amenities = amenity.map { Amenity(amenityName = it) }
         _staycation.value = _staycation.value.copy(amenities = amenities)
@@ -147,6 +173,9 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
         Log.d("Staycation", "${_staycation.value.staycationImages.map { it.photoUri }}")
     }
 
+    fun setInitialMaxGuest(){
+        _staycation.value = _staycation.value.copy(maxNoOfGuests = _staycation.value.noOfGuests)
+    }
 
     fun removeSelectedImage(uri: Uri) {
         _staycation.value = _staycation.value.copy(staycationImages = _staycation.value.staycationImages.filter { it.photoUri != uri })
@@ -185,6 +214,46 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
     fun setHasDangerousAnimal(isTrue: Boolean) {
         _staycation.value = _staycation.value.copy(hasDangerousAnimal = isTrue)
         Log.d("Staycation", "${_staycation.value.hasDangerousAnimal}")
+    }
+
+    fun setNoCancel(isTrue: Boolean) {
+        _staycation.value = _staycation.value.copy(noCancel = isTrue)
+        Log.d("Staycation", "${_staycation.value.noCancel}")
+    }
+
+    fun setNoReschedule(isTrue: Boolean) {
+        _staycation.value = _staycation.value.copy(noReschedule = isTrue)
+        Log.d("Staycation", "${_staycation.value.noReschedule}")
+    }
+
+    fun sethasFirstAidKit(isTrue: Boolean) {
+        _staycation.value = _staycation.value.copy(hasFirstAid = isTrue)
+        Log.d("Staycation", "${_staycation.value.hasFirstAid}")
+    }
+
+    fun sethasFireExit(isTrue: Boolean) {
+        _staycation.value = _staycation.value.copy(hasFireExit = isTrue)
+        Log.d("Staycation", "${_staycation.value.hasFireExit}")
+    }
+
+    fun sethasFireExtinguisher(isTrue: Boolean) {
+        _staycation.value = _staycation.value.copy(hasFireExtinguisher = isTrue)
+        Log.d("Staycation", "${_staycation.value.hasFireExtinguisher}")
+    }
+
+    fun setAllowPets(isTrue: Boolean) {
+        _staycation.value = _staycation.value.copy(allowPets = isTrue)
+        Log.d("Staycation", "${_staycation.value.allowPets}")
+    }
+
+    fun setAllowSmoking(isTrue: Boolean) {
+        _staycation.value = _staycation.value.copy(allowSmoking = isTrue)
+        Log.d("Staycation", "${_staycation.value.allowSmoking}")
+    }
+
+    fun setNoisePolicy(isTrue: Boolean) {
+        _staycation.value = _staycation.value.copy(noisePolicy = isTrue)
+        Log.d("Staycation", "${_staycation.value.noisePolicy}")
     }
 
     fun setHasSecurityCamera(isTrue: Boolean) {
@@ -279,11 +348,24 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
                     hasDangerousAnimal = _staycation.value.hasDangerousAnimal,
                     hasSecurityCamera = _staycation.value.hasSecurityCamera,
                     hasWeapon = _staycation.value.hasWeapon,
+                    hasFireExit = _staycation.value.hasFireExit,
+                    hasFireExtinguisher = _staycation.value.hasFireExtinguisher,
+                    hasFirstAid = _staycation.value.hasFirstAid,
+                    allowPets = _staycation.value.allowPets,
+                    allowSmoking = _staycation.value.allowSmoking,
+                    noCancel = _staycation.value.noCancel,
+                    noReschedule = _staycation.value.noReschedule,
+                    additionalInfo = _staycation.value.additionalInfo,
+                    phoneNo = _staycation.value.phoneNo,
+                    email = _staycation.value.email,
                     hostId = _staycation.value.host.hostId,
                     noOfBathrooms = _staycation.value.noOfBathrooms,
                     noOfBedrooms = _staycation.value.noOfBedrooms,
                     noOfBeds = _staycation.value.noOfBeds,
                     noOfGuests = _staycation.value.noOfGuests,
+                    maxNoOfGuests = _staycation.value.maxNoOfGuests,
+                    additionalFeePerGuest = _staycation.value.additionalFeePerGuest,
+                    noisePolicy = !_staycation.value.noisePolicy,
                     staycationDescription = _staycation.value.staycationDescription,
                     staycationLocation = _staycation.value.staycationLocation,
                     staycationLat = _staycation.value.staycationLat,

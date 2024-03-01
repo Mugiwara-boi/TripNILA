@@ -7,7 +7,6 @@ import java.time.ZoneId
 import java.util.Calendar
 import java.util.Date
 import java.util.concurrent.TimeUnit
-import kotlin.math.abs
 
 
 data class StaycationAvailability(
@@ -34,12 +33,27 @@ data class Staycation(
     val hasSecurityCamera: Boolean = false,
     val hasWeapon: Boolean = false,
     val hasDangerousAnimal: Boolean = false,
+    val hasFirstAid: Boolean = false,
+    val hasFireExit: Boolean = false,
+    val hasFireExtinguisher: Boolean = false,
     val staycationImages: List<Photo> = emptyList(),
     val promotions: List<Promotion> = emptyList(),
     val availableDates: List<StaycationAvailability> = emptyList(),
     val amenities: List<Amenity> = emptyList(),
     val staycationBookings: List<StaycationBooking> = emptyList(),
-    val nearbyAttractions: List<String> = emptyList()
+    val nearbyAttractions: List<String> = emptyList(),
+
+    val maxNoOfGuests: Int = 0,
+    val additionalFeePerGuest: Double = 0.0,
+    val noisePolicy: Boolean = false,
+    val allowSmoking: Boolean = false,
+    val allowPets: Boolean = false,
+    val additionalInfo: String = "",
+    val noCancel: Boolean = false,
+    val noReschedule: Boolean = false,
+
+    val phoneNo: String = "",
+    val email: String = "",
 ) {
     val totalReviews: Int
         get() = staycationBookings.mapNotNull { it.bookingReview }.filter { it.bookingId != "" }.count()

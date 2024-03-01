@@ -40,7 +40,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.security.MessageDigest
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -54,7 +53,6 @@ import java.util.SortedSet
 import java.util.TimeZone
 import java.util.UUID
 import java.util.concurrent.TimeUnit
-import java.util.*
 import kotlin.experimental.and
 
 
@@ -484,8 +482,24 @@ class UserRepository {
                 val staycationTitle = document.getString("staycationTitle") ?: ""
                 val staycationType = document.getString("staycationType") ?: ""
 
+                val hasFirstAid = document.getBoolean("hasFirstAid") ?: false
+                val hasFireExit = document.getBoolean("hasFireExit") ?: false
+                val hasFireExtinguisher = document.getBoolean("hasFireExtinguisher") ?: false
+                val maxNoOfGuests = document.getLong("maxNoOfGuests")?.toInt() ?: 0
+                val additionalFeePerGuest = document.getDouble("additionalFeePerGuest") ?: 0.0
+                val noisePolicy = document.getBoolean("noisePolicy") ?: false
+                val allowSmoking = document.getBoolean("allowSmoking") ?: false
+                val allowPets = document.getBoolean("allowPets") ?: false
+                val additionalInfo = document.getString("additionalInfo") ?: ""
+                val noCancel = document.getBoolean("noCancel") ?: false
+                val noReschedule = document.getBoolean("noCancel") ?: false
+                val phoneNo = document.getString("phoneNo") ?: ""
+                val email = document.getString("email") ?: ""
+
                 val staycationImages = getServiceImages(staycationId, "Staycation")
                 val staycationBookings = getStaycationBookings(staycationId)
+
+
             //    val hostInfo = getHostInfo(hostId)
 
                 val staycation = Staycation(
@@ -505,6 +519,19 @@ class UserRepository {
                     staycationSpace = staycationSpace,
                     staycationTitle = staycationTitle,
                     staycationType = staycationType,
+                    hasFirstAid = hasFirstAid,
+                    hasFireExit = hasFireExit,
+                    hasFireExtinguisher = hasFireExtinguisher,
+                    maxNoOfGuests = maxNoOfGuests,
+                    additionalFeePerGuest = additionalFeePerGuest,
+                    additionalInfo = additionalInfo,
+                    noisePolicy = noisePolicy,
+                    allowPets = allowPets,
+                    allowSmoking = allowSmoking,
+                    noReschedule = noReschedule,
+                    noCancel = noCancel,
+                    phoneNo = phoneNo,
+                    email = email,
                     staycationImages = staycationImages,
                     staycationBookings = staycationBookings,
                     host = Host(
@@ -1621,11 +1648,24 @@ class UserRepository {
         hasDangerousAnimal: Boolean = false,
         hasSecurityCamera: Boolean = false,
         hasWeapon: Boolean = false,
+        hasFireExit: Boolean = false,
+        hasFireExtinguisher: Boolean = false,
+        hasFirstAid: Boolean = false,
+        allowPets: Boolean = false,
+        allowSmoking: Boolean = false,
+        noReschedule: Boolean = false,
+        noCancel: Boolean = false,
+        additionalInfo: String = "",
         hostId: String = "",
         noOfBathrooms: Int = 1,
         noOfBedrooms: Int = 1,
         noOfBeds: Int = 1,
+        phoneNo: String = "",
+        email: String = "",
         noOfGuests: Int = 1,
+        maxNoOfGuests: Int = 0,
+        additionalFeePerGuest: Double = 0.0,
+        noisePolicy: Boolean = false,
         staycationDescription: String = "",
         staycationLocation: String = "",
         staycationLat: Double = 0.0,
@@ -1663,11 +1703,24 @@ class UserRepository {
                 "hasDangerousAnimal" to hasDangerousAnimal,
                 "hasSecurityCamera" to hasSecurityCamera,
                 "hasWeapon" to hasWeapon,
+                "hasFireExit" to hasFireExit,
+                "hasFireExtinguisher" to hasFireExtinguisher,
+                "hasFirstAid" to hasFirstAid,
+                "allowPets" to allowPets,
+                "allowSmoking" to allowSmoking,
+                "maxNoOfGuests" to maxNoOfGuests,
+                "additionalFeePerGuest" to additionalFeePerGuest,
+                "noisePolicy" to noisePolicy,
                 "hostId" to hostId,
+                "noReschedule" to noReschedule,
+                "noCancel" to noCancel,
+                "additionalInfo" to additionalInfo,
                 "noOfBathrooms" to noOfBathrooms,
                 "noOfBedrooms" to noOfBedrooms,
                 "noOfBeds" to noOfBeds,
                 "noOfGuests" to noOfGuests,
+                "phoneNo" to phoneNo,
+                "email" to email,
                 "staycationDescription" to staycationDescription,
                 "staycationLocation" to staycationLocation,
                 "staycationLat" to staycationLat,
@@ -2981,6 +3034,20 @@ class UserRepository {
                 val staycationTitle = staycationDocument.getString("staycationTitle") ?: ""
                 val staycationType = staycationDocument.getString("staycationType") ?: ""
 
+                val hasFirstAid = staycationDocument.getBoolean("hasFirstAid") ?: false
+                val hasFireExit = staycationDocument.getBoolean("hasFireExit") ?: false
+                val hasFireExtinguisher = staycationDocument.getBoolean("hasFireExtinguisher") ?: false
+                val maxNoOfGuests = staycationDocument.getLong("maxNoOfGuests")?.toInt() ?: 0
+                val additionalFeePerGuest = staycationDocument.getDouble("additionalFeePerGuest") ?: 0.0
+                val noisePolicy = staycationDocument.getBoolean("noisePolicy") ?: false
+                val allowSmoking = staycationDocument.getBoolean("allowSmoking") ?: false
+                val allowPets = staycationDocument.getBoolean("allowPets") ?: false
+                val additionalInfo = staycationDocument.getString("additionalInfo") ?: ""
+                val noCancel = staycationDocument.getBoolean("noCancel") ?: false
+                val noReschedule = staycationDocument.getBoolean("noCancel") ?: false
+                val phoneNo = staycationDocument.getString("phoneNo") ?: ""
+                val email = staycationDocument.getString("email") ?: ""
+
                 // Fetch Staycation images
                 val staycationImages = getServiceImages(staycationId, "Staycation")
                 val hostInfo = getHostInfo(hostId)
@@ -3005,6 +3072,20 @@ class UserRepository {
                     staycationTitle = staycationTitle,
                     staycationType = staycationType,
                     staycationImages = staycationImages,
+                    hasFirstAid = hasFirstAid,
+                    hasFireExit = hasFireExit,
+                    hasFireExtinguisher = hasFireExtinguisher,
+                    maxNoOfGuests = maxNoOfGuests,
+                    additionalFeePerGuest = additionalFeePerGuest,
+                    additionalInfo = additionalInfo,
+                    noisePolicy = noisePolicy,
+                    allowPets = allowPets,
+                    allowSmoking = allowSmoking,
+                    noReschedule = noReschedule,
+                    noCancel = noCancel,
+                    phoneNo = phoneNo,
+                    email = email,
+
                     host = Host(
                         profilePicture = hostInfo?.profilePicture ?: "",
                         firstName = hostInfo?.firstName ?: "",
@@ -5422,6 +5503,19 @@ class UserRepository {
         val hasSecurityCamera = document.getBoolean("hasSecurityCamera") ?: false
         val hasWeapon = document.getBoolean("hasWeapon") ?: false
         val hasDangerousAnimal = document.getBoolean("hasDangerousAnimal") ?: false
+        val hasFirstAid = document.getBoolean("hasFirstAid") ?: false
+        val hasFireExit = document.getBoolean("hasFireExit") ?: false
+        val hasFireExtinguisher = document.getBoolean("hasFireExtinguisher") ?: false
+        val maxNoOfGuests = document.getLong("maxNoOfGuests")?.toInt() ?: 0
+        val additionalFeePerGuest = document.getDouble("additionalFeePerGuest") ?: 0.0
+        val noisePolicy = document.getBoolean("noisePolicy") ?: false
+        val allowSmoking = document.getBoolean("allowSmoking") ?: false
+        val allowPets = document.getBoolean("allowPets") ?: false
+        val additionalInfo = document.getString("additionalInfo") ?: ""
+        val noCancel = document.getBoolean("noCancel") ?: false
+        val noReschedule = document.getBoolean("noCancel") ?: false
+        val phoneNo = document.getString("phoneNo") ?: ""
+        val email = document.getString("email") ?: ""
 
         val touristInfo = getHostInfo(hostId)
         val staycationImages = getServiceImages(staycationId, "Staycation")
@@ -5461,6 +5555,20 @@ class UserRepository {
             availableDates = availability,
             amenities = amenities,
             staycationBookings = bookings,
+            hasFirstAid = hasFirstAid,
+            hasFireExit = hasFireExit,
+            hasFireExtinguisher = hasFireExtinguisher,
+            maxNoOfGuests = maxNoOfGuests,
+            additionalFeePerGuest = additionalFeePerGuest,
+            additionalInfo = additionalInfo,
+            noisePolicy = noisePolicy,
+            allowPets = allowPets,
+            allowSmoking = allowSmoking,
+            noReschedule = noReschedule,
+            noCancel = noCancel,
+            phoneNo = phoneNo,
+            email = email,
+
             //averageReviewRating = bookings.calculateAverageReviewRating()
         )
     }
@@ -5519,6 +5627,20 @@ class UserRepository {
                 val hasWeapon = document.getBoolean("hasWeapon") ?: false
                 val hasDangerousAnimal = document.getBoolean("hasDangerousAnimal") ?: false
 
+                val hasFirstAid = document.getBoolean("hasFirstAid") ?: false
+                val hasFireExit = document.getBoolean("hasFireExit") ?: false
+                val hasFireExtinguisher = document.getBoolean("hasFireExtinguisher") ?: false
+                val maxNoOfGuests = document.getLong("maxNoOfGuests")?.toInt() ?: 0
+                val additionalFeePerGuest = document.getDouble("additionalFeePerGuest") ?: 0.0
+                val noisePolicy = document.getBoolean("noisePolicy") ?: false
+                val allowSmoking = document.getBoolean("allowSmoking") ?: false
+                val allowPets = document.getBoolean("allowPets") ?: false
+                val additionalInfo = document.getString("additionalInfo") ?: ""
+                val noCancel = document.getBoolean("noCancel") ?: false
+                val noReschedule = document.getBoolean("noCancel") ?: false
+                val phoneNo = document.getString("phoneNo") ?: ""
+                val email = document.getString("email") ?: ""
+
                 val touristInfo = getHostInfo(hostId)
                 val staycationImages = getServiceImages(staycationId, "Staycation")
                 val staycationTags = getServiceTags(staycationId, "Staycation")
@@ -5557,6 +5679,19 @@ class UserRepository {
                     availableDates = availability,
                     amenities = amenities,
                     staycationBookings = bookings,
+                    hasFirstAid = hasFirstAid,
+                    hasFireExit = hasFireExit,
+                    hasFireExtinguisher = hasFireExtinguisher,
+                    maxNoOfGuests = maxNoOfGuests,
+                    additionalFeePerGuest = additionalFeePerGuest,
+                    additionalInfo = additionalInfo,
+                    noisePolicy = noisePolicy,
+                    allowPets = allowPets,
+                    allowSmoking = allowSmoking,
+                    noReschedule = noReschedule,
+                    noCancel = noCancel,
+                    phoneNo = phoneNo,
+                    email = email,
                     // averageReviewRating = bookings.calculateAverageReviewRating()
                 )
                 staycationList.add(staycation)

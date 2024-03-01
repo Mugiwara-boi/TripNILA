@@ -106,10 +106,7 @@ import com.example.tripnila.data.Staycation
 import com.example.tripnila.model.DetailViewModel
 import java.text.NumberFormat
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.temporal.ChronoUnit
-import java.util.Calendar
-import java.util.Date
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class,
@@ -431,6 +428,7 @@ fun StaycationDetailsScreen(
                     }
                     item {
                         StaycationAdditionalInformationCard(
+                            detailViewModel = detailViewModel,
                             modifier = Modifier
                                 .offset(y = (-5).dp)
                                 .padding(bottom = 7.dp)
@@ -1051,12 +1049,28 @@ fun StaycationAmenitiesCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StaycationAdditionalInformationCard(
-    modifier: Modifier = Modifier,
-    withEditButton: Boolean = false,
-){
+fun StaycationAdditionalInformationCard(withEditButton: Boolean = false, modifier: Modifier = Modifier, detailViewModel: DetailViewModel){
+
+    val phoneNo by remember{ mutableStateOf(detailViewModel.staycation.value?.phoneNo) }
+    val email by remember{ mutableStateOf(detailViewModel.staycation.value?.email) }
+    val noReschedule by remember{ mutableStateOf(detailViewModel.staycation.value?.noReschedule) }
+    val noCancel by remember{ mutableStateOf(detailViewModel.staycation.value?.noCancel) }
+    val hasSecurityCamera by remember{ mutableStateOf(detailViewModel.staycation.value?.hasSecurityCamera) }
+    val hasFirstAid by remember{ mutableStateOf(detailViewModel.staycation.value?.hasFirstAid) }
+    val hasFireExit by remember{ mutableStateOf(detailViewModel.staycation.value?.hasFireExit) }
+    val hasFireExtinguisher by remember{ mutableStateOf(detailViewModel.staycation.value?.hasFireExtinguisher) }
+    val maxGuest by remember{ mutableStateOf(detailViewModel.staycation.value?.maxNoOfGuests) }
+    val noisePolicy by remember{ mutableStateOf(detailViewModel.staycation.value?.noisePolicy) }
+    val guestCount by remember{ mutableStateOf(detailViewModel.staycation.value?.noOfGuests) }
+    val allowPets by remember{ mutableStateOf(detailViewModel.staycation.value?.allowPets) }
+    val allowSmoking by remember{ mutableStateOf(detailViewModel.staycation.value?.allowSmoking) }
+    val additionalInfo by remember{ mutableStateOf(detailViewModel.staycation.value?.additionalInfo) }
+    val staycationDetails by remember{ mutableStateOf(detailViewModel.staycation.value?.staycationDescription) }
 
     val openHouseRulesModal = remember { mutableStateOf(false)}
+    val openHealthAndSafety = remember { mutableStateOf(false)}
+    val openCancelAndReschedule = remember { mutableStateOf(false)}
+    val openBusinessInformation = remember { mutableStateOf(false)}
     val bottomSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
@@ -1072,6 +1086,7 @@ fun StaycationAdditionalInformationCard(
         modifier = modifier
             .fillMaxWidth()
     ) {
+
         Column(
             modifier = Modifier
                 //                .padding(horizontal = 25.dp, vertical = 12.dp),
@@ -1102,9 +1117,9 @@ fun StaycationAdditionalInformationCard(
                 }
             }
             AdditionalInformationRow(textInfo = "House Rules", onClick = {openHouseRulesModal.value = true})
-            AdditionalInformationRow(textInfo = "Health & safety", onClick = {/*TODO*/})
-            AdditionalInformationRow(textInfo = "Cancellation & reschedule policy", onClick = {/*TODO*/})
-            AdditionalInformationRow(textInfo = "Business Information", onClick = {/*TODO*/})
+            AdditionalInformationRow(textInfo = "Health & safety", onClick = {openHealthAndSafety.value = true})
+            AdditionalInformationRow(textInfo = "Cancellation & reschedule policy", onClick = {openCancelAndReschedule.value = true})
+            AdditionalInformationRow(textInfo = "Business Information", onClick = {openBusinessInformation.value = true})
 
         }
     }
@@ -1130,24 +1145,6 @@ fun StaycationAdditionalInformationCard(
                         )
                     }
                     Spacer(modifier = Modifier.weight(1f))
-/*                    ClickableText(
-                        text = buildAnnotatedString {
-                            withStyle(
-                                style = SpanStyle(
-                                    fontSize = 16.sp,
-                                    textDecoration = TextDecoration.Underline
-                                )
-                            ) {
-                                append("Clear")
-                            }
-                        },
-                        onClick = {
-                            dateRangePickerState.setSelection(null, null)
-                            isSaveButtonClicked.value = false
-                        }
-
-                    )*/
-
 
                 }
             },
@@ -1156,23 +1153,774 @@ fun StaycationAdditionalInformationCard(
             modifier = Modifier
                 .fillMaxHeight(0.8f) //0.693
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Spacer(modifier = Modifier
-                    .weight(1f)
-                    //  .height(15.dp)
-                )
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    item {
+                        Text(
+                            text = "House Rules",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
+                                .fillMaxWidth()
+                        )
+                    }
+                    item {
+
+                        Text(
+                            text = "Check-in/Check-out",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Check-in time is at 2pm, and check-out time is at 12 PM.",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+                    }
+                    item {
+
+                        if (noisePolicy!!) {
+                            Text(
+                                text = "Noise Policy",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+
+                            Text(
+                                text = "Respect quiet hours from 10 PM to 7 AM. Keep noise levels to a minimum during this period to ensure a peaceful environment for all guests.",
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+                            Divider(
+                                color = Color(0xFFDEDEDE),
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                            )
+
+                        }
+                    }
+                    item {
+
+                        if (allowSmoking!!) {
+                            Text(
+                                text = "Smoking Policy",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+
+                            Text(
+                                text = "Smoking is allowed inside the accommodations. Please make sure to dispose cigarette butts properly.",
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+                            Divider(
+                                color = Color(0xFFDEDEDE),
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                            )
+
+                        } else {
+                            Text(
+                                text = "No Smoking",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+
+                            Text(
+                                text = "Smoking is strictly prohibited inside the accommodations. Please use designated outdoor smoking areas and dispose of cigarette butts responsibly.",
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+                            Divider(
+                                color = Color(0xFFDEDEDE),
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                            )
+                        }
+                    }
+                    item {
+
+                        if (allowPets!!) {
+                            Text(
+                                text = "Pet Policy",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+
+                            Text(
+                                text = "Pets are allowed. Please make sure to clean after your pets. Any damage caused by your pet on the property will be subject to repair fees",
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+                            Divider(
+                                color = Color(0xFFDEDEDE),
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                            )
+
+                        } else {
+                            Text(
+                                text = "Pet Policy",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+
+                            Text(
+                                text = "Pets are not allowed.",
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+                            Divider(
+                                color = Color(0xFFDEDEDE),
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                            )
+                        }
+                    }
+                    item {
+
+                        if (maxGuest!! > guestCount!!) {
+                            Text(
+                                text = "Guest Limit",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+
+                            Text(
+                                text = "The maximum number of guests allowed per accommodation is $guestCount up to $maxGuest, subject for additional fees. Please adhere to this limit for safety and comfort reasons.",
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+                            Divider(
+                                color = Color(0xFFDEDEDE),
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                            )
+
+                        } else {
+                            Text(
+                                text = "Guest Limit",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+
+                            Text(
+                                text = "The maximum number of guests allowed per accommodation is $guestCount. Please adhere to this limit for safety and comfort reasons.",
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+                            Divider(
+                                color = Color(0xFFDEDEDE),
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                            )
+                        }
+                    }
+                    item {
+
+                        Text(
+                            text = "Respect for Property",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Treat the accommodations and amenities with care and respect. Any damages caused by guests will be subject to repair charges.",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+                    }
+                    item {
+
+                        Text(
+                            text = "Security Measures",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Ensure that doors and windows are securely locked when leaving the accommodation unattended. Report any suspicious activity to management immediately.",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+                    }
+                    item {
+
+                        Text(
+                            text = "Community Guidelines",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Be courteous and considerate towards other guests and residents. Refrain from disruptive behavior that may disturb the peace and enjoyment of others.",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+                    }
+                    item {
+
+                        Text(
+                            text = "Compliance with Local Laws",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Guests are expected to comply with all local laws and regulations during their stay.",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+
+                    }
+
+                    item {
+                        if(additionalInfo != "") {
+
+                            Text(
+                                text = "Additional Information",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+
+                            Text(
+                                text = additionalInfo!!,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+                            Divider(
+                                color = Color(0xFFDEDEDE),
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                            )
+
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars))
+                    }
 
 
-                Spacer(modifier = Modifier.weight(1f))
-
-                Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars))
+                }
             }
 
+
         }
+
+
+    if(openHealthAndSafety.value){
+        ModalBottomSheet(
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White,
+            dragHandle = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = { openHealthAndSafety.value = false },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Close"
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            },
+            onDismissRequest = { openHealthAndSafety.value = false },
+            sheetState = bottomSheetState,
+            modifier = Modifier
+                .fillMaxHeight(0.8f) //0.693
+        ) {
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                item {
+                    Text(
+                        text = "Health & Safety",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
+                            .fillMaxWidth()
+                    )
+                }
+                item {
+
+                    Text(
+                        text = "Sanitation Protocol",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(start = 16.dp, end = 16.dp)
+                            .fillMaxWidth()
+                    )
+
+                    Text(
+                        text = "Accommodations are thoroughly cleaned and sanitized between guest stays.",
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .padding(start = 16.dp, end = 16.dp)
+                            .fillMaxWidth()
+                    )
+                    Divider(
+                        color = Color(0xFFDEDEDE),
+                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                    )
+                }
+                item {
+
+                    if (hasFirstAid!!) {
+                        Text(
+                            text = "First Aid Kit",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "First aid kits are available in designated areas.",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+
+                    }
+                }
+                item {
+
+                    if (hasFireExit!!) {
+                        Text(
+                            text = "Fire Safety Instructions",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Evacuation plan are posted on designated areas. Follow marked exits in case of fire alarm.",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+
+                    }
+                }
+                item {
+
+                    if (hasFireExtinguisher!!) {
+                        Text(
+                            text = "Fire Extinguisher",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Fire extinguishers are available at designated areas. Please use only in case of a fire.",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+
+                    }
+                }
+
+                item {
+                    if(hasSecurityCamera!!) {
+                        Text(
+                            text = "Security Measures",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Security cameras are in place. Please use provided locks and security devices for safety.",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars))
+                    }
+                    else{
+                        Text(
+                            text = "Security Measures",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Please use provided locks and security devices for safety.",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars))
+                    }
+                }
+
+            }
+        }
+
+
+    }
+
+    if(openCancelAndReschedule.value){
+        ModalBottomSheet(
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White,
+            dragHandle = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = { openCancelAndReschedule.value = false },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Close"
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            },
+            onDismissRequest = { openCancelAndReschedule.value = false },
+            sheetState = bottomSheetState,
+            modifier = Modifier
+                .fillMaxHeight(0.8f) //0.693
+        ) {
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                item {
+                    Text(
+                        text = "Cancellation and Rescheduling Policy",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
+                            .fillMaxWidth()
+                    )
+                }
+
+                item {
+
+                    if (noCancel!!) {
+                        Text(
+                            text = "Cancellation Policy",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Guests can only cancel 14 days before the booked appointment for a full refund. Cancellations are not allowed for anytime shorter than 14 days",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+
+                    } else{
+                        Text(
+                            text = "Cancellation Policy",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Guests can only cancel 14 days before the booked appointment for a full refund. For cancellations 7 days before appointed date, an 80% refund will be given. Cancellations are not allowed for anything shorter than 7 days",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+                    }
+                }
+                item {
+
+                    if (noReschedule!!) {
+                        Text(
+                            text = "Rescheduling Policy",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Guests can only reschedule 14 days before the booked appointment. Rescheduling are not allowed for anytime shorter than 14 days",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+
+                    } else{
+                        Text(
+                            text = "Rescheduling Policy",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Guests can reschedule 7 days before the booked appointment. Rescheduling are not allowed for anytime shorter than 7 days",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars))
+                    }
+                }
+
+
+            }
+        }
+
+
+    }
+
+    if(openBusinessInformation.value){
+        ModalBottomSheet(
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White,
+            dragHandle = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = { openBusinessInformation.value = false },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Close"
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            },
+            onDismissRequest = { openBusinessInformation.value = false },
+            sheetState = bottomSheetState,
+            modifier = Modifier
+                .fillMaxHeight(0.8f) //0.693
+        ) {
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                item {
+                    Text(
+                        text = "Business Information",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
+                            .fillMaxWidth()
+                    )
+                }
+                item {
+
+                    Text(
+                        text = "About Us",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(start = 16.dp, end = 16.dp)
+                            .fillMaxWidth()
+                    )
+
+                    Text(
+                        text = staycationDetails!!,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .padding(start = 16.dp, end = 16.dp)
+                            .fillMaxWidth()
+                    )
+                    Divider(
+                        color = Color(0xFFDEDEDE),
+                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                    )
+                }
+                item {
+
+                        Text(
+                            text = "Contact Information",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Phone: $phoneNo",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Text(
+                            text = "Email: $email",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                        )
+                        Divider(
+                            color = Color(0xFFDEDEDE),
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                        )
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars))
+
+                }
+
+            }
+        }
+
     }
     }
+
 
 
 @Composable
