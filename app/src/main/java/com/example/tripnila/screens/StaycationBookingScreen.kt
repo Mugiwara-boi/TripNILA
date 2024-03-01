@@ -31,7 +31,6 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -293,7 +292,7 @@ fun StaycationBookingScreen(
                       //  tripnilaFee = staycation?.value?.staycationPrice?.times(0.05) ?: 625.00
                     )
                     PaymentAgreementText()
-                    Spacer(modifier = Modifier.padding(vertical = 15.dp))
+//                    Spacer(modifier = Modifier.padding(vertical = 15.dp))
                     BookingFilledButton(
                         buttonText = "Confirm and pay",
                         onClick = {
@@ -304,6 +303,7 @@ fun StaycationBookingScreen(
                             .padding(horizontal = 10.dp)
                             .fillMaxWidth()
                     )
+
                 }
 
             }
@@ -351,7 +351,7 @@ fun StaycationBookingScreen(
                 onDismissRequest = { openCalendarBottomSheet.value = false },
                 sheetState = bottomSheetState,
                 modifier = Modifier
-                    .fillMaxHeight(0.8f) //0.693
+                    .fillMaxHeight(0.85f) //0.693
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize()

@@ -89,7 +89,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import coil.compose.rememberImagePainter
 import com.example.tripnila.R
 import com.example.tripnila.common.AdditionalInformationRow
 import com.example.tripnila.common.AppOutlinedButton
@@ -2085,7 +2084,8 @@ fun BookingFilledButton(
                 text = buttonText,
                 fontSize = contentFontSize,
                 fontWeight = contentFontWeight,
-                color = contentColor
+                color = contentColor,
+
             )
         }
 
