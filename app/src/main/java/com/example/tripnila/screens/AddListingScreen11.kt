@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,8 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedCard
@@ -30,11 +27,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,7 +41,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.tripnila.common.Orange
 import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.HostTourViewModel
 import kotlinx.coroutines.launch
@@ -80,8 +74,8 @@ fun AddListingScreen11(
         "Tour" -> remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourPrice?.toInt()) }
         else -> throw IllegalStateException("Unknown")
     }
-    var noCancel by remember { mutableStateOf(false) }
-    var noResched by remember { mutableStateOf(false) }
+    var noCancel = addListingViewModel?.staycation?.collectAsState()?.value?.noCancel
+    var noResched = addListingViewModel?.staycation?.collectAsState()?.value?.noReschedule
 
     LaunchedEffect(isLoading){
         if (isLoading != null) {
@@ -211,54 +205,30 @@ fun AddListingScreen11(
                         price.value?.toDouble()?.let { value -> ProfitCard(forStaycation = listingType == "Staycation", basePrice = value) }
                     }
                     item{
-                        Row(modifier = Modifier
-                            .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "No Reschedule",
-                                color = Color(0xff333333),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Checkbox(
-                                checked = noResched,
-                                onCheckedChange = { isChecked ->
-                                    noResched = isChecked
-                                },
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = Orange
-                                ),
-                                modifier = Modifier.offset(x = 13.dp)
-
-                            )
-
-                        }
-                        Row(modifier = Modifier
-                            .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "No Cancellation",
-                                color = Color(0xff333333),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Checkbox(
-                                checked = noCancel,
-                                onCheckedChange = { isChecked ->
-                                    noCancel = isChecked
-                                },
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = Orange
-                                ),
-                                modifier = Modifier.offset(x = 13.dp)
-
-                            )
-
-                        }
+                        CheckboxRow(
+                            rowLabel = "No Cancellation",
+                            selected = noCancel!!,
+                            onSelectedChange = { isSelected ->
+                                if (isSelected) {
+                                    addListingViewModel?.setNoCancel(true)
+                                } else {
+                                    addListingViewModel?.setNoCancel(false)
+                                }
+                            }
+                        )
+                    }
+                    item{
+                        CheckboxRow(
+                            rowLabel = "No Reschedule",
+                            selected = noResched!!,
+                            onSelectedChange = { isSelected ->
+                                if (isSelected) {
+                                    addListingViewModel?.setNoReschedule(true)
+                                } else {
+                                    addListingViewModel?.setNoReschedule(false)
+                                }
+                            }
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.weight(1f))

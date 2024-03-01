@@ -420,7 +420,7 @@ class UserRepository {
                 val additionalInfo = document.getString("additionalInfo") ?: ""
                 val noCancel = document.getBoolean("noCancel") ?: false
                 val noReschedule = document.getBoolean("noCancel") ?: false
-                val phoneNo = document.getLong("phoneNo")?.toInt() ?: 0
+                val phoneNo = document.getString("phoneNo") ?: ""
                 val email = document.getString("email") ?: ""
 
                 val staycationImages = getServiceImages(staycationId, "Staycation")
@@ -1555,11 +1555,24 @@ class UserRepository {
         hasDangerousAnimal: Boolean = false,
         hasSecurityCamera: Boolean = false,
         hasWeapon: Boolean = false,
+        hasFireExit: Boolean = false,
+        hasFireExtinguisher: Boolean = false,
+        hasFirstAid: Boolean = false,
+        allowPets: Boolean = false,
+        allowSmoking: Boolean = false,
+        noReschedule: Boolean = false,
+        noCancel: Boolean = false,
+        additionalInfo: String = "",
         hostId: String = "",
         noOfBathrooms: Int = 1,
         noOfBedrooms: Int = 1,
         noOfBeds: Int = 1,
+        phoneNo: String = "",
+        email: String = "",
         noOfGuests: Int = 1,
+        maxNoOfGuests: Int = 0,
+        additionalFeePerGuest: Double = 0.0,
+        noisePolicy: Boolean = false,
         staycationDescription: String = "",
         staycationLocation: String = "",
         staycationLat: Double = 0.0,
@@ -1597,11 +1610,24 @@ class UserRepository {
                 "hasDangerousAnimal" to hasDangerousAnimal,
                 "hasSecurityCamera" to hasSecurityCamera,
                 "hasWeapon" to hasWeapon,
+                "hasFireExit" to hasFireExit,
+                "hasFireExtinguisher" to hasFireExtinguisher,
+                "hasFirstAid" to hasFirstAid,
+                "allowPets" to allowPets,
+                "allowSmoking" to allowSmoking,
+                "maxNoOfGuests" to maxNoOfGuests,
+                "additionalFeePerGuest" to additionalFeePerGuest,
+                "noisePolicy" to noisePolicy,
                 "hostId" to hostId,
+                "noReschedule" to noReschedule,
+                "noCancel" to noCancel,
+                "additionalInfo" to additionalInfo,
                 "noOfBathrooms" to noOfBathrooms,
                 "noOfBedrooms" to noOfBedrooms,
                 "noOfBeds" to noOfBeds,
                 "noOfGuests" to noOfGuests,
+                "phoneNo" to phoneNo,
+                "email" to email,
                 "staycationDescription" to staycationDescription,
                 "staycationLocation" to staycationLocation,
                 "staycationLat" to staycationLat,
@@ -2745,7 +2771,7 @@ class UserRepository {
                 val additionalInfo = staycationDocument.getString("additionalInfo") ?: ""
                 val noCancel = staycationDocument.getBoolean("noCancel") ?: false
                 val noReschedule = staycationDocument.getBoolean("noCancel") ?: false
-                val phoneNo = staycationDocument.getLong("phoneNo")?.toInt() ?: 0
+                val phoneNo = staycationDocument.getString("phoneNo") ?: ""
                 val email = staycationDocument.getString("email") ?: ""
 
                 // Fetch Staycation images
@@ -4544,7 +4570,7 @@ class UserRepository {
         val additionalInfo = document.getString("additionalInfo") ?: ""
         val noCancel = document.getBoolean("noCancel") ?: false
         val noReschedule = document.getBoolean("noCancel") ?: false
-        val phoneNo = document.getLong("phoneNo")?.toInt() ?: 0
+        val phoneNo = document.getString("phoneNo") ?: ""
         val email = document.getString("email") ?: ""
 
         val touristInfo = getHostInfo(hostId)
@@ -4668,7 +4694,7 @@ class UserRepository {
                 val additionalInfo = document.getString("additionalInfo") ?: ""
                 val noCancel = document.getBoolean("noCancel") ?: false
                 val noReschedule = document.getBoolean("noCancel") ?: false
-                val phoneNo = document.getLong("phoneNo")?.toInt() ?: 0
+                val phoneNo = document.getString("phoneNo") ?: ""
                 val email = document.getString("email") ?: ""
 
                 val touristInfo = getHostInfo(hostId)

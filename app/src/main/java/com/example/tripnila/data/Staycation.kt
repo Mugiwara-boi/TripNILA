@@ -52,7 +52,7 @@ data class Staycation(
     val noCancel: Boolean = false,
     val noReschedule: Boolean = false,
 
-    val phoneNo: Int = 0,
+    val phoneNo: String = "",
     val email: String = "",
 ) {
     val totalReviews: Int

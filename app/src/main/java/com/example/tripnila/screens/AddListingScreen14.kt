@@ -64,8 +64,14 @@ fun AddListingScreen14(
     val hasSecurityCamera = addListingViewModel?.staycation?.collectAsState()?.value?.hasSecurityCamera
     val hasWeapon = addListingViewModel?.staycation?.collectAsState()?.value?.hasWeapon
     val hasDangerousAnimal = addListingViewModel?.staycation?.collectAsState()?.value?.hasDangerousAnimal
-    val staycationAdditionalInformation = remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationDescription) }
+    val staycationAdditionalInformation = remember { mutableStateOf(addListingViewModel?.staycation?.value?.additionalInfo) }
     val staycation = addListingViewModel?.staycation?.collectAsState()?.value
+    val hasFirstAid = addListingViewModel?.staycation?.collectAsState()?.value?.hasFirstAid
+    val hasFireExit = addListingViewModel?.staycation?.collectAsState()?.value?.hasFireExit
+    val hasFireExtinguisher = addListingViewModel?.staycation?.collectAsState()?.value?.hasFireExtinguisher
+    val allowPets = addListingViewModel?.staycation?.collectAsState()?.value?.allowPets
+    val allowSmoking = addListingViewModel?.staycation?.collectAsState()?.value?.allowSmoking
+    val noisePolicy = addListingViewModel?.staycation?.collectAsState()?.value?.noisePolicy
 
     val alreadySubmitted = addListingViewModel?.isSuccessAddListing?.collectAsState()?.value
 
@@ -164,9 +170,9 @@ fun AddListingScreen14(
                                 selected = hasSecurityCamera,
                                 onSelectedChange = { isSelected ->
                                     if (isSelected) {
-                                        addListingViewModel.setHasSecurityCamera(true)
+                                        addListingViewModel?.setHasSecurityCamera(true)
                                     } else {
-                                        addListingViewModel.setHasSecurityCamera(false)
+                                        addListingViewModel?.setHasSecurityCamera(false)
                                     }
                                 }
                             )
@@ -179,9 +185,9 @@ fun AddListingScreen14(
                                 selected = hasWeapon,
                                 onSelectedChange = { isSelected ->
                                     if (isSelected) {
-                                        addListingViewModel.setHasWeapon(true)
+                                        addListingViewModel?.setHasWeapon(true)
                                     } else {
-                                        addListingViewModel.setHasWeapon(false)
+                                        addListingViewModel?.setHasWeapon(false)
                                     }
                                 }
                             )
@@ -194,54 +200,54 @@ fun AddListingScreen14(
                                 selected = hasDangerousAnimal,
                                 onSelectedChange = { isSelected ->
                                     if (isSelected) {
-                                        addListingViewModel.setHasDangerousAnimal(true)
+                                        addListingViewModel?.setHasDangerousAnimal(true)
                                     } else {
-                                        addListingViewModel.setHasDangerousAnimal(false)
+                                        addListingViewModel?.setHasDangerousAnimal(false)
                                     }
                                 }
                             )
                         }
                     }
                     item {
-                        if (hasDangerousAnimal != null) {
+                        if (hasFireExit != null) {
                             CheckboxRow(
                                 rowLabel = "Fire exit plan",
-                                selected = hasDangerousAnimal,
+                                selected = hasFireExit,
                                 onSelectedChange = { isSelected ->
                                     if (isSelected) {
-                                        addListingViewModel.setHasDangerousAnimal(true)
+                                        addListingViewModel?.sethasFireExit(true)
                                     } else {
-                                        addListingViewModel.setHasDangerousAnimal(false)
+                                        addListingViewModel?.sethasFireExit(false)
                                     }
                                 }
                             )
                         }
                     }
                     item {
-                        if (hasDangerousAnimal != null) {
+                        if (hasFireExtinguisher != null) {
                             CheckboxRow(
                                 rowLabel = "Fire extinguisher",
-                                selected = hasDangerousAnimal,
+                                selected = hasFireExtinguisher,
                                 onSelectedChange = { isSelected ->
                                     if (isSelected) {
-                                        addListingViewModel.setHasDangerousAnimal(true)
+                                        addListingViewModel?.sethasFireExtinguisher(true)
                                     } else {
-                                        addListingViewModel.setHasDangerousAnimal(false)
+                                        addListingViewModel?.sethasFireExtinguisher(false)
                                     }
                                 }
                             )
                         }
                     }
                     item {
-                        if (hasDangerousAnimal != null) {
+                        if (hasFirstAid != null) {
                             CheckboxRow(
                                 rowLabel = "First aid kit",
-                                selected = hasDangerousAnimal,
+                                selected = hasFirstAid,
                                 onSelectedChange = { isSelected ->
                                     if (isSelected) {
-                                        addListingViewModel.setHasDangerousAnimal(true)
+                                        addListingViewModel?.sethasFirstAidKit(true)
                                     } else {
-                                        addListingViewModel.setHasDangerousAnimal(false)
+                                        addListingViewModel?.sethasFirstAidKit(false)
                                     }
                                 }
                             )
@@ -255,30 +261,45 @@ fun AddListingScreen14(
                         )
                     }
                     item {
-                        if (hasDangerousAnimal != null) {
+                        if (allowSmoking != null) {
                             CheckboxRow(
                                 rowLabel = "Smoking",
-                                selected = hasDangerousAnimal,
+                                selected = allowSmoking,
                                 onSelectedChange = { isSelected ->
                                     if (isSelected) {
-                                        addListingViewModel.setHasDangerousAnimal(true)
+                                        addListingViewModel?.setAllowSmoking(true)
                                     } else {
-                                        addListingViewModel.setHasDangerousAnimal(false)
+                                        addListingViewModel?.setAllowSmoking(false)
                                     }
                                 }
                             )
                         }
                     }
                     item {
-                        if (hasDangerousAnimal != null) {
+                        if (allowPets != null) {
                             CheckboxRow(
                                 rowLabel = "Pets",
-                                selected = hasDangerousAnimal,
+                                selected = allowPets,
                                 onSelectedChange = { isSelected ->
                                     if (isSelected) {
-                                        addListingViewModel.setHasDangerousAnimal(true)
+                                        addListingViewModel?.setAllowPets(true)
                                     } else {
-                                        addListingViewModel.setHasDangerousAnimal(false)
+                                        addListingViewModel?.setAllowPets(false)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    item {
+                        if (noisePolicy != null) {
+                            CheckboxRow(
+                                rowLabel = "Late night noise",
+                                selected = noisePolicy,
+                                onSelectedChange = { isSelected ->
+                                    if (isSelected) {
+                                        addListingViewModel?.setNoisePolicy(true)
+                                    } else {
+                                        addListingViewModel?.setNoisePolicy(false)
                                     }
                                 }
                             )
@@ -296,7 +317,7 @@ fun AddListingScreen14(
                             inputText = staycationAdditionalInformation,
                             maxCharacterLimit = 500,
                             onTextChanged = { newText ->
-//                                addListingViewModel?.setStaycationDescription(newText)
+                                addListingViewModel?.setStaycationAdditionalInfo(newText)
                             }
                         )
                     }

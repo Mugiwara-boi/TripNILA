@@ -56,8 +56,8 @@ fun AddListingScreen9(
 
     var staycationTitle = remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationTitle) }
     var staycationDescription = remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationDescription) }
-    var mutableContact = remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationDescription) }
-    var mutableEmail = remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationDescription) }
+    var mutableContact = remember { mutableStateOf(addListingViewModel?.staycation?.value?.phoneNo) }
+    var mutableEmail = remember { mutableStateOf(addListingViewModel?.staycation?.value?.email) }
     val localFocusManager = LocalFocusManager.current
 
     Surface(
@@ -161,7 +161,7 @@ fun AddListingScreen9(
                                 BasicTextFieldWithLeadingIcon(
                                     inputText = contact,
                                     onTextChange = { newText ->
-//                                        addBusinessViewModel?.setContact(newText)
+                                            addListingViewModel?.setStaycationPhone(newText)
                                     },
                                     icon = R.drawable.telephone,
                                     placeholder = "09********",
@@ -169,7 +169,7 @@ fun AddListingScreen9(
                                         imeAction = ImeAction.Next
                                     ),
                                     keyboardActions = KeyboardActions {
-//                                        localFocusManager.moveFocus(FocusDirection.Down)
+                                        localFocusManager.moveFocus(FocusDirection.Down)
                                     },
                                 )
                             }
@@ -177,7 +177,7 @@ fun AddListingScreen9(
                             BasicTextFieldWithLeadingIcon(
                                 inputText = mutableEmail,
                                 onTextChange = { newText ->
-//                                    addBusinessViewModel?.setEmail(newText)
+                                    addListingViewModel?.setStaycationEmail(newText)
                                 },
                                 icon = R.drawable.email,
                                 placeholder = "abc@lbgrill.com",

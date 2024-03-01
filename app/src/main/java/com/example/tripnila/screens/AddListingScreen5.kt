@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -63,10 +65,14 @@ fun AddListingScreen5(
     var bedroomCount by remember { mutableStateOf(addListingViewModel?.staycation?.value?.noOfBedrooms) }
     var bedCount by remember { mutableStateOf(addListingViewModel?.staycation?.value?.noOfBeds) }
     var bathroomCount by remember { mutableStateOf(addListingViewModel?.staycation?.value?.noOfBathrooms) }
+    var maxGuest by remember { mutableStateOf(addListingViewModel?.staycation?.value?.maxNoOfGuests) }
+    var addFeePerGuest = remember { mutableStateOf(addListingViewModel?.staycation?.value?.additionalFeePerGuest?.toInt()) }
     var allowAddGuest by remember { mutableStateOf(false) }
+
     val formatter = NumberFormat.getNumberInstance(Locale.US)
     val fee = 0
     var isFocused by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -160,72 +166,98 @@ fun AddListingScreen5(
                     Divider(color = Color(0xFF999999))
 
                     if(allowAddGuest){
-                        DetailsCounter(
+                        MaxCounter(
                             label = "Max Guests",
-                            textCounter = bedroomCount ?: 0,
+                            minCounter = guestCount!!,
+                            textCounter = maxGuest ?: 0,
                             onAdd = {
-                                bedroomCount = bedroomCount!! + 1
-                                addListingViewModel?.setNoOfBedrooms(bedroomCount!!)
+                                maxGuest = maxGuest!! + 1
+                                if(maxGuest!! > guestCount!!){
+                                    addListingViewModel?.setStaycationMaxGuest(maxGuest!!)
+                                }
+                                else{
+                                    Toast.makeText(
+                                        context,
+                                        "Maximum guest should be higher than guest count",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+
                             },
                             onSubtract = {
-                                if (bedroomCount!! > 0) {
-                                    bedroomCount = bedroomCount!! - 1
-                                    addListingViewModel?.setNoOfBedrooms(bedroomCount!!)
+                                if (maxGuest!! > 0) {
+                                    maxGuest = maxGuest!! - 1
+                                    if(maxGuest!! > guestCount!!){
+                                        addListingViewModel?.setStaycationMaxGuest(maxGuest!!)
+                                    }
+                                    else{
+                                        Toast.makeText(
+                                            context,
+                                            "Maximum guest should be higher than guest count",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 }
                             }
                         )
-                        Row(modifier = Modifier
-                            .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Additional fee per guest",
-                                color = Color(0xff333333),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            BasicTextField(
+                        if (maxGuest!! > guestCount!!){
+                            Row(modifier = Modifier
+                                .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Additional fee per guest",
+                                    color = Color(0xff333333),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(top = 10.dp, bottom = 5.dp)
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                BasicTextField(
 
-                                value = formatter.format(fee),
-                                onValueChange = {
-                                    /*entranceFee.value = it.replace(",", "").toIntOrNull() ?: 0
+                                    value = formatter.format(addFeePerGuest.value),
+                                    onValueChange = {
+                                        addFeePerGuest.value = it.replace(",", "").toIntOrNull() ?: 0
 
-                                    addBusinessViewModel?.setEntranceFee(entranceFee?.value!!.toDouble())*/
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                textStyle = TextStyle(fontSize = 18.sp),
-                                singleLine = true,
-                                decorationBox = { innerTextField ->
-                                    Row(
-                                        modifier = Modifier
-                                            .background(
-                                                color = Color.White,
-                                                shape = RoundedCornerShape(size = 10.dp)
+                                        addListingViewModel?.setStaycationAdditionalFeePerGuest(addFeePerGuest?.value!!.toDouble())
+                                    },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    textStyle = TextStyle(fontSize = 18.sp),
+                                    singleLine = true,
+                                    decorationBox = { innerTextField ->
+                                        Row(
+                                            modifier = Modifier
+                                                .background(
+                                                    color = Color.White,
+                                                    shape = RoundedCornerShape(size = 10.dp)
+                                                )
+                                                .border(
+                                                    width = 2.dp,
+                                                    color = if (isFocused) Orange else Color(
+                                                        0xFFC2C2C2
+                                                    ),
+                                                    shape = RoundedCornerShape(size = 10.dp)
+                                                )
+                                                .padding(all = 8.dp), // inner padding
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "₱ ",
+                                                fontWeight = FontWeight.Medium,
                                             )
-                                            .border(
-                                                width = 2.dp,
-                                                color = if (isFocused) Orange else Color(
-                                                    0xFFC2C2C2
-                                                ),
-                                                shape = RoundedCornerShape(size = 10.dp)
-                                            )
-                                            .padding(all = 8.dp), // inner padding
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "₱ ",
-                                            fontWeight = FontWeight.Medium,
-                                        )
 
-                                        innerTextField()
+                                            innerTextField()
+                                        }
                                     }
-                                }
-                            )
+                                )
 
+                            }
+                            Divider(color = Color(0xFF999999))
                         }
-                        Divider(color = Color(0xFF999999))
 
+
+                    } else{
+                        addListingViewModel?.setStaycationMaxGuest(0)
+                        addListingViewModel?.setStaycationAdditionalFeePerGuest(0.0)
                     }
                     DetailsCounter(
                         label = "Bedrooms",
@@ -361,6 +393,69 @@ fun DetailsCounter(
             // if (count < maxCount) {
                 onAdd()
             // }
+            },
+            modifier = Modifier.size(17.dp)
+        ) {
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.add_circle),
+                contentDescription = "Add",
+                tint = Color(0xFF999999)
+            )
+        }
+    }
+    Divider(color = Color(0xFF999999))
+}
+
+@Composable
+fun MaxCounter(
+    label: String,
+    modifier: Modifier = Modifier,
+    minCounter: Int,
+    textCounter: Int,
+    onAdd:() -> Unit,
+    onSubtract:() -> Unit,
+) {
+    // var count by remember { mutableStateOf(0) }
+
+    Row(
+        modifier = modifier
+            .background(Color.White)
+            .fillMaxWidth()
+            .padding(top = 5.dp, bottom = 20.dp)
+
+    ) {
+        Text(
+            text = label,
+            color = Color(0xff333333),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        IconButton(
+            onClick = {
+                onSubtract()
+            },
+            enabled = textCounter > minCounter,
+            modifier = Modifier.size(17.dp)
+        ) {
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.subtract_circle),
+                contentDescription = "Subtract",
+                tint = if (textCounter > minCounter) Color(0xFF999999) else Color(0xFFDEDEDE)
+            )
+        }
+        Text(
+            text = textCounter.toString(),
+            color = Color(0xff333333),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 15.dp)
+        )
+        IconButton(
+            onClick = {
+                // if (count < maxCount) {
+                onAdd()
+                // }
             },
             modifier = Modifier.size(17.dp)
         ) {
