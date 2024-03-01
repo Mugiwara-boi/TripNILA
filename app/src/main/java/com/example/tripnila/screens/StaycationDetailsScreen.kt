@@ -280,6 +280,7 @@ fun StaycationDetailsScreen(
                                 openBottomSheet.value = true
                             },
                             onClickChatHost = {
+                                Log.d("Other User", staycation.value!!.host.touristId)
                                 onNavToChat(touristId, staycation.value!!.host.touristId)
                             },
                             onClickBook = {

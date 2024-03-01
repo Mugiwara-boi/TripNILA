@@ -122,7 +122,7 @@ fun LoadingScreen(
 ) {
     Box(
         modifier = Modifier
-            .background(color = Color.LightGray)
+            .background(color = Color.LightGray.copy(.2f))
             .fillMaxSize()
             .shimmerLoadingAnimation(isLoadingCompleted, isLightModeActive)
     )

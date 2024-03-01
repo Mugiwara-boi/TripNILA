@@ -479,9 +479,6 @@ fun YourTourDivider(
     val formattedDate = if (selectedDate != null) "${selectedDate.localDate.format(formatter)} ${selectedDate.startingTime} - ${selectedDate.endingTime}" else "Select date*"
     val formattedGuest = if (personCount > 0) "$personCount guest" else "Select guests*"
 
-
-
-
     Column(
         modifier = modifier
             .fillMaxWidth()

@@ -325,7 +325,7 @@ fun WithdrawChoosePaymentMethodCard(
 
     var selectedPaymentMethod by remember { mutableIntStateOf(-1) }
 
-    var paymentMethods = listOf(
+    val paymentMethods = listOf(
         PaymentMethod(R.drawable.paypal),
         PaymentMethod(R.drawable.gcash),
         PaymentMethod(R.drawable.paymaya)

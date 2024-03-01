@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.util.Log
 import android.view.MotionEvent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -7,7 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +25,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -44,6 +47,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -52,6 +59,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -65,7 +73,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
@@ -78,14 +85,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
 import com.example.tripnila.R
 import com.example.tripnila.common.AppConfirmAndPayDivider
 import com.example.tripnila.common.AppDropDownFilter
@@ -95,8 +101,10 @@ import com.example.tripnila.common.Tag
 import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.BookingHistory
 import com.example.tripnila.data.StaycationBooking
+import com.example.tripnila.data.TourBooking
 import com.example.tripnila.model.BookingHistoryViewModel
 import com.example.tripnila.model.TouristWalletViewModel
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -104,34 +112,60 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BookingHistoryScreen(
     touristId: String = "",
     touristWalletViewModel: TouristWalletViewModel,
-    bookingHistoryViewModel: BookingHistoryViewModel? = null,
+    bookingHistoryViewModel: BookingHistoryViewModel,
     navController: NavHostController? = null,
     onNavToChat: (String, String) -> Unit,
     onBack: () -> Unit,
 ){
 
-    var selectedItemIndex by rememberSaveable { mutableStateOf(3) }
+    var selectedItemIndex by rememberSaveable { mutableIntStateOf(3) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     // val staycationBookingList = bookingHistoryViewModel?.staycationBookingList?.collectAsState()?.value
-    val addReviewResult = bookingHistoryViewModel?.addReviewResult?.collectAsState()?.value
-    val isCancelBookingSuccessful = bookingHistoryViewModel?.isSuccessCancelBooking?.collectAsState()?.value
-    val staycationBookingFlow = remember { bookingHistoryViewModel!!.getStaycationBookingsForTourist(touristId) }
-    val staycationBookingItems = staycationBookingFlow.collectAsLazyPagingItems()
+    val addReviewResult = bookingHistoryViewModel.addReviewResult.collectAsState().value
+    val isCancelBookingSuccessful = bookingHistoryViewModel.isSuccessCancelBooking.collectAsState().value
+    val selectedTab by bookingHistoryViewModel.selectedTab.collectAsState()
+    val logCheckOutDatesResult by bookingHistoryViewModel.logCheckOutDatesResult.collectAsState()
+
+
+
+    val staycationBookingFlow = remember { bookingHistoryViewModel.getStaycationBookingsForTourist(touristId) }
+    val staycationBookingItems = if (logCheckOutDatesResult != "") staycationBookingFlow.collectAsLazyPagingItems() else null
+
+    val tourBookingFlow = remember { bookingHistoryViewModel.getTourBookingsForTourist(touristId) }
+    val tourBookingItems = if (logCheckOutDatesResult != "") tourBookingFlow.collectAsLazyPagingItems() else null
+
+    val tabs = listOf("Staycation", "Tour")
+
+   // var tempCounter by remember { mutableIntStateOf(0) }
+
+    val pagerState = rememberPagerState(
+        initialPage = tabs.indexOf(selectedTab),
+        initialPageOffsetFraction = 0f
+    ) {
+        tabs.size
+    }
 
     LaunchedEffect(touristId) {
-        bookingHistoryViewModel?.updateStaycationBookingsStatus()
+        bookingHistoryViewModel.updateStaycationBookingsStatus(touristId)
+
+        val currentTimestamp = Timestamp.now()
+        val milliseconds = currentTimestamp.seconds * 1000
+        Log.d("Current Timestamp", "$milliseconds")
     }
 
     LaunchedEffect(addReviewResult) {
@@ -144,7 +178,8 @@ fun BookingHistoryScreen(
     LaunchedEffect(isCancelBookingSuccessful) {
         if (isCancelBookingSuccessful != null) {
             if (isCancelBookingSuccessful == true) {
-                staycationBookingItems.refresh()
+                staycationBookingItems?.refresh()
+                tourBookingItems?.refresh()
                 delay(300)
                 snackbarHostState.showSnackbar("Booking Cancelled")
 
@@ -155,9 +190,17 @@ fun BookingHistoryScreen(
             bookingHistoryViewModel.clearSuccessCancelBooking()
         }
     }
-
-
-
+//
+//    LaunchedEffect(tempCounter) {
+//        if (tempCounter > 0) {
+//            // TEST REFRESH
+//            staycationBookingItems.refresh()
+//            tourBookingItems.refresh()
+//
+//            Log.d("tempCounter", tempCounter.toString())
+//            //------------------
+//        }
+//    }
 
 
     Surface(
@@ -191,94 +234,331 @@ fun BookingHistoryScreen(
             },
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         ) {
-            LazyColumn(
+
+            Column(
                 modifier = Modifier
-                    .fillMaxSize()
                     .padding(it)
+                    .fillMaxSize()
             ) {
-                if (staycationBookingItems.loadState.refresh == LoadState.Loading) {
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            CircularProgressIndicator(
+                TabRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = Color.White,
+                    selectedTabIndex = tabs.indexOf(selectedTab),
+               //     edgePadding = 3.dp,
+                    indicator = { tabPositions ->
+                        TabRowDefaults.Indicator(
+                            color = Orange,
+                            modifier = Modifier.tabIndicatorOffset(
+                                tabPositions[tabs.indexOf(
+                                    selectedTab
+                                )]
                             )
-                        }
-                    }
-                }
-                items(staycationBookingItems) { staycationBooking ->
-                    staycationBooking?.let {
-                        val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
-                        dateFormat.timeZone = TimeZone.getTimeZone("Asia/Manila") // Set the timezone to Manila
-
-                        val manilaZoneId = ZoneId.of("Asia/Manila")
-
-                        val formattedBookedDates = formatDateRange(
-                            staycationBooking.checkInDate!!.toInstant()
-                                .atZone(manilaZoneId)
-                                .toLocalDate(),
-                            staycationBooking.checkOutDate!!.toInstant()
-                                .atZone(manilaZoneId)
-                                .toLocalDate()
                         )
-
-
-                        val bookingHistory = BookingHistory(
-                            bookingId = staycationBooking.staycationBookingId,
-                         //   ownerImage = staycationBooking.staycation?.hostImage
-                            ownerImage = staycationBooking.staycation?.host?.profilePicture
-                                ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
-                            bookedRental = staycationBooking.staycation?.staycationTitle ?: "",
-                            date = dateFormat.format(staycationBooking.bookingDate ?: Date()),
-                            rentalImage = "https://www.unfe.org/wp-content/uploads/2019/04/SM-placeholder.png",
-                            rentalLocation = staycationBooking.staycation?.staycationLocation ?: "",
-                            bookedDates = formattedBookedDates,
-                            guestsNo = staycationBooking.noOfGuests,
-                            totalAmount = staycationBooking.totalAmount,
-                            rentalStatus = staycationBooking.bookingStatus,
-                            isReviewed = staycationBooking.bookingReview != null,
-                            bookingDuration = staycationBooking.getDaysDifference().toInt(),
-                            staycationPrice = staycationBooking.staycation?.staycationPrice ?: 0.0,
-                            checkInDate = staycationBooking.checkInDate,
-                            checkOutDate = staycationBooking.checkOutDate,
-                            noOfPets = staycationBooking.noOfPets,
-                            noOfInfants = staycationBooking.noOfInfants,
-                            noOfGuests = staycationBooking.noOfGuests,
-                            hostTouristId = staycationBooking.staycation?.host?.touristId ?: "",
-                            staycationId = staycationBooking.staycation?.staycationId ?: ""
-                        )
-
-                        bookingHistoryViewModel?.let { bookingHistoryViewModel ->
-                            BookingHistoryCard(
-                                touristId = touristId,
-                                bookingHistoryViewModel = bookingHistoryViewModel,
-                                touristWalletViewModel = touristWalletViewModel,
-                                bookingHistory = bookingHistory,
-                                coroutineScope = coroutineScope,
-                                modifier = Modifier.padding(top = 15.dp),
-                                staycationBookingItems = staycationBookingItems,
-                                onChatHost = { receiverId ->
-                                    onNavToChat(touristId, receiverId)
+                    },
+                    divider = { Divider(color = Color.Transparent) }
+                ) {
+                    tabs.forEach { tabName ->
+                        val isSelected = selectedTab == tabName
+                        Tab(
+                            selected = isSelected,
+                            onClick = {
+                                bookingHistoryViewModel.selectTab(tabName)
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(tabs.indexOf(tabName))
                                 }
+
+                            },
+                            modifier = Modifier.padding(horizontal = 5.dp)
+                        ) {
+                            Text(
+                                text = tabName,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = if (isSelected) Orange else Color.Gray,
+                                modifier = Modifier.padding(
+                                    top = 12.dp,
+                                    bottom = 5.dp,
+                                    start = 7.dp,
+                                    end = 7.dp
+                                ),
                             )
                         }
                     }
-
                 }
-                if (staycationBookingItems.loadState.append == LoadState.Loading) {
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            CircularProgressIndicator(
-                            )
+
+                HorizontalPager(
+                    state = pagerState,
+                    userScrollEnabled = false,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    when (selectedTab) {
+                        "Staycation" -> {
+                            if (staycationBookingItems != null) {
+                                StaycationPage(
+                                    staycationBookingItems = staycationBookingItems,
+                                    touristId = touristId,
+                                    bookingHistoryViewModel = bookingHistoryViewModel,
+                                    touristWalletViewModel = touristWalletViewModel,
+                                    coroutineScope = coroutineScope,
+                                    onNavToChat = { receiverId ->
+                                        onNavToChat(touristId, receiverId)
+                                    },
+                        //                                onTryTempCounter = {
+                        //                                    tempCounter += 1
+                        //                                }
+                                )
+                            }
                         }
+                        "Tour" -> {
+                            if (tourBookingItems != null) {
+                                TourPage(
+                                    tourBookingItems = tourBookingItems,
+                                    touristId = touristId,
+                                    bookingHistoryViewModel = bookingHistoryViewModel,
+                                    touristWalletViewModel = touristWalletViewModel,
+                                    coroutineScope = coroutineScope,
+                                    onNavToChat = { receiverId ->
+                                        onNavToChat(touristId, receiverId)
+                                    },
+                        //                                onTryTempCounter = {
+                        //                                    tempCounter += 1
+                        //                                }
+                                )
+                            }
+                        }
+
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun TourPage(
+    tourBookingItems: LazyPagingItems<TourBooking>,
+    touristId: String,
+    bookingHistoryViewModel: BookingHistoryViewModel,
+    touristWalletViewModel: TouristWalletViewModel,
+    coroutineScope: CoroutineScope,
+
+   // onTryTempCounter: () -> Unit,
+
+    onNavToChat: (String) -> Unit
+) {
+
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        LazyColumn (
+            modifier = Modifier.fillMaxSize()
+        ) {
+
+            if (tourBookingItems.loadState.refresh == LoadState.Loading) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = Orange,
+                            modifier = Modifier
+                                .size(50.dp)
+                                .padding(16.dp)
+                        )
+                    }
+                }
+            }
+
+            items(tourBookingItems) { tourBooking ->
+                tourBooking?.let {
+
+                    val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
+
+                    val formatter = DateTimeFormatter.ofPattern("d MMM, EEEE", Locale.ENGLISH)
+                    val parsedTourDate = LocalDate.parse(tourBooking.tourDate)
+                    val formattedDate = parsedTourDate.format(formatter)
+
+
+                    val bookingHistory = BookingHistory(
+                        bookingId = tourBooking.tourBookingId,
+                        //   ownerImage = staycationBooking.staycation?.hostImage
+                        ownerImage = tourBooking.tour.host.profilePicture
+                            ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
+                        bookedRental = tourBooking.tour.tourTitle,
+                        date = dateFormat.format(tourBooking.bookingDate),
+                        rentalImage = tourBooking.tour.tourImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://www.unfe.org/wp-content/uploads/2019/04/SM-placeholder.png",//,
+                        rentalLocation = tourBooking.tour.tourLocation,
+                        bookedDates = formattedDate,
+                        guestsNo = tourBooking.noOfGuests,
+                        totalAmount = tourBooking.totalAmount,
+                        rentalStatus = tourBooking.bookingStatus,
+                        isReviewed = tourBooking.bookingReview != null,
+                        bookingDuration = tourBooking.noOfGuests,
+                        basePrice = tourBooking.tour.tourPrice,
+                        checkInDate = Date(0),
+                        checkOutDate = Date(0),
+                        startTime = tourBooking.startTime,
+                        endTime = tourBooking.endTime,
+                        noOfPets = 0,
+                        noOfInfants = 0,
+                        noOfGuests = tourBooking.noOfGuests,
+                        hostTouristId = tourBooking.tour.host.touristId,
+                        staycationId = "",
+                        tourId = tourBooking.tour.tourId,
+                        tourAvailabilityId = tourBooking.tourAvailabilityId,
+                        tourDate = tourBooking.tourDate
+                    )
+
+                    BookingHistoryCard(
+                        touristId = touristId,
+                        bookingHistoryViewModel = bookingHistoryViewModel,
+                        touristWalletViewModel = touristWalletViewModel,
+                        bookingHistory = bookingHistory,
+                        coroutineScope = coroutineScope,
+                        modifier = Modifier.padding(top = 15.dp),
+                        tourBookingItems = tourBookingItems,
+                        onChatHost = { receiverId ->
+                            onNavToChat(receiverId)
+                        },
+//                        onTryTempCounter = {
+//
+//                        }
+                    )
+                }
+
+            }
+
+        }
+//        if (tourBookingItems.loadState.refresh is LoadState.Loading) {
+//            CircularProgressIndicator(
+//                color = Orange,
+//                modifier = Modifier
+//                    .size(50.dp)
+//                    .padding(16.dp)
+//                    .align(Alignment.CenterHorizontally)
+//            )
+//        }
+    }
+}
+
+
+
+@Composable
+fun StaycationPage(
+    staycationBookingItems: LazyPagingItems<StaycationBooking>,
+    touristId: String,
+    bookingHistoryViewModel: BookingHistoryViewModel,
+    touristWalletViewModel: TouristWalletViewModel,
+    coroutineScope: CoroutineScope,
+
+  //  onTryTempCounter: () -> Unit,
+
+
+    onNavToChat: (String) -> Unit
+) {
+
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
+
+            if (staycationBookingItems.loadState.refresh == LoadState.Loading) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = Orange,
+                            modifier = Modifier
+                                .size(50.dp)
+                                .padding(16.dp)
+                        )
+                    }
+                }
+            }
+
+            items(staycationBookingItems) { staycationBooking ->
+                staycationBooking?.let {
+                    val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
+                    dateFormat.timeZone = TimeZone.getTimeZone("Asia/Manila") // Set the timezone to Manila
+
+                    val manilaZoneId = ZoneId.of("Asia/Manila")
+
+                    val formattedBookedDates = formatDateRange(
+                        staycationBooking.checkInDate!!.toInstant()
+                            .atZone(manilaZoneId)
+                            .toLocalDate(),
+                        staycationBooking.checkOutDate!!.toInstant()
+                            .atZone(manilaZoneId)
+                            .toLocalDate()
+                    )
+
+
+                    val bookingHistory = BookingHistory(
+                        bookingId = staycationBooking.staycationBookingId,
+                        //   ownerImage = staycationBooking.staycation?.hostImage
+                        ownerImage = staycationBooking.staycation?.host?.profilePicture
+                            ?: "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
+                        bookedRental = staycationBooking.staycation?.staycationTitle ?: "",
+                        date = dateFormat.format(staycationBooking.bookingDate ?: Date()),
+                        rentalImage = staycationBooking.staycation?.staycationImages?.find { it.photoType == "Cover" }?.photoUrl ?: "https://www.unfe.org/wp-content/uploads/2019/04/SM-placeholder.png",//,
+                        rentalLocation = staycationBooking.staycation?.staycationLocation ?: "",
+                        bookedDates = formattedBookedDates,
+                        guestsNo = staycationBooking.noOfGuests,
+                        totalAmount = staycationBooking.totalAmount,
+                        rentalStatus = staycationBooking.bookingStatus,
+                        isReviewed = staycationBooking.bookingReview != null,
+                        bookingDuration = staycationBooking.getDaysDifference().toInt(),
+                        basePrice = staycationBooking.staycation?.staycationPrice ?: 0.0,
+                        checkInDate = staycationBooking.checkInDate,
+                        checkOutDate = staycationBooking.checkOutDate,
+                        noOfPets = staycationBooking.noOfPets,
+                        noOfInfants = staycationBooking.noOfInfants,
+                        noOfGuests = staycationBooking.noOfGuests,
+                        hostTouristId = staycationBooking.staycation?.host?.touristId ?: "",
+                        staycationId = staycationBooking.staycation?.staycationId ?: "",
+                        tourId = "",
+                        tourAvailabilityId = "",
+                        tourDate = "",
+                        startTime = "",
+                        endTime = ""
+
+
+                    )
+
+                    BookingHistoryCard(
+                        touristId = touristId,
+                        bookingHistoryViewModel = bookingHistoryViewModel,
+                        touristWalletViewModel = touristWalletViewModel,
+                        bookingHistory = bookingHistory,
+                        coroutineScope = coroutineScope,
+                        modifier = Modifier.padding(top = 15.dp),
+                        staycationBookingItems = staycationBookingItems,
+                        onChatHost = { receiverId ->
+                            onNavToChat(receiverId)
+                        },
+//                        onTryTempCounter = {
+//                            onTryTempCounter()
+//                        }
+                    )
+                }
+
+            }
+
+        }
+//        if (staycationBookingItems.loadState.refresh is LoadState.Loading) {
+//            CircularProgressIndicator(
+//                color = Orange,
+//                modifier = Modifier
+//                    .size(50.dp)
+//                    .padding(16.dp)
+//                    .align(Alignment.CenterHorizontally)
+//            )
+//        }
     }
 }
 
@@ -304,20 +584,24 @@ private fun formatDateRange(startDate: LocalDate, endDate: LocalDate): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingHistoryCard(
+    modifier: Modifier = Modifier,
     touristId: String,
     bookingHistoryViewModel: BookingHistoryViewModel,
     touristWalletViewModel: TouristWalletViewModel,
     bookingHistory: BookingHistory,
     coroutineScope: CoroutineScope,
     onChatHost: (String) -> Unit,
-    staycationBookingItems: LazyPagingItems<StaycationBooking>,
-    modifier: Modifier = Modifier
+
+   // onTryTempCounter: () -> Unit,
+
+    staycationBookingItems: LazyPagingItems<StaycationBooking>? = null,
+    tourBookingItems: LazyPagingItems<TourBooking>? = null,
 ){
     val isSuccessAddingReview = bookingHistoryViewModel.isSuccessAddReview.collectAsState().value
     val isCancelBookingSuccessful = bookingHistoryViewModel.isSuccessCancelBooking.collectAsState().value
 
     var openReviewCard by remember { mutableStateOf(false) }
-    var openAlertDialog = remember{ mutableStateOf(false)}
+    val openAlertDialog = remember{ mutableStateOf(false)}
     var isModalBottomSheetVisible by remember { mutableStateOf(false) }
     val bottomSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true,
@@ -332,7 +616,8 @@ fun BookingHistoryCard(
 
             delay(600)
 
-            staycationBookingItems.refresh()
+            staycationBookingItems?.refresh()
+            tourBookingItems?.refresh()
             openReviewCard = false
             bookingHistoryViewModel.clearIsSuccessAddReview()
         }
@@ -374,14 +659,8 @@ fun BookingHistoryCard(
                         .clip(RoundedCornerShape(100))
                         .size(25.dp)
                 ){
-                    val imageLoader = rememberAsyncImagePainter(
-                        ImageRequest.Builder(LocalContext.current)
-                            .data(data = bookingHistory?.ownerImage).apply(block = fun ImageRequest.Builder.() {
-                                crossfade(true)
-                            }).build()
-                    )
-                    Image(
-                        painter = imageLoader,
+                    AsyncImage(
+                        model = bookingHistory.ownerImage,
                         contentDescription = "",
                         contentScale = ContentScale.Crop
                     )
@@ -425,6 +704,8 @@ fun BookingHistoryCard(
                 WriteReviewComposable(
                     bookingHistoryViewModel = bookingHistoryViewModel,
                     bookingId = bookingHistory.bookingId,
+                    staycationId = bookingHistory.staycationId,
+                    tourId = bookingHistory.tourId,
                     coroutineScope = coroutineScope,
                     onCancelClick = {
                         openReviewCard = false
@@ -451,7 +732,7 @@ fun BookingHistoryCard(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Dates",
+                            text = if(bookingHistory.tourId != "") "Schedule" else "Dates",
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
@@ -460,6 +741,14 @@ fun BookingHistoryCard(
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFF999999)
                         )
+                        if (bookingHistory.tourId != "") {
+                            Text(
+                                text = "${bookingHistory.startTime} - ${bookingHistory.endTime}" ,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF999999)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Guests",
@@ -497,17 +786,10 @@ fun BookingHistoryCard(
                                 .align(Alignment.End),
                         ) {
 
-                            val imageLoader = rememberAsyncImagePainter(
-                                ImageRequest.Builder(LocalContext.current)
-                                    .data(data = bookingHistory?.rentalImage ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png")
-                                    .apply(block = fun ImageRequest.Builder.() {
-                                        crossfade(true)
-                                    }).build()
-                            )
-                            Image(
-                                painter = imageLoader,
-                                contentDescription = "Image",
-                                contentScale = ContentScale.FillBounds    //FillBounds
+                            AsyncImage(
+                                model = bookingHistory.rentalImage,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop
                             )
                         }
                         Row(
@@ -515,27 +797,32 @@ fun BookingHistoryCard(
                                 .fillMaxWidth()
                                 .padding(top = 10.dp)
                         ) {
-                            if (bookingHistory.rentalStatus == "Pending"){
+                            if (bookingHistory.rentalStatus == "Pending" || bookingHistory.rentalStatus == "Ongoing"){
+                                if (bookingHistory.rentalStatus == "Ongoing") {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
                                 BookingOutlinedButton(
                                     buttonText = "Chat host",
                                     onClick = {
                                         val receiverId = bookingHistory.hostTouristId
+                                        Log.d("HOst Id" , receiverId)
                                         onChatHost(receiverId)
-
-
                                     },
                                     modifier = Modifier.width(95.dp)
                                 )
-                                Spacer(modifier = Modifier.weight(1f))
-                                BookingFilledButton(
-                                    buttonText = "Cancel",
-                                    onClick = {
-                                      //  isOpen.value = true
-                                        isModalBottomSheetVisible = true
-                                    //    bookingHistoryViewModel.setSelectedBookingHistory(bookingHistory)
-                                    },
-                                    modifier = Modifier.width(95.dp)
-                                )
+                                if (bookingHistory.rentalStatus != "Ongoing") {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    BookingFilledButton(
+                                        buttonText = "Cancel",
+                                        onClick = {
+                                            //  isOpen.value = true
+                                            isModalBottomSheetVisible = true
+                                            //    bookingHistoryViewModel.setSelectedBookingHistory(bookingHistory)
+                                        },
+                                        modifier = Modifier.width(95.dp)
+                                    )
+                                }
+
                             }
                             else{
                                 Spacer(modifier = Modifier.weight(1f))
@@ -604,21 +891,34 @@ fun BookingHistoryCard(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         )
-                        AppConfirmAndPayDivider(
-                            image = bookingHistory.rentalImage,//R.drawable.staycation1,
-                            itinerary = bookingHistory.bookedRental,
-                            price = bookingHistory.staycationPrice,
-                            unit = "night"
-                        )
+                        if (bookingHistory.staycationId != "") {
+                            AppConfirmAndPayDivider(
+                                image = bookingHistory.rentalImage,//R.drawable.staycation1,
+                                itinerary = bookingHistory.bookedRental,
+                                price = bookingHistory.basePrice,
+                                unit = "night"
+                            )
+                        } else {
+                            AppConfirmAndPayDivider(
+                                image = bookingHistory.rentalImage,//R.drawable.staycation1,
+                                itinerary = bookingHistory.bookedRental,
+                                price = bookingHistory.basePrice,
+                                unit = "person"
+                            )
+                        }
+
 
 
                         if (bookingHistory != null) {
                             YourTripCancellationDivider(bookingHistory)
                         }
 
-                        val checkInLocalDate = bookingHistory?.checkInDate?.let { date ->
-                            Instant.ofEpochMilli(date.time).atZone(ZoneId.systemDefault()).toLocalDate()
-                        }
+                        // EDIT HERE
+                        val checkInLocalDate = if (bookingHistory.staycationId != "") bookingHistory.checkInDate.let { date ->
+                                                        Instant.ofEpochMilli(date.time).atZone(ZoneId.systemDefault()).toLocalDate()
+                                                    } else {
+                                                        LocalDate.parse(bookingHistory.tourDate)
+                                                    }
                         val daysBeforeCheckIn: Int = checkInLocalDate?.let {
                             ChronoUnit.DAYS.between(LocalDate.now(), it).toInt()
                         } ?: 0
@@ -627,9 +927,9 @@ fun BookingHistoryCard(
                             touristId = touristId,
                             forCancelBooking = true,
                             bookingHistoryViewModel = bookingHistoryViewModel,
-                            bookingFee = bookingHistory?.staycationPrice ?: 0.0,
-                            bookingDuration = bookingHistory!!.bookingDuration?.toInt() ?: 0,
-                            maintenanceFee = bookingHistory?.staycationPrice?.times(0.10) ?: 0.0,
+                            bookingFee = bookingHistory.basePrice,
+                            bookingDuration = if (bookingHistory.staycationId != "") bookingHistory.bookingDuration else bookingHistory.noOfGuests,
+                            maintenanceFee = if (bookingHistory.staycationId != "") bookingHistory.basePrice.times(0.10) else null,
                        //     tripnilaFee = bookingHistory?.staycationPrice?.times(0.05) ?: 0.0,
                             daysBeforeCheckIn = daysBeforeCheckIn,
                             touristWalletViewModel = touristWalletViewModel
@@ -642,6 +942,9 @@ fun BookingHistoryCard(
                             onClick = {
                                 bookingHistoryViewModel.setAlertDialogMessage()
                                 openAlertDialog.value = true
+                                Log.d("Clicked CardId", bookingHistory.bookingId)
+                                Log.d("Staycation Id", bookingHistory.staycationId)
+                                Log.d("Tour Id", bookingHistory.tourId)
                             },
                             modifier = Modifier
                                 .padding(horizontal = 10.dp)
@@ -653,20 +956,6 @@ fun BookingHistoryCard(
 
         }
     }
-
-
-//    LaunchedEffect(bookingHistory) {
-//        if (bookingHistory != null) {
-//            bookingHistoryViewModel.selectBookingHistory(bookingHistory)
-//        } else {
-//            bookingHistoryViewModel.clearBookingHistory()
-//        }
-//    }
-
-
-    //val selectedBookingHistory by bookingHistoryViewModel.selectedBookingHistory.collectAsState()
-
-
 
     if (openAlertDialog.value) {
         Dialog(onDismissRequest = { openAlertDialog.value = false }) {
@@ -687,7 +976,7 @@ fun BookingHistoryCard(
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Text(
-                        text = bookingHistoryViewModel?.alertDialogMessage?.collectAsState()?.value ?: "",
+                        text = bookingHistoryViewModel.alertDialogMessage.collectAsState().value ?: "",
                         color = Color.Black,
                         fontSize = 18.sp,
                         modifier = Modifier
@@ -700,16 +989,19 @@ fun BookingHistoryCard(
                             .fillMaxWidth(),
                         //   horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        if (bookingHistoryViewModel?.alertDialogMessage?.collectAsState()?.value != "Are you sure you want to proceed?") {
+                        if (bookingHistoryViewModel.alertDialogMessage.collectAsState().value != "Are you sure you want to proceed?") {
                             Spacer(modifier = Modifier.weight(1f))
                         }
                         TextButton(
-                            onClick = { openAlertDialog.value = false },
+                            onClick = {
+                                openAlertDialog.value = false
+                             //   onTryTempCounter()
+                            },
                             modifier = Modifier.padding(horizontal = 10.dp),
                         ) {
                             Text("Dismiss", color = Color.Black)
                         }
-                        if (bookingHistoryViewModel?.alertDialogMessage?.collectAsState()?.value == "Are you sure you want to proceed?") {
+                        if (bookingHistoryViewModel.alertDialogMessage.collectAsState().value == "Are you sure you want to proceed?") {
                             Spacer(modifier = Modifier.weight(1f))
                             TextButton(
                                 onClick = {
@@ -717,17 +1009,28 @@ fun BookingHistoryCard(
                                     coroutineScope.launch {
                                         openAlertDialog.value = false
 
-                                        bookingHistoryViewModel?.cancelStaycationBooking(
-                                            bookingId = bookingHistory.bookingId,
-                                            staycationId = bookingHistory.staycationId,
-                                            checkInDate = bookingHistory.checkInDate,
-                                            checkOutDate = bookingHistory.checkOutDate
-                                        )
+
+                                        // EDIT HERE
+                                        if (bookingHistory.staycationId != "") {
+
+                                            bookingHistoryViewModel.cancelStaycationBooking(
+                                                bookingId = bookingHistory.bookingId,
+                                                staycationId = bookingHistory.staycationId,
+                                                checkInDate = bookingHistory.checkInDate,
+                                                checkOutDate = bookingHistory.checkOutDate
+                                            )
+
+                                        } else {
+                                            bookingHistoryViewModel.cancelTourBooking(
+                                                bookingId = bookingHistory.bookingId,
+                                                tourAvailabilityId = bookingHistory.tourAvailabilityId,
+                                                guestCount = bookingHistory.noOfGuests
+                                            )
+
+                                        }
+
                                         touristWalletViewModel.setRefundedBalance(touristId = touristId, hostWalletId = bookingHistory.hostTouristId)
 
-
-//                                        delay(5000)
-//                                        isOpen = false
                                     }
 
 
@@ -793,10 +1096,10 @@ fun YourTripCancellationDivider(
     modifier: Modifier = Modifier,
 ) {
 
-    var checkInLocalDate= bookingHistory.checkInDate?.let { date ->
+    val checkInLocalDate= bookingHistory.checkInDate.let { date ->
         Instant.ofEpochMilli(date.time).atZone(ZoneId.systemDefault()).toLocalDate()
     }
-    var checkOutLocalDate= bookingHistory.checkOutDate?.let { date ->
+    val checkOutLocalDate= bookingHistory.checkOutDate.let { date ->
         Instant.ofEpochMilli(date.time).atZone(ZoneId.systemDefault()).toLocalDate()
     }
 
@@ -807,28 +1110,28 @@ fun YourTripCancellationDivider(
 
     val formattedDateRange = if (checkInLocalDate?.month == checkOutLocalDate?.month) "$startDay-$endDay $startMonth" else "$startDay $startMonth-$endDay $endMonth"
 
-    var guestCount = bookingHistory.noOfGuests
-    var infantCount = bookingHistory.noOfInfants
-    var petCount = bookingHistory.noOfPets
+    val guestCount = bookingHistory.noOfGuests
+    val infantCount = bookingHistory.noOfInfants
+    val petCount = bookingHistory.noOfPets
 
     val guestInfoText = buildAnnotatedString {
         append("$guestCount ${
-            guestCount?.let {
+            guestCount.let {
                 if (it == 1) "guest" else "guests"
             }
         }")
 
-        if (infantCount!! > 0) {
+        if (infantCount > 0) {
             append(", $infantCount ${
-                infantCount?.let {
+                infantCount.let {
                     if (it == 1) "infant" else "infants"
                 }
             }")
         }
 
-        if (petCount!! > 0) {
+        if (petCount > 0) {
             append(", $petCount ${
-                petCount?.let {
+                petCount.let {
                     if (it == 1) "pet" else "pets"
                 }
             }")
@@ -846,13 +1149,15 @@ fun YourTripCancellationDivider(
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium
         )
-        val dateRowText = formattedDateRange.takeIf { it?.isNotBlank() == true } ?: "Select dates*"
-        val dateRowTextColor = if (formattedDateRange?.isNotBlank() == true) Color(0xFF999999) else Color.Red
+        val dateRowText = formattedDateRange.takeIf { it.isNotBlank() } ?: "Select dates*"
+        val dateRowTextColor = if (formattedDateRange.isNotBlank()) Color(0xFF999999) else Color.Red
 
+
+        val formatter = DateTimeFormatter.ofPattern("d MMM, EEEE", Locale.ENGLISH)
 
         AppYourTripRow(
             rowLabel = "Dates",
-            rowText = dateRowText,
+            rowText = if (bookingHistory.tourId != "") "${LocalDate.parse(bookingHistory.tourDate).format(formatter)} ${bookingHistory.startTime} - ${bookingHistory.endTime}" else dateRowText,
             fontColor = dateRowTextColor,
             forCancelBooking = true
 
@@ -860,12 +1165,12 @@ fun YourTripCancellationDivider(
 
         // Display a prompt if guestCount is null or zero
         val guestCountText = when {
-            guestCount == null || guestCount <= 0 -> "Select guests*"
+            guestCount <= 0 -> "Select guests*"
             else -> "$guestInfoText"
         }
 
         val guestColor = when {
-            guestCount == null || guestCount <= 0 -> Color.Red
+            guestCount <= 0 -> Color.Red
             else -> Color(0xFF999999)
         }
         AppYourTripRow(
@@ -888,6 +1193,8 @@ fun WriteReviewComposable(
     bookingHistoryViewModel: BookingHistoryViewModel,
     coroutineScope: CoroutineScope,
     bookingId: String,
+    tourId: String,
+    staycationId: String,
     onCancelClick: () -> Unit,
 ){
 
@@ -897,13 +1204,8 @@ fun WriteReviewComposable(
     //var comment by remember { mutableStateOf("") }
     var comment = reviewInput.comment
     val maxCharacterLimit = 100
-    val remainingCharacters = maxCharacterLimit - comment?.length!!
+    val remainingCharacters = maxCharacterLimit - comment.length
 
-
-
-//    var selectedImageUris by remember {
-//        mutableStateOf<List<Uri>>(emptyList())
-//    }
 
     var selectedImageUris = bookingHistoryViewModel.selectedImageUris.collectAsState().value
 
@@ -924,7 +1226,7 @@ fun WriteReviewComposable(
     )
     AppRatingBar(bookingHistoryViewModel = bookingHistoryViewModel, initialRating = bookingHistoryViewModel.userInputReview.collectAsState().value.rating)
     Spacer(modifier = Modifier.height(8.dp))
-    comment?.let {
+    comment.let {
         BasicTextField(
         value = it,
         onValueChange = {
@@ -957,7 +1259,7 @@ fun WriteReviewComposable(
                     // modifier =Modifier.fillMaxHeight(),
                     verticalAlignment = Alignment.Top
                 ) {
-                    if (comment?.isEmpty() == true) {
+                    if (comment.isEmpty()) {
                         Text(
                             text = "Write something here...",
                             fontSize = 10.sp,
@@ -1017,7 +1319,7 @@ fun WriteReviewComposable(
                         model = uri,
                         contentDescription = null,
                         modifier = Modifier
-                            .width(125.dp)
+                            .width(140.dp)
                             .height(80.dp)
                             .padding(vertical = 5.dp)
                              ,
@@ -1095,7 +1397,11 @@ fun WriteReviewComposable(
             buttonText = "Confirm",
             onClick = {
                 coroutineScope.launch {
-                    bookingHistoryViewModel.setStaycationReview(bookingId)
+                    if (staycationId != "") {
+                        bookingHistoryViewModel.setServiceReview(bookingId, "Staycation")
+                    } else {
+                        bookingHistoryViewModel.setServiceReview(bookingId, "Tour")
+                    }
                 }
             },
             modifier = Modifier.width(90.dp)
@@ -1176,7 +1482,25 @@ fun AppRatingBar(
 @Preview
 @Composable
 private fun BookingHistoryScreenPreview(){
-    // BookingHistoryScreen()
+
+    val bookingHistoryViewModel = viewModel(modelClass = BookingHistoryViewModel::class.java)
+
+     BookingHistoryScreen(
+         touristId = "n7r1JjE18t5iCP32GXjt",
+         touristWalletViewModel = TouristWalletViewModel(),
+         bookingHistoryViewModel = bookingHistoryViewModel,
+         onNavToChat = { _, _ ->
+
+         },
+         onBack = {
+
+         }
+
+     )
+
+//    val manilaZoneId = ZoneId.of("Asia/Manila")
+//    val currentTimeInManila = ZonedDateTime.now(manilaZoneId)
+//    println("${currentTimeInManila.toInstant().toEpochMilli()}")
 
 }
 
