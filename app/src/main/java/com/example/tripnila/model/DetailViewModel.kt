@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Staycation
+import com.example.tripnila.data.StaycationBooking
 import com.example.tripnila.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,9 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
     private val _staycation = MutableStateFlow<Staycation?>(null)
     val staycation: StateFlow<Staycation?> get() = _staycation
 
+    private val _staycationBooking = MutableStateFlow<StaycationBooking?>(null)
+    val staycationBooking = _staycationBooking.asStateFlow()
+
     private val _startDate = MutableStateFlow<Long?>(null)
     val startDate: StateFlow<Long?> = _startDate
 
@@ -30,6 +34,9 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
 
     private val _nightsDifference = MutableStateFlow<Long?>(null)
     val nightsDifference: StateFlow<Long?> = _nightsDifference
+
+    private val _initialNightsDifference = MutableStateFlow<Long?>(null)
+    val initialNightsDifference: StateFlow<Long?> = _initialNightsDifference
 
     private val _totalBookingAmount = MutableStateFlow<Double?>(0.0)
     val totalBookingAmount: StateFlow<Double?> = _totalBookingAmount
@@ -63,6 +70,24 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
 
     private val _selectedPaymentMethod = MutableStateFlow<Int?>(-1)
     val selectedPaymentMethod: StateFlow<Int?> get() = _selectedPaymentMethod//.asStateFlow()
+
+    private val _initialFormattedDateRange = MutableStateFlow<String?>(null)
+    val initialFormattedDateRange: StateFlow<String?> = _initialFormattedDateRange
+
+    private val _initialStartDate = MutableStateFlow<Long?>(null)
+    val initialStartDate: StateFlow<Long?> = _initialStartDate
+
+    private val _initialEndDate = MutableStateFlow<Long?>(null)
+    val initialEndDate: StateFlow<Long?> = _initialEndDate
+
+    private val _initialGuestCount = MutableStateFlow<Int?>(null)
+    val initialGuestCount: StateFlow<Int?> = _initialGuestCount
+
+    private val _initialInfantCount = MutableStateFlow<Int?>(null)
+    val initialInfantCount: StateFlow<Int?> = _initialInfantCount
+
+    private val _initialPetCount = MutableStateFlow<Int?>(null)
+    val initialPetCount: StateFlow<Int?> = _initialPetCount
 
     fun setSelectedPaymentMethod(index: Int?) {
         _selectedPaymentMethod.value = index
@@ -156,7 +181,7 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
         return if (count == 1) word else "${word}s"
     }
 
-    fun updateFormattedDateRange() {
+    private fun updateFormattedDateRange() {
         val startDateMillis = _startDate.value
         val endDateMillis = _endDate.value
 
@@ -221,6 +246,122 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
             _staycation.value = staycation
         }
     }
+
+    fun getStaycationBookingByBookingId(bookingId: String) {
+        viewModelScope.launch {
+
+            val staycationBooking = repository.getStaycationBookingByBookingId(bookingId)
+            _staycationBooking.value = staycationBooking
+
+            _staycation.value = _staycationBooking.value?.staycation
+
+            _nightsDifference.value = _staycationBooking.value?.getDaysDifference()
+            _initialNightsDifference.value = _staycationBooking.value?.getDaysDifference()
+
+            _startDate.value = _staycationBooking.value?.checkInDate?.time
+            _endDate.value = _staycationBooking.value?.checkOutDate?.time
+
+            _initialStartDate.value = _staycationBooking.value?.checkInDate?.time
+            _initialEndDate.value = _staycationBooking.value?.checkOutDate?.time
+
+            if (_startDate.value != null && _endDate.value != null) {
+                val startDate = Instant.ofEpochMilli(_startDate.value!!)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+
+                val endDate = Instant.ofEpochMilli(_endDate.value!!)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+
+                _initialFormattedDateRange.value = formatDateRange(startDate, endDate)
+            } else {
+                _initialFormattedDateRange.value = null
+            }
+
+           // _adultCount.value = _staycationBooking.value?.noOfGuests
+            _initialGuestCount.value = _staycationBooking.value?.noOfGuests
+            _guestCount.value = _staycationBooking.value?.noOfGuests
+
+            _infantCount.value = _staycationBooking.value?.noOfInfants
+            _initialInfantCount.value = _staycationBooking.value?.noOfInfants
+
+            _petCount.value = _staycationBooking.value?.noOfPets
+            _initialPetCount.value = _staycationBooking.value?.noOfPets
+
+        }
+    }
+
+    suspend fun rescheduleBooking() {
+        _loadingState.value = true
+        try {
+            viewModelScope.launch {
+
+
+                val maintenanceFee = _staycation.value?.staycationPrice?.times(0.10)
+
+                val initialProductBookingFee = (_staycation.value?.staycationPrice)?.times(_initialNightsDifference.value!!)
+                val initialTripNilaFee = initialProductBookingFee?.times(0.05)
+                val initialTotalFeeState = (initialProductBookingFee?.plus(maintenanceFee!!))?.plus(initialTripNilaFee!!)
+
+                val productBookingFee = (_staycation.value?.staycationPrice)?.times(_nightsDifference.value!!)
+                val tripNilaFee = productBookingFee?.times(0.05)
+                val totalFeeState = (productBookingFee?.plus(maintenanceFee!!))?.plus(tripNilaFee!!)
+
+                val totalFeeDifference = totalFeeState?.let { initialTotalFeeState?.minus(it) }
+
+                val amountRefunded = if (totalFeeDifference!! < 0) {
+                    0
+                } else {
+                    totalFeeDifference
+                }
+
+                Log.d("Booking Update", "bookingId: ${_staycationBooking.value?.staycationBookingId ?: ""}")
+                Log.d("Booking Update", "staycationId: ${_staycationBooking.value?.staycation?.staycationId ?: ""}")
+                Log.d("Booking Update", "initialCheckInDateMillis: ${_initialStartDate.value ?: 0}")
+                Log.d("Booking Update", "initialCheckOutDateMillis: ${_initialEndDate.value ?: 0}")
+                Log.d("Booking Update", "newCheckInDateMillis: ${_startDate.value ?: 0}")
+                Log.d("Booking Update", "newCheckOutDateMillis: ${_endDate.value ?: 0}")
+                Log.d("Booking Update", "commission: $tripNilaFee")
+                Log.d("Booking Update", "amountRefunded: $amountRefunded")
+                Log.d("Booking Update", "newTotalAmount: $totalFeeState")
+                Log.d("Booking Update", "newNoOfGuests: ${_guestCount.value ?: 0}")
+                Log.d("Booking Update", "newNoOfPets: ${_petCount.value ?: 0}")
+                Log.d("Booking Update", "newNoOfInfants: ${_infantCount.value ?: 0}")
+//
+                val isSuccess = repository.updateStaycationBooking(
+                    bookingId = _staycationBooking.value?.staycationBookingId ?: "",
+                    staycationId = _staycationBooking.value?.staycation?.staycationId!!,
+                    initialCheckInDateMillis = _initialStartDate.value ?: 0,
+                    initialCheckOutDateMillis = _initialEndDate.value ?: 0,
+                    newCheckInDateMillis = _startDate.value ?: 0,
+                    newCheckOutDateMillis = _endDate.value ?: 0,
+                    commission = tripNilaFee ?: 0.0,
+                    amountRefunded = amountRefunded.toDouble(),
+                    newTotalAmount = totalFeeState ,
+                    newNoOfGuests = _guestCount.value ?: 0,
+                    newNoOfPets = _petCount.value ?: 0,
+                    newNoOfInfants = _infantCount.value ?: 0
+                )
+
+
+                _bookingResult.value = if (isSuccess) {
+                    "Rescheduling successful!"
+                } else {
+                    "Rescheduling failed: An error occurred" // Customize error message
+                }
+
+                Log.d("Result", "$_bookingResult")
+
+
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            _loadingState.value = false // Set loading state to false, whether successful or not
+        }
+    }
+
 
     suspend fun addBooking(touristId: String) {
         _loadingState.value = true

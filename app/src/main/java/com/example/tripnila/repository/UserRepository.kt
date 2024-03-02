@@ -57,7 +57,7 @@ import kotlin.experimental.and
 
 
 class UserRepository {
-    val db = FirebaseFirestore.getInstance()
+    private val db = FirebaseFirestore.getInstance()
     private val touristCollection = db.collection("tourist")
     private val hostCollection = db.collection("host")
     private val touristPreferencesCollection = db.collection("tourist_preference")
@@ -1767,49 +1767,6 @@ class UserRepository {
         }
     }
 
-//    suspend fun addStaycationNearbyAttractions(staycationId: String, attractions: List<String>) {
-//        try {
-//            // Query the staycationNearbyAttractionCollection for documents where the staycationId field is equal to the staycationId parameter
-//            val querySnapshot = staycationNearbyAttractionCollection
-//                .whereEqualTo("staycationId", staycationId)
-//                .get()
-//                .await()
-//
-//            // Get the ID of the first document in the query snapshot, or set documentId to null if the query snapshot is empty
-//            val documentId = if (querySnapshot.documents.isNotEmpty()) {
-//                querySnapshot.documents.first().id
-//            } else {
-//                null
-//            }
-//
-//            // Create a batch write
-//            val batch = Firebase.firestore.batch()
-//
-//            // Iterate over the attractions list and set the data for each attraction
-//            attractions.forEach { attraction ->
-//                val attractionData = hashMapOf(
-//                    "staycationId" to staycationId,
-//                    "attractionName" to attraction
-//                )
-//
-//                // If documentId is not null, update the existing document with the new data using the merge option
-//                if (documentId != null) {
-//                    val attractionRef = staycationNearbyAttractionCollection.document(documentId)
-//                    batch.set(attractionRef, attractionData, SetOptions.merge())
-//                } else {
-//                    // Otherwise, create a new document
-//                    batch.set(staycationNearbyAttractionCollection.document(), attractionData)
-//                }
-//            }
-//
-//            // Commit the batch write
-//            batch.commit().await()
-//
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//        }
-//    }
-
     private suspend fun addServiceTags(serviceId: String, serviceType: String, tags: List<String>) {
         try {
 
@@ -1974,8 +1931,6 @@ class UserRepository {
             // Handle the exception as needed
         }
     }
-
-
 
 
 
@@ -3051,6 +3006,7 @@ class UserRepository {
                 // Fetch Staycation images
                 val staycationImages = getServiceImages(staycationId, "Staycation")
                 val hostInfo = getHostInfo(hostId)
+                val availableDates = getStaycationAvailability(staycationId)
 
                 Log.d("Host Id", hostInfo?.touristId ?: "")
 
@@ -3072,6 +3028,7 @@ class UserRepository {
                     staycationTitle = staycationTitle,
                     staycationType = staycationType,
                     staycationImages = staycationImages,
+<<<<<<< Updated upstream
                     hasFirstAid = hasFirstAid,
                     hasFireExit = hasFireExit,
                     hasFireExtinguisher = hasFireExtinguisher,
@@ -3086,12 +3043,16 @@ class UserRepository {
                     phoneNo = phoneNo,
                     email = email,
 
+=======
+                    availableDates = availableDates,
+>>>>>>> Stashed changes
                     host = Host(
                         profilePicture = hostInfo?.profilePicture ?: "",
                         firstName = hostInfo?.firstName ?: "",
                         middleName = hostInfo?.middleName ?: "",
                         lastName = hostInfo?.lastName ?: "",
                         touristId = hostInfo?.touristId ?: "",
+                        hostId = hostId
                     )
                 )
             }
@@ -3318,6 +3279,120 @@ class UserRepository {
             // Handle the error case as needed
         }
         return null
+    }
+
+    suspend fun updateStaycationBookingPayment(
+        serviceBookingId: String,
+        newAmount: Double,
+        amountRefunded: Double,
+        commission: Double,
+        paymentStatus: String,
+    ) {
+        try {
+
+            val querySnapshot = paymentCollection
+                .whereEqualTo("serviceBookingId", serviceBookingId)
+                .whereEqualTo("serviceType", "Staycation")
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+
+                val documentId = document.id
+
+                addPaymentToHistory(documentId, "Update")
+
+                document.reference.update(
+                    mapOf(
+                        "amount" to newAmount, // New amount
+                        "amountRefunded" to amountRefunded, // New amountRefunded
+                        "commission" to commission, // New commission
+                        "paymentDate" to Timestamp.now(), // New paymentDate
+                        "paymentStatus" to paymentStatus // New paymentStatus
+                    )
+                ).await()
+
+                addPaymentToHistory(documentId, "Update")
+
+            }
+            Log.d("","Booking details updated successfully.")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+
+    suspend fun updateStaycationBooking(
+        bookingId: String,
+        staycationId: String,
+        initialCheckInDateMillis: Long,
+        initialCheckOutDateMillis: Long,
+        newCheckInDateMillis: Long,
+        newCheckOutDateMillis: Long,
+        commission: Double,
+        amountRefunded: Double,
+        newTotalAmount: Double,
+        newNoOfGuests: Int,
+        newNoOfPets: Int,
+        newNoOfInfants: Int
+    ): Boolean {
+        return try {
+
+            val staycationBookingRef = staycationBookingCollection
+                .document(bookingId)
+
+            val checkInDate = Date(newCheckInDateMillis)
+            val checkOutDate = Date(newCheckOutDateMillis)
+
+            val calendar = Calendar.getInstance()
+            calendar.time = checkInDate
+            calendar.add(Calendar.HOUR_OF_DAY, 6)
+            val checkInDatePlus6Hours = calendar.time
+
+            calendar.time = checkOutDate
+            calendar.add(Calendar.HOUR_OF_DAY, 4)
+            val checkOutDatePlus4Hours = calendar.time
+
+            val newData = mapOf(
+                "checkInDate" to checkInDatePlus6Hours,
+                "checkOutDate" to checkOutDatePlus4Hours,
+                "totalAmount" to newTotalAmount,
+                "noOfGuests" to newNoOfGuests,
+                "noOfPets" to newNoOfPets,
+                "noOfInfants" to newNoOfInfants
+            )
+
+            addStaycationBookingToHistory(
+                bookingId = bookingId,
+                transaction = "update"
+            )
+
+            staycationBookingRef.update(newData).await()
+
+            addStaycationBookingToHistory(
+                bookingId = bookingId,
+                transaction = "update"
+            )
+
+            makeAvailabilityInRange(staycationId, initialCheckInDateMillis, initialCheckOutDateMillis)
+
+            deleteAvailabilityInRange(staycationId, newCheckInDateMillis, newCheckOutDateMillis)
+
+            updateStaycationBookingPayment(
+                serviceBookingId = bookingId,
+                newAmount = newTotalAmount,
+                amountRefunded = amountRefunded,
+                commission = commission,
+                paymentStatus = "Pending",
+            )
+
+            Log.d("Update", "Booking $bookingId status updated")
+            true // Operation succeeded
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
     }
 
 
@@ -3697,21 +3772,22 @@ class UserRepository {
     suspend fun makeAvailabilityInRange(staycationId: String, checkInDateMillis: Long, checkOutDateMillis: Long) {
         try {
 
-//            val checkInDateMillis = 1709258400000
-//            val checkOutDateMillis = 1709870400000
+
+//            val checkInDateMillis = 1709877600000
+//            val checkOutDateMillis = 1710043200000
 
             val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")) // Create a calendar with UTC time zone
             calendar.timeInMillis = checkInDateMillis // Set the check-in date
-            calendar.add(Calendar.HOUR_OF_DAY, -10) // Subtract 10 hours
+            calendar.add(Calendar.HOUR_OF_DAY, -14) // Subtract 14 hours
 
             val startDate = calendar.time // Get the updated start date
 
             calendar.timeInMillis = checkOutDateMillis // Set the check-out date
-            calendar.add(Calendar.HOUR_OF_DAY, -10) // Subtract 10 hours
+            calendar.add(Calendar.HOUR_OF_DAY, -12) // Subtract 12 hours
 
             val endDate = calendar.time // Get the updated end date
 
-            val dateRange = (startDate.time until endDate.time step TimeUnit.DAYS.toMillis(1))
+            val dateRange = (startDate.time..endDate.time).step(TimeUnit.DAYS.toMillis(1))
                 .map { Date(it) }
 
             // Create availability records for each date in the range
@@ -3734,6 +3810,48 @@ class UserRepository {
             // Handle the error case as needed
         }
     }
+
+
+//    suspend fun makeAvailabilityInRange(staycationId: String, checkInDateMillis: Long, checkOutDateMillis: Long) {
+//        try {
+//
+////            val checkInDateMillis = 1709258400000
+////            val checkOutDateMillis = 1709870400000
+//
+//            val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")) // Create a calendar with UTC time zone
+//            calendar.timeInMillis = checkInDateMillis // Set the check-in date
+//            calendar.add(Calendar.HOUR_OF_DAY, -10) // Subtract 10 hours
+//
+//            val startDate = calendar.time // Get the updated start date
+//
+//            calendar.timeInMillis = checkOutDateMillis // Set the check-out date
+//            calendar.add(Calendar.HOUR_OF_DAY, -10) // Subtract 10 hours
+//
+//            val endDate = calendar.time // Get the updated end date
+//
+//            val dateRange = (startDate.time until endDate.time step TimeUnit.DAYS.toMillis(1))
+//                .map { Date(it) }
+//
+//            // Create availability records for each date in the range
+//            for (date in dateRange) {
+//                val availabilityData = hashMapOf(
+//                    "staycationId" to staycationId,
+//                    "availableDate" to date,
+//                    // Add other fields as needed
+//                )
+//
+//                Log.d("Availability Data", availabilityData.toString())
+//
+//                // Add the availability record to the collection
+//                val documentReference = staycationAvailabilityCollection.add(availabilityData).await()
+//
+//                Log.d("Document Added", "Document ID: ${documentReference.id}")
+//            }
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            // Handle the error case as needed
+//        }
+//    }
 
 
 
@@ -5705,6 +5823,49 @@ class UserRepository {
         }
     }
 
+    suspend fun getStaycationBookingByBookingId(staycationBookingId: String): StaycationBooking? {
+        return try {
+            val document = staycationBookingCollection.document(staycationBookingId).get().await()
+
+            if (document.exists()) {
+                val bookingDate = document.getTimestamp("bookingDate")?.toDate() ?: Date()
+                val bookingStatus = document.getString("bookingStatus") ?: ""
+                val checkInDate = document.getTimestamp("checkInDate")?.toDate() ?: Date()
+                val checkOutDate = document.getTimestamp("checkOutDate")?.toDate() ?: Date()
+                val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
+                val noOfInfants = document.getLong("noOfInfants")?.toInt() ?: 0
+                val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
+                val staycationId = document.getString("staycationId") ?: ""
+                val totalAmount = document.getDouble("totalAmount") ?: 0.0
+                val touristId = document.getString("touristId") ?: ""
+
+                val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
+
+                // Construct a StaycationBooking object
+                StaycationBooking(
+                    staycationBookingId = staycationBookingId,
+                    bookingDate = bookingDate,
+                    bookingStatus = bookingStatus,
+                    checkInDate = checkInDate,
+                    checkOutDate = checkOutDate,
+                    noOfGuests = noOfGuests,
+                    noOfPets = noOfPets,
+                    noOfInfants = noOfInfants,
+                    totalAmount = totalAmount,
+                    tourist = Tourist(touristId = touristId),
+                    staycation = staycation
+                )
+            } else {
+                null // Document doesn't exist, return null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null // Handle the error case as needed
+        }
+    }
+
+
+
     private suspend fun getStaycationBookings(staycationId: String): List<StaycationBooking> {
         return try {
             val result = staycationBookingCollection
@@ -6077,39 +6238,25 @@ class UserRepository {
 @Composable
 private fun QueryTests() {
 
-  // val checkInDate: Date = Fri Mar 01 10:00:00 GMT+08:00 2024
+    val checkInDateMillis = 1709877600000
+    val checkOutDateMillis = 1710043200000
 
-//    val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")) // Create a calendar with the desired time zone
-//
-//    calendar.timeInMillis = checkInDateMillis // Set the milliseconds representing the date
-//    val checkInDate = calendar.time // Get the Date object
-//
-//    calendar.timeInMillis = checkOutDateMillis // Set the milliseconds representing the date
-//    val checkOutDate = calendar.time // Get the Date object
+    val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")) // Create a calendar with UTC time zone
+    calendar.timeInMillis = checkInDateMillis // Set the check-in date
+    calendar.add(Calendar.HOUR_OF_DAY, -14) // Subtract 14 hours
 
-    val startTimeString = "10:00 AM"
-    val tourDateString = "2024-02-29"
+    val startDate = calendar.time // Get the updated start date
 
-    // Parse the tour date
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val tourDate = LocalDate.parse(tourDateString, dateFormatter)
+    calendar.timeInMillis = checkOutDateMillis // Set the check-out date
+    calendar.add(Calendar.HOUR_OF_DAY, -12) // Subtract 12 hours
 
-    // Parse the start time
-    val timeFormatter = DateTimeFormatter.ofPattern("hh:mm a")
-    val startTime = LocalTime.parse(startTimeString, timeFormatter)
+    val endDate = calendar.time // Get the updated end date
 
-    // Combine tour date and start time
-    val startDateTime = LocalDateTime.of(tourDate, startTime)
+    val dateRange = (startDate.time..endDate.time).step(TimeUnit.DAYS.toMillis(1))
+        .map { Date(it) }
 
-    // Convert to UTC+8 timezone (Asia/Manila)
-    val manilaZoneId = ZoneId.of("Asia/Manila")
-    val zonedDateTime = ZonedDateTime.of(startDateTime, manilaZoneId)
-
-    // Convert to timestamp
-   // val timestamp = zonedDateTime.toInstant().toEpochMilli()
-    val timestamp = Timestamp(Date.from(zonedDateTime.toInstant()))
-
-    println("Start time in timestamp: $timestamp")
-    println("Current timestamp: ${Timestamp.now()}")
-   // println(checkInDate) // Output: Fri Mar 01 10:00:00 GMT+08:00 2024
+// Create availability records for each date in the range
+    for (date in dateRange) {
+        println(date)
+    }
 }

@@ -104,7 +104,13 @@ import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.model.DetailViewModel
 import java.text.NumberFormat
+import java.time.Instant
 import java.time.LocalDate
+<<<<<<< Updated upstream
+=======
+import java.time.LocalDateTime
+import java.time.ZoneId
+>>>>>>> Stashed changes
 import java.time.temporal.ChronoUnit
 
 
@@ -194,8 +200,8 @@ fun StaycationDetailsScreen(
 
         val selectedEndDateMillis = dateRangePickerState.selectedEndDateMillis
 
-        Log.d("Before", "$selectedStartDateMillis")
-        Log.d("Before", "$selectedEndDateMillis")
+        Log.d("Before (Details)", "$selectedStartDateMillis")
+        Log.d("Before (Details)", "$selectedEndDateMillis")
 
 
         val countNights = if (selectedStartDateMillis != null && selectedEndDateMillis != null) {
@@ -518,11 +524,14 @@ fun StaycationDetailsScreen(
                             ),
                             dateValidator = { date ->
 
+                                val selectedDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate()
+                                val today = LocalDateTime.now().toLocalDate()
+
                                 val adjustedDates = staycation.value?.availableDates?.map {
                                     it.availableDate?.toDate()?.time?.plus(28800000) ?: 0
                                 } ?: emptyList()
 
-                                adjustedDates.contains(date)
+                                adjustedDates.contains(date) && selectedDate.isAfter(today)
 
 //                                val adjustedDates = staycation.value?.availableDates?.map {
 //                                    it.availableDate?.toDate()?.time?.plus(28800000) ?: 0
@@ -2359,19 +2368,20 @@ fun ConfirmCalendar(
 private fun StaycationDetailsPreview() {
 
     val detailViewModel = viewModel(modelClass = DetailViewModel::class.java)
-    val onNavToBooking: (String, String) -> Unit = { staycationId, touristId ->
-        // Your implementation here
-    }
 
     StaycationDetailsScreen(
         detailViewModel = detailViewModel,
-        staycationId = "33022",
-        touristId = "5JCZ1j5hODQ7BcURS2GI",
-        onNavToBooking = onNavToBooking,
+        staycationId = "LxpNxRFdwkQzBxujF3gx",
+        touristId = "n7r1JjE18t5iCP32GXjt",
+        onNavToBooking = { staycationId, touristId ->
+            // Your implementation here
+        },
         onBack = {
 
         },
-        onNavToChat = onNavToBooking
+        onNavToChat = { _, _ ->
+
+        }
     )
 }
 

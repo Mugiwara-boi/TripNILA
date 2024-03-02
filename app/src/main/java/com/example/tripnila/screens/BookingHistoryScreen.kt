@@ -128,6 +128,7 @@ fun BookingHistoryScreen(
     bookingHistoryViewModel: BookingHistoryViewModel,
     navController: NavHostController? = null,
     onNavToChat: (String, String) -> Unit,
+    onNavToReschedule: (String, String) -> Unit,
     onBack: () -> Unit,
 ){
 
@@ -140,8 +141,6 @@ fun BookingHistoryScreen(
     val isCancelBookingSuccessful = bookingHistoryViewModel.isSuccessCancelBooking.collectAsState().value
     val selectedTab by bookingHistoryViewModel.selectedTab.collectAsState()
     val logCheckOutDatesResult by bookingHistoryViewModel.logCheckOutDatesResult.collectAsState()
-
-
 
     val staycationBookingFlow = remember { bookingHistoryViewModel.getStaycationBookingsForTourist(touristId) }
     val staycationBookingItems = if (logCheckOutDatesResult != "") staycationBookingFlow.collectAsLazyPagingItems() else null
@@ -270,18 +269,21 @@ fun BookingHistoryScreen(
                             },
                             modifier = Modifier.padding(horizontal = 5.dp)
                         ) {
+
                             Text(
                                 text = tabName,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = if (isSelected) Orange else Color.Gray,
                                 modifier = Modifier.padding(
-                                    top = 12.dp,
+                                    top = 8.dp,
                                     bottom = 5.dp,
                                     start = 7.dp,
                                     end = 7.dp
                                 ),
                             )
+
+
                         }
                     }
                 }
@@ -303,9 +305,9 @@ fun BookingHistoryScreen(
                                     onNavToChat = { receiverId ->
                                         onNavToChat(touristId, receiverId)
                                     },
-                        //                                onTryTempCounter = {
-                        //                                    tempCounter += 1
-                        //                                }
+                                    onReschedule = { staycationBookingId ->
+                                        onNavToReschedule(touristId, staycationBookingId)
+                                    }
                                 )
                             }
                         }
@@ -320,9 +322,9 @@ fun BookingHistoryScreen(
                                     onNavToChat = { receiverId ->
                                         onNavToChat(touristId, receiverId)
                                     },
-                        //                                onTryTempCounter = {
-                        //                                    tempCounter += 1
-                        //                                }
+                                    onReschedule = { tourBookingId ->
+                                        onNavToReschedule(touristId, tourBookingId)
+                                    }
                                 )
                             }
                         }
@@ -344,6 +346,7 @@ fun TourPage(
 
    // onTryTempCounter: () -> Unit,
 
+    onReschedule: (String) -> Unit,
     onNavToChat: (String) -> Unit
 ) {
 
@@ -421,6 +424,9 @@ fun TourPage(
                         onChatHost = { receiverId ->
                             onNavToChat(receiverId)
                         },
+                        onReschedule = { tourBookingId ->
+                           onReschedule(tourBookingId)
+                        },
 //                        onTryTempCounter = {
 //
 //                        }
@@ -453,8 +459,7 @@ fun StaycationPage(
     coroutineScope: CoroutineScope,
 
   //  onTryTempCounter: () -> Unit,
-
-
+    onReschedule: (String) -> Unit,
     onNavToChat: (String) -> Unit
 ) {
 
@@ -541,6 +546,9 @@ fun StaycationPage(
                         onChatHost = { receiverId ->
                             onNavToChat(receiverId)
                         },
+                        onReschedule = { staycationBookingId ->
+                            onReschedule(staycationBookingId)
+                        },
 //                        onTryTempCounter = {
 //                            onTryTempCounter()
 //                        }
@@ -594,6 +602,7 @@ fun BookingHistoryCard(
 
    // onTryTempCounter: () -> Unit,
 
+    onReschedule: (String) -> Unit,
     staycationBookingItems: LazyPagingItems<StaycationBooking>? = null,
     tourBookingItems: LazyPagingItems<TourBooking>? = null,
 ){
@@ -714,10 +723,11 @@ fun BookingHistoryCard(
 
             }
             else{
+
                 Row {
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth(0.45f)
+                            .fillMaxWidth(0.50f)
                             .padding(start = 10.dp)
                     ) {
                         Text(
@@ -732,7 +742,7 @@ fun BookingHistoryCard(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = if(bookingHistory.tourId != "") "Schedule" else "Dates",
+                            text = if (bookingHistory.tourId != "") "Schedule" else "Dates",
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
@@ -743,7 +753,7 @@ fun BookingHistoryCard(
                         )
                         if (bookingHistory.tourId != "") {
                             Text(
-                                text = "${bookingHistory.startTime} - ${bookingHistory.endTime}" ,
+                                text = "${bookingHistory.startTime} - ${bookingHistory.endTime}",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = Color(0xFF999999)
@@ -792,53 +802,65 @@ fun BookingHistoryCard(
                                 contentScale = ContentScale.Crop
                             )
                         }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 10.dp)
-                        ) {
-                            if (bookingHistory.rentalStatus == "Pending" || bookingHistory.rentalStatus == "Ongoing"){
-                                if (bookingHistory.rentalStatus == "Ongoing") {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                }
-                                BookingOutlinedButton(
-                                    buttonText = "Chat host",
-                                    onClick = {
-                                        val receiverId = bookingHistory.hostTouristId
-                                        Log.d("HOst Id" , receiverId)
-                                        onChatHost(receiverId)
-                                    },
-                                    modifier = Modifier.width(95.dp)
-                                )
-                                if (bookingHistory.rentalStatus != "Ongoing") {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    BookingFilledButton(
-                                        buttonText = "Cancel",
-                                        onClick = {
-                                            //  isOpen.value = true
-                                            isModalBottomSheetVisible = true
-                                            //    bookingHistoryViewModel.setSelectedBookingHistory(bookingHistory)
-                                        },
-                                        modifier = Modifier.width(95.dp)
-                                    )
-                                }
-
-                            }
-                            else{
-                                Spacer(modifier = Modifier.weight(1f))
-                                BookingOutlinedButton(
-                                    enableButton = !bookingHistory.isReviewed && bookingHistory.rentalStatus == "Completed", //|| bookingHistory.rentalStatus != "Cancelled"
-
-                                    buttonText = "Review",
-                                    onClick = {
-                                        openReviewCard = true
-                                    },
-                                    modifier = Modifier.width(95.dp),
-                                )
-                            }
-                        }
+                        //  Spacer(modifier = Modifier.weight(1f))
                     }
                 }
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                ) {
+                    if (bookingHistory.rentalStatus == "Pending" || bookingHistory.rentalStatus == "Ongoing"){
+                        if (bookingHistory.rentalStatus == "Ongoing") {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                        BookingFilledButton(
+                            buttonText = "Chat host",
+                            onClick = {
+                                val receiverId = bookingHistory.hostTouristId
+                                Log.d("HOst Id" , receiverId)
+                                onChatHost(receiverId)
+                            },
+                            modifier = Modifier.width(110.dp)
+                        )
+                        if (bookingHistory.rentalStatus == "Pending") {
+                            BookingOutlinedButton(
+                                buttonText = "Reschedule",
+                                onClick = {
+                                    onReschedule(bookingHistory.bookingId)
+                                },
+                                modifier = Modifier.width(110.dp)
+                            )
+                        }
+                        if (bookingHistory.rentalStatus != "Ongoing") {
+                        //    Spacer(modifier = Modifier.weight(1f))
+                            BookingFilledButton(
+                                buttonText = "Cancel",
+                                onClick = {
+                                    //  isOpen.value = true
+                                    isModalBottomSheetVisible = true
+                                    //    bookingHistoryViewModel.setSelectedBookingHistory(bookingHistory)
+                                },
+                                modifier = Modifier.width(110.dp)
+                            )
+                        }
+
+                    }
+                    else{
+                        Spacer(modifier = Modifier.weight(1f))
+                        BookingOutlinedButton(
+                            enableButton = !bookingHistory.isReviewed && bookingHistory.rentalStatus == "Completed", //|| bookingHistory.rentalStatus != "Cancelled"
+
+                            buttonText = "Review",
+                            onClick = {
+                                openReviewCard = true
+                            },
+                            modifier = Modifier.width(110.dp),
+                        )
+                    }
+                }
+
 
             }
 
@@ -1485,6 +1507,7 @@ private fun BookingHistoryScreenPreview(){
 
     val bookingHistoryViewModel = viewModel(modelClass = BookingHistoryViewModel::class.java)
 
+
      BookingHistoryScreen(
          touristId = "n7r1JjE18t5iCP32GXjt",
          touristWalletViewModel = TouristWalletViewModel(),
@@ -1494,13 +1517,13 @@ private fun BookingHistoryScreenPreview(){
          },
          onBack = {
 
+         },
+         onNavToReschedule = { a, b ->
+
          }
 
      )
 
-//    val manilaZoneId = ZoneId.of("Asia/Manila")
-//    val currentTimeInManila = ZonedDateTime.now(manilaZoneId)
-//    println("${currentTimeInManila.toInstant().toEpochMilli()}")
 
 }
 
