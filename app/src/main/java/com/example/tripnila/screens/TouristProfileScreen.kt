@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -59,6 +60,7 @@ import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.ProfileData
 import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.ProfileViewModel
+import com.itenirary.IteniraryActivity
 
 
 @Composable
@@ -165,11 +167,16 @@ fun TouristProfileScreen(
                             onClick = {
                                 // sa touristId na variable nakastore yung Id ng Current User
                                 // Profile Screen -> Itinerary Planner
-                                Toast.makeText(
+                                // Pagente
+                                /*Toast.makeText(
                                     context,
                                     "TouristId: $touristId",
                                     Toast.LENGTH_SHORT
-                                ).show()
+                                ).show()*/
+
+                                val intent = Intent(context, IteniraryActivity::class.java)
+                                intent.putExtra("touristId", touristId)
+                                context.startActivity(intent)
                             }
                         )
                     }
