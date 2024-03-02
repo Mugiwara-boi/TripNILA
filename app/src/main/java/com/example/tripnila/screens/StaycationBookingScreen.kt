@@ -846,6 +846,8 @@ fun AppPaymentDivider(
   //  val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripnilaFee
     touristWalletViewModel.setTotalFee(totalFeeState)
     touristWalletViewModel.setTripnilaFee(tripNilaFee)
+    touristWalletViewModel.setInitialTotalFee(initialTotalFeeState)
+    touristWalletViewModel.setInitialTripnilaFee(initialTripNilaFee)
 
     var selectedPaymentMethod by remember { mutableStateOf(-1) }
     var isSelectionEnabled by remember { mutableStateOf(true) }
@@ -900,7 +902,7 @@ fun AppPaymentDivider(
 
         if (forRescheduling) {
             Text(
-                text = "Previous Payment????",
+                text = "Previous Payment",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
@@ -948,7 +950,7 @@ fun AppPaymentDivider(
 
 
         Text(
-            text = "Payment",
+            text = "New Payment",
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier

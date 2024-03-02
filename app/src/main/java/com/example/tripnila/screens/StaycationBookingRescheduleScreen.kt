@@ -49,7 +49,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -58,7 +57,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -71,7 +69,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tripnila.common.AppConfirmAndPayDivider
-import com.example.tripnila.common.AppYourTripRow
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.Host
 import com.example.tripnila.model.DetailViewModel
@@ -80,7 +77,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.util.Calendar
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -106,11 +102,13 @@ fun StaycationBookingRescheduleScreen(
     //var totalOccupancyLimit = staycation?.value?.noOfGuests
     val infantOccupancyLimit = 5 // /*TODO*/
     val petOccupancyLimit = 0 // /*TODO*/
-
+    val tripnilaFee by touristWalletViewModel.tripnilaFee.collectAsState()
     val host = staycation.value?.host?: Host()
     val hostId = host.hostId
     val hostWalletId = hostId.removePrefix("HOST-")
     val totalFee by touristWalletViewModel.totalFee.collectAsState()
+    val initialTotalFee by touristWalletViewModel.initialTotalFee.collectAsState()
+    val initialTripnilaFee by touristWalletViewModel.initialTripnilaFee.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
     val bottomSheetState = rememberModalBottomSheetState(
@@ -266,7 +264,9 @@ fun StaycationBookingRescheduleScreen(
                     }
 
                     LazyColumn(
-                        modifier = Modifier.fillMaxWidth().weight(1f)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
                     ) {
                         item {
                             AppConfirmAndPayDivider(
@@ -625,12 +625,14 @@ fun StaycationBookingRescheduleScreen(
                                         coroutineScope.launch {
                                             openAlertDialog.value = false
 
-                                            val bookingJob = launch {
-                                                detailViewModel.rescheduleBooking()
-                                                touristWalletViewModel.setBookingPayment(totalFee,touristId)
-                                            }
-                                            bookingJob.join()
-                                            touristWalletViewModel.setPendingAmount(totalFee,hostWalletId)
+                                            detailViewModel.rescheduleBooking()
+                                            touristWalletViewModel.setReschedulePayment(totalFee,touristId,initialTotalFee)
+                                            touristWalletViewModel.setReschedulePendingAmount(
+                                                totalFee = totalFee,
+                                                hostWalletId = hostWalletId,
+                                                tripnilaFee = tripnilaFee,
+                                                initialTotalFee = initialTotalFee,
+                                                initialTripnilaFee = initialTripnilaFee,)
                                         }
 
 

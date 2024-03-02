@@ -106,11 +106,8 @@ import com.example.tripnila.model.DetailViewModel
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDate
-<<<<<<< Updated upstream
-=======
 import java.time.LocalDateTime
 import java.time.ZoneId
->>>>>>> Stashed changes
 import java.time.temporal.ChronoUnit
 
 

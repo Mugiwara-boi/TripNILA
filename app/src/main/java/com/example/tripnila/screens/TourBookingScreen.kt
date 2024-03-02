@@ -66,15 +66,15 @@ import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.AppConfirmAndPayDivider
 import com.example.tripnila.common.AppYourTripRow
+import com.example.tripnila.data.Host
 import com.example.tripnila.data.TourAvailableDates
 import com.example.tripnila.model.TourDetailsViewModel
+import com.example.tripnila.model.TouristWalletViewModel
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.text.NumberFormat
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import com.example.tripnila.model.TouristWalletViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -90,6 +90,11 @@ fun TourBookingScreen(
     val selectedPersonCount by tourDetailsViewModel.personCount.collectAsState()
     val bookingResult by tourDetailsViewModel.bookingResult.collectAsState()
     val limit = selectedDate?.remainingSlot
+    val tripnilaFee by touristWalletViewModel.tripnilaFee.collectAsState()
+    val totalFee by touristWalletViewModel.totalFee.collectAsState()
+    val host = tour.host?: Host()
+    val hostId = host.hostId
+    val hostWalletId = hostId.removePrefix("HOST-")
 
     val formattedNumber = NumberFormat.getNumberInstance()
     val formattedNumberWithDecimalFormat = NumberFormat.getNumberInstance() as DecimalFormat
@@ -460,6 +465,8 @@ fun TourBookingScreen(
                                         coroutineScope.launch {
                                             openAlertDialog = false
                                             tourDetailsViewModel.addBooking(touristId)
+                                            touristWalletViewModel.setBookingPayment(totalFee,touristId)
+                                            touristWalletViewModel.setPendingAmount(totalFee = totalFee,hostWalletId = hostWalletId,tripnilaFee = tripnilaFee)
                                         }
                                     },
                                     modifier = Modifier.padding(horizontal = 10.dp),

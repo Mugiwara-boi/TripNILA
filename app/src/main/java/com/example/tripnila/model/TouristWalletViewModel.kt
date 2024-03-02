@@ -42,6 +42,18 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
     private val _totalFee = MutableStateFlow(0.0)
     val totalFee = _totalFee.asStateFlow()
 
+    private val _initialTotalFee = MutableStateFlow(0.0)
+    val initialTotalFee = _initialTotalFee.asStateFlow()
+
+    private val _newTotalFee = MutableStateFlow(0.0)
+    val newTotalFee = _newTotalFee.asStateFlow()
+
+    private val _initialTripnilaFee = MutableStateFlow(0.0)
+    val initialTripnilaFee = _initialTripnilaFee.asStateFlow()
+
+    private val _newTripnilaFee = MutableStateFlow(0.0)
+    val newTripnilaFee = _newTripnilaFee.asStateFlow()
+
     private val _tripnilaFee = MutableStateFlow(0.0)
     val tripnilaFee = _tripnilaFee.asStateFlow()
 
@@ -65,6 +77,26 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
         _refundAmount.value = amount
         Log.d("RefundAmount", "${_refundAmount.value}")
     }
+
+    fun setInitialTotalFee(amount:Double){
+        _initialTotalFee.value = amount
+        Log.d("RefundAmount", "${_initialTotalFee.value}")
+    }
+    fun setNewTotalFee(amount:Double){
+        _newTotalFee.value = amount
+        Log.d("RefundAmount", "${_newTotalFee.value}")
+    }
+
+    fun setInitialTripnilaFee(amount:Double) {
+        _initialTripnilaFee.value = amount
+        Log.d("InitialTripnilaFee", "${initialTripnilaFee.value}")
+    }
+
+    fun setNewTripnilaFee(amount:Double) {
+        _newTripnilaFee.value = amount
+        Log.d("TripnilaFee", "${newTripnilaFee.value}")
+    }
+
 
     fun setEnoughBalance(enough: Boolean){
         _isEnoughBalance.value = enough
@@ -90,6 +122,12 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
     fun getAdminWallet(){
         viewModelScope.launch {
             _adminWallet.value = repository.getAdminWallet()
+            Log.d("Admin", "${_adminWallet.value.touristId}")
+            Log.d("currentAmount", "${_adminWallet.value.currentBalance}")
+            Log.d("paypalAmount", "${_adminWallet.value.paypalBalance}")
+            Log.d("paymayaAmount", "${_adminWallet.value.paymayaBalance}")
+            Log.d("gcashAmount", "${_adminWallet.value.gcashBalance}")
+            Log.d("pendingBalance", "${_adminWallet.value.pendingBalance}")
         }
     }
 
@@ -141,6 +179,60 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
         _touristWallet.value = _touristWallet.value.copy(currentBalance = newBalance)
         Log.d("TotalFee", "${_touristWallet.value.currentBalance}")
         updateBalance(touristId)
+    }
+
+    fun setReschedulePayment(totalFee: Double, touristId: String, initialTotalFee: Double){
+        if(totalFee > initialTotalFee){
+            val newFee = totalFee - initialTotalFee
+            val currentBalance = _touristWallet.value.currentBalance
+            val newBalance = currentBalance.minus(newFee)
+            _touristWallet.value = _touristWallet.value.copy(currentBalance = newBalance)
+            Log.d("TotalFee", "Paid extra $newBalance")
+            updateBalance(touristId)
+        }
+        else if(totalFee < initialTotalFee){
+            val refundFee = initialTotalFee - totalFee
+            val currentBalance = _touristWallet.value.currentBalance
+            val newBalance = currentBalance + refundFee
+            _touristWallet.value = _touristWallet.value.copy(currentBalance = newBalance)
+            Log.d("TotalFee", "Refunded back$newBalance")
+            updateBalance(touristId)
+        } else{
+            Log.d("TotalFee", "Same amount ${_touristWallet.value.currentBalance}")
+        }
+
+    }
+
+    fun setReschedulePendingAmount(totalFee: Double, hostWalletId: String, tripnilaFee: Double, initialTotalFee: Double, initialTripnilaFee: Double){
+        viewModelScope.launch {
+            if(totalFee > initialTotalFee){
+                val newTotal = totalFee - initialTotalFee
+                val newTripnila = tripnilaFee - initialTripnilaFee
+                val newPendingFee = newTotal - newTripnila
+                _hostWallet.value = _hostWallet.value.copy(pendingBalance = _hostWallet.value.pendingBalance + newPendingFee)
+                _adminWallet.value = _adminWallet.value.copy(pendingBalance = _adminWallet.value.pendingBalance + newTripnila)
+                Log.d("HostPendingAmount", "added $newPendingFee")
+                Log.d("AdminPendingAmount", "added $newTripnila")
+                updateHostBalance(hostWalletId)
+                updateAdminBalance()
+            }
+            else if(totalFee < initialTotalFee){
+                val newTotal = initialTotalFee - totalFee
+                val newTripnila = initialTripnilaFee - tripnilaFee
+                val refundFee = newTotal - newTripnila
+                _hostWallet.value = _hostWallet.value.copy(pendingBalance = _hostWallet.value.pendingBalance - refundFee)
+                _adminWallet.value = _adminWallet.value.copy(pendingBalance = _adminWallet.value.pendingBalance - newTripnila)
+                Log.d("HostPendingAmount", "refunded $refundFee")
+                Log.d("AdminPendingAmount", "refunded $newTripnila")
+                updateHostBalance(hostWalletId)
+                updateAdminBalance()
+            }
+            else{
+                Log.d("HostPendingAmount", "same ${hostWallet.value.pendingBalance}")
+                Log.d("AdminPendingAmount", "same ${adminWallet.value.pendingBalance}")
+            }
+
+        }
     }
 
     fun setPendingAmount(totalFee: Double, hostWalletId: String, tripnilaFee: Double){

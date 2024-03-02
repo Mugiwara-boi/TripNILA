@@ -3035,7 +3035,7 @@ class UserRepository {
                     staycationTitle = staycationTitle,
                     staycationType = staycationType,
                     staycationImages = staycationImages,
-<<<<<<< Updated upstream
+
                     hasFirstAid = hasFirstAid,
                     hasFireExit = hasFireExit,
                     hasFireExtinguisher = hasFireExtinguisher,
@@ -3050,9 +3050,9 @@ class UserRepository {
                     phoneNo = phoneNo,
                     email = email,
 
-=======
+
                     availableDates = availableDates,
->>>>>>> Stashed changes
+
                     host = Host(
                         profilePicture = hostInfo?.profilePicture ?: "",
                         firstName = hostInfo?.firstName ?: "",
