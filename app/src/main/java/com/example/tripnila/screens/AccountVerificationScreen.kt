@@ -63,12 +63,12 @@ fun AccountVerificationScreen(
     touristId: String = ""
 ){
 
-
     val validIdOptions = listOf("Driver's License", "Passport", "Postal ID", "Philippine Identification (PhilID / ePhilID)")
     val horizontalPaddingValue = 16.dp
     val verticalPaddingValue = 10.dp
 
     val backgroundColor = Color.White
+
 
     Surface(
         modifier = Modifier

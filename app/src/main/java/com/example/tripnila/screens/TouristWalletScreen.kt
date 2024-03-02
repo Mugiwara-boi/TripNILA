@@ -1,6 +1,5 @@
 package com.example.tripnila.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,7 +29,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.common.Orange
-import com.example.tripnila.data.WalletTransaction
 import com.example.tripnila.model.TouristWalletViewModel
 import java.text.DecimalFormat
 
@@ -42,21 +40,13 @@ fun TouristWalletScreen(
     onBack: () -> Unit,
     onNavToCashIn: (String) -> Unit
 ){
+    touristWalletViewModel.getTouristProfile(touristId)
     val horizontalPaddingValue = 16.dp
     val verticalPaddingValue = 10.dp
     val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
-    val walletTransactions = listOf(
-        WalletTransaction(
-            transactionType = "Cash in",
-            transactionDate = "September 06, 2023",
-            amount = 1000.00
-        ),
-        WalletTransaction(
-            transactionType = "Payment",
-            transactionDate = "September 06, 2023",
-            amount = 1000.00
-        ),
-    )
+    val tourist by touristWalletViewModel.tourist.collectAsState()
+    val touristName = tourist.firstName + " " + tourist.middleName + " " + tourist.lastName
+
 
     touristWalletViewModel.getWallet(touristId)
 //    touristWalletViewModel.setWallet(touristId)
@@ -89,7 +79,7 @@ fun TouristWalletScreen(
             ) {
                 item {
                     AvailableBalanceCardWithCashinButton(
-                        userName = "Joshua Araneta",
+                        userName = touristName,
                         userBalance = currentBalance,
                         onCashin = {
                             onNavToCashIn(touristId)
@@ -100,47 +90,6 @@ fun TouristWalletScreen(
                                 horizontal = horizontalPaddingValue
                             )
                     )
-                }
-
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                vertical = verticalPaddingValue,
-                                horizontal = horizontalPaddingValue
-                            )
-                    ) {
-                        Text(
-                            text = "Recent Transactions",
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 16.sp
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        walletTransactions.forEach { walletTransaction ->
-                            RecentTransactionCard(
-                                transaction = walletTransaction,
-                                modifier = Modifier.padding(top = 8.dp, start = 5.dp, end = 5.dp)
-                            )
-                        }
-                        BookingOutlinedButton(
-                            buttonText = "See all transactions",
-                            containerColor = Color(0xFFF8F8F9),
-                            buttonShape = RoundedCornerShape(10.dp),
-                            borderStroke = BorderStroke(1.dp, Color(0xff999999)),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-                            contentFontSize  = 12.sp,
-                            contentFontWeight = FontWeight.Medium,
-                            contentColor = Color(0xff999999),
-                            onClick = {
-
-                            },
-                            modifier = Modifier
-                                .padding(start = 30.dp, end = 30.dp, top = 12.dp)
-                                .fillMaxWidth()
-                                .height(35.dp)
-                        )
-                    }
                 }
 
             }

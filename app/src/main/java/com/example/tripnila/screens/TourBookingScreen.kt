@@ -262,7 +262,6 @@ fun TourBookingScreen(
 //                        modifier = Modifier.padding(top = 5.dp) // 10.dp
 //                    )
                     PaymentAgreementText()
-                    Spacer(modifier = Modifier.padding(vertical = 15.dp))
                     BookingFilledButton(
                         buttonText = "Confirm and pay",
                         onClick = {
