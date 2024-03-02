@@ -621,6 +621,40 @@ class UserRepository {
         return TouristWallet()
     }
 
+    suspend fun getAdminWallet(): TouristWallet{
+
+        try {
+            val querySnapshot = touristWalletCollection
+                .whereEqualTo("touristId", "admin")
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                val currentBalance = document.getDouble("currentBalance") ?: 0.0
+                val pendingBalance = document.getDouble("pendingBalance") ?: 0.0
+                val paypalBalance = document.getDouble("paypalBalance") ?: 0.0
+                val paymayaBalance = document.getDouble("paymayaBalance") ?: 0.0
+                val gcashBalance = document.getDouble("gcashBalance") ?: 0.0
+
+                return TouristWallet(
+                    touristId = "admin",
+                    currentBalance = currentBalance,
+                    paypalBalance = paypalBalance,
+                    paymayaBalance = paymayaBalance,
+                    gcashBalance = gcashBalance,
+                    pendingBalance = pendingBalance
+                )
+            }
+
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+
+        return TouristWallet()
+    }
+
     suspend fun addBalance(touristId: String, amount:Double, paypalBalance: Double, paymayaBalance: Double, gcashBalance: Double, pendingBalance: Double){
         try{
         touristWalletCollection
@@ -3519,6 +3553,7 @@ class UserRepository {
                 "noOfGuests" to noOfGuests,
                 "noOfInfants" to noOfInfants,
                 "noOfPets" to noOfPets,
+                "commission" to commission,
                 "staycationId" to staycationId,
                 "totalAmount" to totalAmount,
                 "touristId" to touristId
