@@ -15,6 +15,9 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
     private val _touristWallet = MutableStateFlow(TouristWallet())
     val touristWallet = _touristWallet.asStateFlow()
 
+    private val _adminWallet = MutableStateFlow(TouristWallet())
+    val adminWallet = _adminWallet.asStateFlow()
+
     private val _hostWallet = MutableStateFlow(TouristWallet())
     val hostWallet = _hostWallet.asStateFlow()
 
@@ -38,6 +41,9 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
 
     private val _totalFee = MutableStateFlow(0.0)
     val totalFee = _totalFee.asStateFlow()
+
+    private val _tripnilaFee = MutableStateFlow(0.0)
+    val tripnilaFee = _tripnilaFee.asStateFlow()
 
     private val _isLoadingAddBalance = MutableStateFlow<Boolean?>(null)
     val isLoadingAddBalance: StateFlow<Boolean?> = _isLoadingAddBalance
@@ -68,6 +74,11 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
         Log.d("TotalFee", "${totalFee.value}")
     }
 
+    fun setTripnilaFee(amount:Double) {
+        _tripnilaFee.value = amount
+        Log.d("TripnilaFee", "${tripnilaFee.value}")
+    }
+
     fun setPercentRefunded(days:Int){
         if(days > 7){
             _percentRefunded.value = 1.0
@@ -76,26 +87,35 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
         }
     }
 
-    fun setRefundedBalance(touristId: String, hostWalletId: String){
-        val refundedAmount = _refundAmount.value * _percentRefunded.value
-        _refundedCurrentBalance.value = _refundAmount.value - refundedAmount
-        _refundedPendingBalance.value = _refundAmount.value
-        val newBalance = _touristWallet.value.currentBalance + refundedAmount
+    fun getAdminWallet(){
+        viewModelScope.launch {
+            _adminWallet.value = repository.getAdminWallet()
+        }
+    }
+
+    fun setRefundedBalance(touristId: String, hostWalletId: String, tripnilaFee: Double){
+        val refundedAmount = (_refundAmount.value - tripnilaFee) * _percentRefunded.value
+        _refundedCurrentBalance.value = _refundAmount.value - refundedAmount - tripnilaFee
+        _refundedPendingBalance.value = _refundAmount.value - tripnilaFee
+        val newBalance = _touristWallet.value.currentBalance + refundedAmount + tripnilaFee
         _touristWallet.value = _touristWallet.value.copy(currentBalance = newBalance)
         updateBalance(touristId)
-        setRefundedAmountToHostWallet(hostWalletId)
+        setRefundedAmountToHostWallet(hostWalletId, tripnilaFee)
         Log.d("RefundedAmount", "$refundedAmount")
         Log.d("NewBalanceAfterRefundedAmount", "${_touristWallet.value.currentBalance}")
         Log.d("NewRefundedCurrentBalance", "${_refundedCurrentBalance.value}")
         Log.d("NewRefundedPendingBalance", "${_refundedPendingBalance.value}")
     }
 
-    fun setRefundedAmountToHostWallet(hostWalletId: String){
+    fun setRefundedAmountToHostWallet(hostWalletId: String, tripnilaFee: Double){
         val refundedPending = _hostWallet.value.pendingBalance - _refundedPendingBalance.value
         val refundedCurrent = _hostWallet.value.currentBalance + _refundedCurrentBalance.value
+        val refundedFee = _adminWallet.value.pendingBalance - tripnilaFee
         _hostWallet.value = _hostWallet.value.copy(pendingBalance = refundedPending)
+        _adminWallet.value = _adminWallet.value.copy(pendingBalance = refundedFee)
         _hostWallet.value = _hostWallet.value.copy(currentBalance = refundedCurrent)
         updateHostBalance(hostWalletId)
+        updateAdminBalance()
         Log.d("RefundedPendingAmount", "$refundedPending")
         Log.d("RefundedCurrentAmount", "$refundedPending")
         Log.d("RefundedAmountToHostCurrent", "${_hostWallet.value.currentBalance}")
@@ -123,17 +143,18 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
         updateBalance(touristId)
     }
 
-    fun setPendingAmount(amount: Double, hostWalletId: String){
+    fun setPendingAmount(totalFee: Double, hostWalletId: String, tripnilaFee: Double){
         viewModelScope.launch {
+            val hostpending = totalFee - tripnilaFee
+            _hostWallet.value = _hostWallet.value.copy(pendingBalance = _hostWallet.value.pendingBalance + hostpending)
+            _adminWallet.value = _adminWallet.value.copy(pendingBalance = _adminWallet.value.pendingBalance + tripnilaFee)
 
-
-            // Update only the pendingBalance field
-            _hostWallet.value = _hostWallet.value.copy(pendingBalance = _hostWallet.value.pendingBalance + amount)
-
-            Log.d("TotalFee", "${_hostWallet.value.pendingBalance}")
+            Log.d("HostPendingAmount", "${hostWallet.value.pendingBalance}")
+            Log.d("AdminPendingAmount", "${adminWallet.value.pendingBalance}")
 
             // Update the balance on the server
             updateHostBalance(hostWalletId)
+            updateAdminBalance()
         }
     }
     fun getTouristProfile(touristId: String){
@@ -215,6 +236,8 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
         viewModelScope.launch {
 
             val touristWallet = repository.getTouristWallet(touristId)
+            getAdminWallet()
+
 
             // Update the touristWallet LiveData
             _touristWallet.value = touristWallet
@@ -226,10 +249,13 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
         }
     }
 
+
+
     fun getHostWallet(hostWalletId: String){
         viewModelScope.launch {
 
             val touristWallet = repository.getTouristWallet(hostWalletId)
+            getAdminWallet()
 
             // Update the touristWallet LiveData
             _hostWallet.value = touristWallet
@@ -247,6 +273,26 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
             val gcashBalance = _hostWallet.value.gcashBalance
             val paymayaBalance = _hostWallet.value.paymayaBalance
             val pendingBalance = _hostWallet.value.pendingBalance
+
+            val wallet = repository.addBalance(
+                touristId = touristId,
+                amount = balance,
+                paymayaBalance = paymayaBalance,
+                paypalBalance = paypalBalance,
+                pendingBalance = pendingBalance,
+                gcashBalance = gcashBalance,
+            )
+        }
+    }
+
+    fun updateAdminBalance(){
+        viewModelScope.launch {
+            val touristId = "admin"
+            val balance = _adminWallet.value.currentBalance
+            val paypalBalance = _adminWallet.value.paypalBalance
+            val gcashBalance = _adminWallet.value.gcashBalance
+            val paymayaBalance = _adminWallet.value.paymayaBalance
+            val pendingBalance = _adminWallet.value.pendingBalance
 
             val wallet = repository.addBalance(
                 touristId = touristId,

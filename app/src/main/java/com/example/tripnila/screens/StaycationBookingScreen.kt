@@ -141,8 +141,7 @@ fun StaycationBookingScreen(
 
     val nights = remember { mutableStateOf(0) }
     val hasNavigationBar = WindowInsets.areNavigationBarsVisible
-
-
+    val tripnilaFee by touristWalletViewModel.tripnilaFee.collectAsState()
     val isInitial = remember { mutableStateOf(true) }
     touristWalletViewModel.getHostWallet(hostWalletId)
 //    touristWalletViewModel.setWallet(touristId)
@@ -620,12 +619,9 @@ fun StaycationBookingScreen(
                                         coroutineScope.launch {
                                             openAlertDialog.value = false
 
-                                            val bookingJob = launch {
-                                                detailViewModel?.addBooking(touristId)
-                                                touristWalletViewModel.setBookingPayment(totalFee,touristId)
-                                            }
-                                            bookingJob.join()
-                                            touristWalletViewModel.setPendingAmount(totalFee,hostWalletId)
+                                            detailViewModel.addBooking(touristId)
+                                            touristWalletViewModel.setBookingPayment(totalFee,touristId)
+                                            touristWalletViewModel.setPendingAmount(totalFee = totalFee,hostWalletId = hostWalletId,tripnilaFee = tripnilaFee)
                                         }
 
 
@@ -849,6 +845,7 @@ fun AppPaymentDivider(
 
   //  val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripnilaFee
     touristWalletViewModel.setTotalFee(totalFeeState)
+    touristWalletViewModel.setTripnilaFee(tripNilaFee)
 
     var selectedPaymentMethod by remember { mutableStateOf(-1) }
     var isSelectionEnabled by remember { mutableStateOf(true) }

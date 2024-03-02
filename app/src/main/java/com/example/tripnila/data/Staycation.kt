@@ -99,7 +99,10 @@ data class Photo(
     val photoUri: Uri? = null
 )
 
-
+data class BookingInfo(
+    val totalAmount: Double,
+    val commission: Double
+)
 data class StaycationBooking(
     val staycationBookingId: String = "",
     val tourist: Tourist? = null,
@@ -109,6 +112,7 @@ data class StaycationBooking(
     val noOfGuests: Int = 0,
     val noOfPets: Int = 0,
     val noOfInfants: Int = 0,
+    val commission: Double =0.0,
     val totalAmount: Double = 0.00,
     val bookingStatus: String = "",
     val bookingReview: Review? = null, // new

@@ -112,7 +112,6 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
@@ -141,7 +140,6 @@ fun BookingHistoryScreen(
     val isCancelBookingSuccessful = bookingHistoryViewModel.isSuccessCancelBooking.collectAsState().value
     val selectedTab by bookingHistoryViewModel.selectedTab.collectAsState()
     val logCheckOutDatesResult by bookingHistoryViewModel.logCheckOutDatesResult.collectAsState()
-
     val staycationBookingFlow = remember { bookingHistoryViewModel.getStaycationBookingsForTourist(touristId) }
     val staycationBookingItems = if (logCheckOutDatesResult != "") staycationBookingFlow.collectAsLazyPagingItems() else null
 
@@ -618,6 +616,9 @@ fun BookingHistoryCard(
             true
         }
     )
+    val bookingFee = bookingHistory.basePrice * bookingHistory.bookingDuration
+    val tripnilaFee = bookingFee * 0.05
+
 
     touristWalletViewModel.getHostWallet(bookingHistory.hostTouristId)
     LaunchedEffect(isSuccessAddingReview) {
@@ -1051,7 +1052,7 @@ fun BookingHistoryCard(
 
                                         }
 
-                                        touristWalletViewModel.setRefundedBalance(touristId = touristId, hostWalletId = bookingHistory.hostTouristId)
+                                        touristWalletViewModel.setRefundedBalance(touristId = touristId, hostWalletId = bookingHistory.hostTouristId,tripnilaFee = tripnilaFee)
 
                                     }
 

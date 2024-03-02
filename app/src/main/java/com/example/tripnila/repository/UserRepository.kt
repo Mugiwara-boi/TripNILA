@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.tripnila.data.Amenity
+import com.example.tripnila.data.BookingInfo
 import com.example.tripnila.data.Business
 import com.example.tripnila.data.Chat
 import com.example.tripnila.data.DailySchedule
@@ -604,6 +605,40 @@ class UserRepository {
 
                 return TouristWallet(
                     touristId = touristId,
+                    currentBalance = currentBalance,
+                    paypalBalance = paypalBalance,
+                    paymayaBalance = paymayaBalance,
+                    gcashBalance = gcashBalance,
+                    pendingBalance = pendingBalance
+                )
+            }
+
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle the error case as needed
+        }
+
+        return TouristWallet()
+    }
+
+    suspend fun getAdminWallet(): TouristWallet{
+
+        try {
+            val querySnapshot = touristWalletCollection
+                .whereEqualTo("touristId", "admin")
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                val currentBalance = document.getDouble("currentBalance") ?: 0.0
+                val pendingBalance = document.getDouble("pendingBalance") ?: 0.0
+                val paypalBalance = document.getDouble("paypalBalance") ?: 0.0
+                val paymayaBalance = document.getDouble("paymayaBalance") ?: 0.0
+                val gcashBalance = document.getDouble("gcashBalance") ?: 0.0
+
+                return TouristWallet(
+                    touristId = "admin",
                     currentBalance = currentBalance,
                     paypalBalance = paypalBalance,
                     paymayaBalance = paymayaBalance,
@@ -2764,8 +2799,7 @@ class UserRepository {
         }
     }*/
 
-    suspend fun updateBookingStatusToFinishedIfExpiredForTours(): Map<String, Double> {
-
+    suspend fun updateBookingStatusToFinishedIfExpiredForTours(): Map<String, BookingInfo> {
         try {
             val currentTimestamp = Timestamp.now()
 
@@ -2774,12 +2808,13 @@ class UserRepository {
 
             val result = query.get().await()
 
-            val tourDataMap = mutableMapOf<String, Double>() // Map to store tourId and totalAmount
+            val tourDataMap = mutableMapOf<String, BookingInfo>() // Map to store tourId, totalAmount, and commission
 
             for (document in result.documents) {
-                val endTimeString  = document.getString("endTime") ?: ""
-                val tourDateString  = document.getString("tourDate") ?: ""
-                val totalAmount = document.getDouble("totalAmount")
+                val endTimeString = document.getString("endTime") ?: ""
+                val tourDateString = document.getString("tourDate") ?: ""
+                val totalAmount = document.getDouble("totalAmount") ?: 0.0
+                val commission = document.getDouble("commission") ?: 0.0
                 val tourId = document.getString("tourId")
 
                 val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -2797,9 +2832,9 @@ class UserRepository {
                 // Convert to timestamp
                 val timestamp = Timestamp(Date.from(zonedDateTime.toInstant()))
 
-                if (timestamp <= currentTimestamp && tourId != null && totalAmount != null) {
+                if (timestamp <= currentTimestamp && tourId != null) {
                     Log.d("BookingStatusUpdate", "BookingId: ${document.id}, Check OutDate: $zonedDateTime")
-                    Log.d(" TOUR", "TOUR")
+                    Log.d("TOUR", "TOUR")
                     val bookingId = document.id
                     val updateTask = tourBookingCollection.document(bookingId)
                         .update("bookingStatus", "Completed")
@@ -2812,9 +2847,9 @@ class UserRepository {
 
                             Log.d(
                                 "UserRepository",
-                                "tourId ID: $tourId, Total Amount: $totalAmount"
+                                "tourId ID: $tourId, Total Amount: $totalAmount, Commission: $commission"
                             )
-                            Log.d( "UserRepository","staycationDataMap updated: $tourDataMap")
+                            Log.d("UserRepository", "staycationDataMap updated: $tourDataMap")
                         }
                         .addOnFailureListener { e ->
                             // Handle the error
@@ -2824,14 +2859,11 @@ class UserRepository {
                             )
                         }
 
-                    tourDataMap[tourId.toString()] = totalAmount
+                    tourDataMap[tourId.toString()] = BookingInfo(totalAmount, commission)
                 }
-
             }
             Log.d("tourDataMap", "tourDataMap: $tourDataMap")
             return tourDataMap
-
-
         } catch (e: Exception) {
             Log.e("BookingStatusUpdate", "An error occurred: $e")
         }
@@ -2839,82 +2871,57 @@ class UserRepository {
     }
 
 
-    suspend fun updateBookingStatusToFinishedIfExpired(): Map<String, Double> {
-
+    suspend fun updateBookingStatusToFinishedIfExpired(): Map<String, BookingInfo> {
         try {
             val currentTimestamp = Timestamp.now()
-
             val query = staycationBookingCollection
                 .whereLessThan("checkOutDate", currentTimestamp)
                 .whereEqualTo("bookingStatus", "Ongoing")
-
             val result = query.get().await()
 
-            Log.d("BookingStatusUpdate", "Found ${result.size()} bookings to check")
-
-            val staycationDataMap = mutableMapOf<String, Double>() // Map to store staycationId and totalAmount
+            val bookingInfoMap = mutableMapOf<String, BookingInfo>()
 
             for (document in result.documents) {
-                val checkOutTimestamp = document.getTimestamp("checkOutDate")
                 val staycationId = document.getString("staycationId")
                 val totalAmount = document.getDouble("totalAmount")
+                val commission = document.getDouble("commission")
 
+                if (staycationId != null && totalAmount != null && commission != null) {
+                    val bookingInfo = BookingInfo(totalAmount, commission)
+                    bookingInfoMap[staycationId] = bookingInfo
 
-                if (checkOutTimestamp != null && staycationId != null && totalAmount != null) {
-                    Log.d("BookingStatusUpdate", "BookingId: ${document.id}, CheckOutDate: $checkOutTimestamp")
-
-                    val bookingId = document.id
-                    val updateTask = staycationBookingCollection.document(bookingId)
-                            .update("bookingStatus", "Completed")
-                            .addOnSuccessListener {
-                                // Update successful
-                                Log.d(
-                                    "UserRepository",
-                                    "Booking $bookingId status updated to Finished"
-                                )
-
-                                Log.d(
-                                    "UserRepository",
-                                    "Staycation ID: $staycationId, Total Amount: $totalAmount"
-                                )
-                                Log.d( "UserRepository","staycationDataMap updated: $staycationDataMap")
-                            }
-                            .addOnFailureListener { e ->
-                                // Handle the error
-                                Log.d(
-                                    "UserRepository",
-                                    "Error updating booking status for $bookingId: $e"
-                                )
-                            }
-
+                    // Update booking status to "Completed"
+                    staycationBookingCollection.document(document.id)
+                        .update("bookingStatus", "Completed")
+                        .addOnSuccessListener {
+                            Log.d("UserRepository", "Booking ${document.id} status updated to Finished")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("UserRepository", "Error updating booking status for ${document.id}: $e")
+                        }
                 }
-                staycationDataMap[staycationId.toString()] = totalAmount!!
             }
-            Log.d("StaycationDataMap", "staycationDataMap: $staycationDataMap")
-            return staycationDataMap
 
-
+            Log.d("BookingStatusUpdate", "Updated booking info: $bookingInfoMap")
+            return bookingInfoMap
         } catch (e: Exception) {
             Log.e("BookingStatusUpdate", "An error occurred: $e")
         }
         return emptyMap()
     }
 
-    suspend fun processCompletedBookings(staycationDataMap: Map<String, Double>): Map<String, Pair<String, Double>> {
-        val staycationDetailsMap = mutableMapOf<String, Pair<String, Double>>()
+    suspend fun processCompletedBookings(staycationDataMap: Map<String, BookingInfo>): Map<String, Pair<String, BookingInfo>> {
+        val staycationDetailsMap = mutableMapOf<String, Pair<String, BookingInfo>>()
 
-        for ((staycationId, totalAmount) in staycationDataMap) {
+        for ((staycationId, bookingInfo) in staycationDataMap) {
             try {
                 val staycationDocument = staycationCollection.document(staycationId).get().await()
 
-
                 if (staycationDocument.exists()) {
-                    // Retrieve the hostId from the document
-
                     val hostId = staycationDocument.getString("hostId")
                     if (hostId != null) {
-                        // Add the staycationId, hostId, and totalAmount to the map
-                        staycationDetailsMap[staycationId] = Pair(hostId, totalAmount)
+                        // Add the staycationId, hostId, and booking info to the map
+                        staycationDetailsMap[staycationId] = Pair(hostId, bookingInfo)
                     } else {
                         // If hostId is null, log an error
                         Log.e("GetStaycationDetails", "HostId is null for staycationId $staycationId")
@@ -2932,10 +2939,10 @@ class UserRepository {
         return staycationDetailsMap
     }
 
-    suspend fun processCompletedTourBookings(tourDataMap: Map<String, Double>): Map<String, Pair<String, Double>> {
-        val tourDetailsMap = mutableMapOf<String, Pair<String, Double>>()
+    suspend fun processCompletedTourBookings(tourDataMap: Map<String, BookingInfo>): Map<String, Pair<String, BookingInfo>> {
+        val tourDetailsMap = mutableMapOf<String, Pair<String, BookingInfo>>()
 
-        for ((tourId, totalAmount) in tourDataMap) {
+        for ((tourId, bookingInfo) in tourDataMap) {
             try {
                 val tourDocument = tourCollection.document(tourId).get().await()
 
@@ -2946,7 +2953,7 @@ class UserRepository {
                     val hostId = tourDocument.getString("hostId")
                     if (hostId != null) {
                         // Add the staycationId, hostId, and totalAmount to the map
-                        tourDetailsMap[tourId] = Pair(hostId, totalAmount)
+                        tourDetailsMap[tourId] = Pair(hostId, bookingInfo)
                     } else {
                         // If hostId is null, log an error
                         Log.e("processCompletedTourBookings", "HostId is null for staycationId $tourId")
@@ -3098,6 +3105,45 @@ class UserRepository {
         } catch (e: Exception) {
             // Handle exceptions
             Log.e("UpdateTouristWallet", "Error updating tourist wallet: $e")
+        }
+    }
+
+    suspend fun updateAdminPendingBalance(hostMap: Map<String, Double>) {
+        try {
+            for ((hostId, commission) in hostMap) {
+                // Query the touristWalletCollection to get the touristWallet document
+                val query = touristWalletCollection.whereEqualTo("touristId", "admin")
+                val snapshot = query.get().await()
+
+                // Check if the query returned any documents
+                if (!snapshot.isEmpty) {
+                    val document = snapshot.documents.first()
+
+                    // Get the current pendingBalance and currentBalance
+                    val pendingBalance = document.getDouble("pendingBalance") ?: 0.0
+                    val currentBalance = document.getDouble("currentBalance") ?: 0.0
+
+                    // Calculate the new balances
+                    val newPendingBalance = pendingBalance - commission
+                    val newCurrentBalance = currentBalance + commission
+
+                    // Update the touristWallet document
+                    document.reference.update(
+                        mapOf(
+                            "pendingBalance" to newPendingBalance,
+                            "currentBalance" to newCurrentBalance
+                        )
+                    ).await()
+
+                    // Log the update success
+                    Log.d("UpdateAdminWallet", "Tourist wallet updated successfully")
+                } else {
+                    Log.d("UpdateAdminWallet", "No tourist wallet found for hostId: $hostId")
+                }
+            }
+        } catch (e: Exception) {
+            // Handle exceptions
+            Log.e("UpdateAdminWallet", "Error updating tourist wallet: $e")
         }
     }
 
@@ -3594,6 +3640,7 @@ class UserRepository {
                 "noOfGuests" to noOfGuests,
                 "noOfInfants" to noOfInfants,
                 "noOfPets" to noOfPets,
+                "commission" to commission,
                 "staycationId" to staycationId,
                 "totalAmount" to totalAmount,
                 "touristId" to touristId
@@ -3655,6 +3702,7 @@ class UserRepository {
                 "startTime" to startTime,
                 "totalAmount" to totalAmount,
                 "tourAvailabilityId" to tourAvailabilityId,
+                "commission" to commission,
                 "tourDate" to tourDate,
                 "tourId" to tourId,
                 "touristId" to touristId,

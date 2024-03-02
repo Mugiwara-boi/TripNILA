@@ -9,6 +9,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.example.tripnila.data.BookingHistory
+import com.example.tripnila.data.BookingInfo
 import com.example.tripnila.data.Review
 import com.example.tripnila.data.ReviewPhoto
 import com.example.tripnila.data.StaycationBooking
@@ -64,8 +65,11 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
     private val _alertDialogMessage = MutableStateFlow<String?>(null)
     val alertDialogMessage: StateFlow<String?> get() = _alertDialogMessage
 
-    private val _completedBookings = MutableStateFlow<Map<String, Pair<String, Double>>>(emptyMap())
+    private val _completedBookings = MutableStateFlow<Map<String, Pair<String, BookingInfo>>>(emptyMap())
     val completedBookings = _completedBookings.asStateFlow()
+
+    private val _completedTourBookings = MutableStateFlow<Map<String, Pair<String, BookingInfo>>>(emptyMap())
+    val completedTourBookings = _completedTourBookings.asStateFlow()
 
     private val _isLoadingCancelBooking = MutableStateFlow(false)
     val isLoadingCancelBooking: StateFlow<Boolean> = _isLoadingCancelBooking
@@ -154,21 +158,27 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
                 val completedBooking = repository.updateBookingStatusToFinishedIfExpired()
                 val completedTourBooking = repository.updateBookingStatusToFinishedIfExpiredForTours()
 
-                Log.d("COmpleted TOURS", completedTourBooking.toString())
+                Log.d("Completed TOURS", completedTourBooking.toString())
+                Log.d("Completed BOOKINGS", completedBooking.toString())
 
                 _completedBookings.value = repository.processCompletedBookings(completedBooking)
                 val hostMap = extractHostTotalMap(_completedBookings.value)
+                val hostAdminMap = extractHostTotalMapForAdmin(_completedBookings.value)
                 repository.updatePendingBalance(hostMap)
+                repository.updateAdminPendingBalance(hostAdminMap)
 
-                _completedBookings.value = repository.processCompletedTourBookings(completedTourBooking)
-                val tourHostMap = extractHostTotalMap(_completedBookings.value)
+                _completedTourBookings.value = repository.processCompletedTourBookings(completedTourBooking)
+                val tourHostMap = extractHostTotalMap(_completedTourBookings.value)
+                val tourHostAdminMap = extractHostTotalMapForAdmin(_completedTourBookings.value)
                 repository.updatePendingBalance(tourHostMap)
+                repository.updateAdminPendingBalance(tourHostAdminMap)
 
                 _logCheckOutDatesResult.value = "Fetched successfully."
 
 //                val bookings = repository.getStaycationBookingsForTourist(touristId)
 //                _staycationBookingList.value = bookings
                 Log.d("Update", "${_completedBookings.value}")
+                Log.d("Update", "${_completedTourBookings.value}")
            //     Log.d("Update", "$hostMap")
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -178,13 +188,29 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
     }
 
 
-    fun extractHostTotalMap(staycationDetailsMap: Map<String, Pair<String, Double>>): Map<String, Double> {
+    fun extractHostTotalMap(staycationDetailsMap: Map<String, Pair<String, BookingInfo>>): Map<String, Double> {
         val hostTotalMap = mutableMapOf<String, Double>()
 
         for ((_, pair) in staycationDetailsMap) {
-            val (hostId, totalAmount) = pair
+            val (hostId, bookingInfo) = pair
             val cleanedHostId = hostId.removePrefix("HOST-")
-            hostTotalMap[cleanedHostId] = hostTotalMap.getOrDefault(cleanedHostId, 0.0) + totalAmount
+            val totalAmount = bookingInfo.totalAmount
+            val commission = bookingInfo.commission
+            val amount = totalAmount - commission
+            hostTotalMap[cleanedHostId] = hostTotalMap.getOrDefault(cleanedHostId, 0.0) + amount
+        }
+
+        return hostTotalMap
+    }
+
+    fun extractHostTotalMapForAdmin(staycationDetailsMap: Map<String, Pair<String, BookingInfo>>): Map<String, Double> {
+        val hostTotalMap = mutableMapOf<String, Double>()
+
+        for ((_, pair) in staycationDetailsMap) {
+            val (hostId, bookingInfo) = pair
+            val cleanedHostId = hostId.removePrefix("HOST-")
+            val commission = bookingInfo.commission
+            hostTotalMap[cleanedHostId] = hostTotalMap.getOrDefault(cleanedHostId, 0.0) + commission
         }
 
         return hostTotalMap
