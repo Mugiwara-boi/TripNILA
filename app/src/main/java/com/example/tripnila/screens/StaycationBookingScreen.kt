@@ -92,6 +92,9 @@ import com.example.tripnila.model.TouristWalletViewModel
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.text.NumberFormat
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 @SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -162,6 +165,11 @@ fun StaycationBookingScreen(
         dateRangePickerState.selectedStartDateMillis,
         dateRangePickerState.selectedEndDateMillis
     ) {
+
+        Log.d("Before (Booking)", "${dateRangePickerState.selectedStartDateMillis}")
+        Log.d("Before (BOoking)", "${dateRangePickerState.selectedEndDateMillis}")
+
+
         val countNights = if (dateRangePickerState.selectedStartDateMillis != null && dateRangePickerState.selectedEndDateMillis != null) {
             calculateNights(dateRangePickerState.selectedStartDateMillis!!,
                 dateRangePickerState.selectedEndDateMillis!!
@@ -179,6 +187,7 @@ fun StaycationBookingScreen(
         if (countNights != null && countNights <= 0) {
             dateRangePickerState.setSelection(startDateMillis = null, endDateMillis = null)
         }
+
 
         titleText.value = countNights?.let { "$it nights" } ?: "Select date"
         nights.value = countNights?.toInt() ?: 0
@@ -212,7 +221,8 @@ fun StaycationBookingScreen(
                 AsyncImage(
                     model = staycation?.value?.staycationImages?.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
                     contentDescription = "Staycation Image",
-                    contentScale = ContentScale.FillWidth
+                    contentScale = ContentScale.FillWidth,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Box(
                     modifier = Modifier
@@ -385,12 +395,22 @@ fun StaycationBookingScreen(
                             todayContentColor = Color.Black
                         ),
                         dateValidator = { date ->
+
+                            val selectedDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate()
+                            val today = LocalDateTime.now().toLocalDate()
+
                             val adjustedDates = staycation?.value?.availableDates?.map {
                                 it.availableDate?.toDate()?.time?.plus(28800000) ?: 0
                             } ?: emptyList()
 
-                            val threshold = 60000
-                            adjustedDates.any { Math.abs(date - it) <= threshold }
+                            adjustedDates.contains(date) && selectedDate.isAfter(today)
+
+//                            val adjustedDates = staycation?.value?.availableDates?.map {
+//                                it.availableDate?.toDate()?.time?.plus(28800000) ?: 0
+//                            } ?: emptyList()
+//
+//                            val threshold = 60000
+//                            adjustedDates.any { Math.abs(date - it) <= threshold }
                         },
                     )
 
@@ -775,6 +795,9 @@ fun YourTripDivider(
 @Composable
 fun AppPaymentDivider(
     modifier: Modifier = Modifier,
+    forTourBooking: Boolean = false,
+    forRescheduling: Boolean = false,
+    initialBookingDuration: Int = 0,
     touristId: String,
     detailViewModel: DetailViewModel? = null,
     touristWalletViewModel: TouristWalletViewModel,
@@ -807,10 +830,18 @@ fun AppPaymentDivider(
         isWalletFetched = true
     }
 
+//    val staycationBooking = detailViewModel?.staycationBooking?.collectAsState()
+//    val previouslyPaidBookingAmount = staycationBooking?.value?.totalAmount
+
     val currentBalance = touristWallet.currentBalance
     val productBookingFee = bookingFee * bookingDuration
     val tripNilaFee = productBookingFee * 0.05
     val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripNilaFee
+
+    val initialProductBookingFee = bookingFee * initialBookingDuration
+    val initialTripNilaFee = initialProductBookingFee * 0.05
+    val initialTotalFeeState = initialProductBookingFee + (maintenanceFee ?: 0.0) + initialTripNilaFee
+
 
   //  val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripnilaFee
     touristWalletViewModel.setTotalFee(totalFeeState)
@@ -836,21 +867,86 @@ fun AppPaymentDivider(
     }
 
 
-//    if (!forCancelBooking) {
-//        LaunchedEffect(selectedPaymentMethod) {
-//            bookingHistoryViewModel?.setSelectedPaymentMethod(selectedPaymentMethod)
-//            bookingHistoryViewModel?.setAlertDialogMessage()
-//
-//            Log.d("selectedPaymentMethod", "$selectedPaymentMethod")
-//        }
-//    }
 
+    val initialFormattedTourPaymentRowText = if (initialBookingDuration == 0 || initialBookingDuration == 1) {
+        "₱ ${formattedNumber.format(bookingFee)} x $initialBookingDuration person"
+    } else {
+        "₱ ${formattedNumber.format(bookingFee)} x $initialBookingDuration persons"
+    }
+
+    val initialFormattedStaycationPaymentRowText = if (initialBookingDuration == 0 || initialBookingDuration == 1) {
+        "₱ ${formattedNumber.format(bookingFee)} x $initialBookingDuration night"
+    } else {
+        "₱ ${formattedNumber.format(bookingFee)} x $initialBookingDuration nights"
+    }
+
+    val formattedTourPaymentRowText = if (bookingDuration == 0 || bookingDuration == 1) {
+        "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration person"
+    } else {
+        "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration persons"
+    }
+
+    val formattedStaycationPaymentRowText = if (bookingDuration == 0 || bookingDuration == 1) {
+        "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration night"
+    } else {
+        "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration nights"
+    }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(all = 10.dp)
     ){
+
+        if (forRescheduling) {
+            Text(
+                text = "Previous Payment????",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .padding(bottom = 5.dp)
+            )
+
+            PaymentRow(
+                feeLabel = if (forTourBooking) initialFormattedTourPaymentRowText else initialFormattedStaycationPaymentRowText,
+                feePrice = initialProductBookingFee
+            )
+
+            if (maintenanceFee != null) {
+                PaymentRow(
+                    feeLabel = "Maintenance fee",
+                    feePrice = maintenanceFee
+                )
+            }
+
+            PaymentRow(
+                feeLabel = "Tripnila service fee",
+                feePrice = initialTripNilaFee
+            )
+            Divider(
+                color = Color(0xFFDEDEDE),
+                modifier = Modifier.padding(vertical = 3.dp)
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 3.dp)
+            ) {
+                Text(
+                    text = "Total paid",
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                Text(
+                    text = "₱ ${formattedNumberWithDecimalFormat.format(initialTotalFeeState)}",
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+        }
+
+
         Text(
             text = "Payment",
             fontSize = 16.sp,
@@ -859,7 +955,7 @@ fun AppPaymentDivider(
                 .padding(bottom = 5.dp)
         )
         PaymentRow(
-            feeLabel = "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration nights",
+            feeLabel = if (forTourBooking) formattedTourPaymentRowText else formattedStaycationPaymentRowText,
             feePrice = productBookingFee
         )
 
@@ -941,6 +1037,7 @@ fun AppPaymentDivider(
                 modifier = Modifier
                     .padding(vertical = 4.dp)
             )
+         //   PaymentRow(feeLabel = "Paid", feePrice = initialTotalFeeState)
             PaymentRow(
                 feeLabel = "Current Balance",
                 feePrice = currentBalance
@@ -1320,6 +1417,21 @@ fun GuestsCounter(
             )
         }
     }
+}
+
+@Preview
+@Composable
+private fun StaycationBookingScreenPreview() {
+
+    val touristId = "n7r1JjE18t5iCP32GXjt"
+
+//    StaycationBookingScreen(
+//        touristId = touristId,
+//        staycationId = ,
+//        staycationBookingId = ,
+//        onBack = { /*TODO*/ },
+//        touristWalletViewModel = TouristWalletViewModel()
+//    )
 }
 
 

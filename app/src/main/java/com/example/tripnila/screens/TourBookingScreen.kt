@@ -81,7 +81,7 @@ import com.example.tripnila.model.TouristWalletViewModel
 fun TourBookingScreen(
     touristId: String = "",
     tourDetailsViewModel: TourDetailsViewModel,
-  //  touristWalletViewModel: TouristWalletViewModel,
+    touristWalletViewModel: TouristWalletViewModel,
     onBack: () -> Unit
 ){
 
@@ -100,9 +100,9 @@ fun TourBookingScreen(
     }
 
     val bookingFee = tour.tourPrice
-    val productBookingFee = bookingFee * selectedPersonCount
-    val tripNilaFee = productBookingFee * 0.05
-    val totalFeeState = productBookingFee + tripNilaFee
+//    val productBookingFee = bookingFee * selectedPersonCount
+//    val tripNilaFee = productBookingFee * 0.05
+//    val totalFeeState = productBookingFee + tripNilaFee
 
     var openBottomSheet by remember { mutableStateOf(false) }
     val bottomSheetState = rememberModalBottomSheetState( skipPartiallyExpanded = true)
@@ -200,52 +200,62 @@ fun TourBookingScreen(
                             openBottomSheet = true
                         }
                     )
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(all = 10.dp)
-                    ) {
-                        Text(
-                            text = "Payment",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier
-                                .padding(bottom = 5.dp)
-                        )
-                        PaymentRow(
-                            feeLabel = "₱ ${formattedNumber.format(bookingFee)} x $selectedPersonCount persons",
-                            feePrice = productBookingFee
-                        )
 
-                        PaymentRow(
-                            feeLabel = "Tripnila service fee",
-                            feePrice = tripNilaFee
-                        )
-                        Divider(
-                            color = Color(0xFFDEDEDE),
-                            modifier = Modifier.padding(vertical = 3.dp)
-                        )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 3.dp)
-                        ) {
-                            Text(
-                                text = "Total",
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier
-                                    .weight(1f)
-                            )
-                            Text(
-                                text = "₱ ${formattedNumberWithDecimalFormat.format(totalFeeState)}",
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
-                    Divider(
-                        color = Color(0xFF999999),
-                        modifier = Modifier.padding(top = 5.dp) // 10.dp
+                    AppPaymentDivider(
+                        forTourBooking = true,
+                        touristId = touristId,
+                        bookingFee = bookingFee,
+                        bookingDuration = selectedPersonCount,
+                        //     tripnilaFee = bookingHistory?.staycationPrice?.times(0.05) ?: 0.0,
+                        touristWalletViewModel = touristWalletViewModel
                     )
+
+//                    Column(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(all = 10.dp)
+//                    ) {
+//                        Text(
+//                            text = "Payment",
+//                            fontSize = 16.sp,
+//                            fontWeight = FontWeight.Medium,
+//                            modifier = Modifier
+//                                .padding(bottom = 5.dp)
+//                        )
+//                        PaymentRow(
+//                            feeLabel = "₱ ${formattedNumber.format(bookingFee)} x $selectedPersonCount persons",
+//                            feePrice = productBookingFee
+//                        )
+//
+//                        PaymentRow(
+//                            feeLabel = "Tripnila service fee",
+//                            feePrice = tripNilaFee
+//                        )
+//                        Divider(
+//                            color = Color(0xFFDEDEDE),
+//                            modifier = Modifier.padding(vertical = 3.dp)
+//                        )
+//                        Row(
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .padding(vertical = 3.dp)
+//                        ) {
+//                            Text(
+//                                text = "Total",
+//                                fontWeight = FontWeight.SemiBold,
+//                                modifier = Modifier
+//                                    .weight(1f)
+//                            )
+//                            Text(
+//                                text = "₱ ${formattedNumberWithDecimalFormat.format(totalFeeState)}",
+//                                fontWeight = FontWeight.SemiBold
+//                            )
+//                        }
+//                    }
+//                    Divider(
+//                        color = Color(0xFF999999),
+//                        modifier = Modifier.padding(top = 5.dp) // 10.dp
+//                    )
                     PaymentAgreementText()
                     Spacer(modifier = Modifier.padding(vertical = 15.dp))
                     BookingFilledButton(
