@@ -20,6 +20,7 @@ data class BookingHistory(
     val checkOutDate: Date,
     val noOfGuests: Int,
     val noOfInfants: Int,
+    val additionalFee: Double,
     val noOfPets: Int,
     val hostTouristId: String = "",
     val staycationId: String,

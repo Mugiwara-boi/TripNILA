@@ -385,6 +385,7 @@ fun NavGraphBuilder.homeGraph(
                 touristId = entry.arguments?.getString("touristId") ?: "",
                 bookingHistoryViewModel = bookingHistoryViewModel,
                 touristWalletViewModel = TouristWalletViewModel(),
+                detailViewModel = detailViewModel,
                 navController = navController,
                 onNavToChat = { senderTouristId, receiverTouristId ->
                     navigateToChat(navController, senderTouristId, receiverTouristId)

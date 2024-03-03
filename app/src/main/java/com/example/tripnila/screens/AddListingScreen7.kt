@@ -163,6 +163,10 @@ fun AddListingScreen7(
                 icon = R.drawable.workspace,
                 label = "Netflix/Disney+"
             ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Karaoke"
+            ),
         )
     }
     else if (listingType == "Business") {
