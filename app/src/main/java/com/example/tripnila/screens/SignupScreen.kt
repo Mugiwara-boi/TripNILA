@@ -70,7 +70,9 @@ fun SignupScreen(
 //            signupMessage = errorMessage
 //        }
 //    }
-
+    if (signUpUiState?.value?.isSuccessSignin == true){
+        onNavToLoginScreen.invoke()
+    }
     LaunchedEffect(signUpUiState?.value) {
         signUpUiState?.value?.let {
             // Check if there's a new error message
@@ -279,12 +281,10 @@ fun SignupScreen(
                         .height(20.dp)
                 )
                 BookingFilledButton(
-                    buttonText = "Sign in",
+                    buttonText = "Sign up",
                     onClick = {
                         signupViewModel?.registerUser()
-                        if (signUpUiState?.value?.isSuccessSignin == true){
-                            onNavToLoginScreen.invoke()
-                        }
+
 //                        if (signUpUiState != null) {
 //                            if (signUpUiState.value.isSuccessSignin) {
 //                                coroutineScope.launch {

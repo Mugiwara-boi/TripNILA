@@ -39,6 +39,11 @@ class LoginViewModel(private val repository: UserRepository = UserRepository()) 
         return _loginUiState.value.username.isNotBlank() && _loginUiState.value.password.isNotBlank()
     }
 
+    fun isEmail(text: String): Boolean {
+        return "@" in text
+        Log.d("IsEmail", "Result ${"@" in text}")
+    }
+
     fun loginUser(context: Context) {
         viewModelScope.launch {
             try {
@@ -55,71 +60,114 @@ class LoginViewModel(private val repository: UserRepository = UserRepository()) 
                 _loginUiState.value = _loginUiState.value.copy(isLoading = true, loginError = null)
 
                 Log.d("LoginViewModel", "Login result2: ${_loginUiState.value}")
-                FirebaseAuth.getInstance().signInWithEmailAndPassword(_loginUiState.value.username, _loginUiState.value.password)
-                    .addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            val user = FirebaseAuth.getInstance().currentUser
-                            if (user != null && user.isEmailVerified) {
-                                // Email is verified, proceed with further actions
-                                Log.d("LoginViewModel", "Login successful")
+                if(isEmail(_loginUiState.value.username)){
+                    FirebaseAuth.getInstance().signInWithEmailAndPassword(_loginUiState.value.username, _loginUiState.value.password)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                val user = FirebaseAuth.getInstance().currentUser
+                                if (user != null && user.isEmailVerified) {
+                                    // Email is verified, proceed with further actions
+                                    Log.d("LoginViewModel", "Login successful")
 
-                                viewModelScope.launch {
-                                    try {
-                                        val success = repository.loginUser(
-                                            user.uid,
-                                            _loginUiState.value.password
-                                        )
+                                    viewModelScope.launch {
+                                        try {
+                                            val success = repository.loginUser(
+                                                user.uid,
+                                                _loginUiState.value.password,
+                                                true
+                                            )
 
 
-                                        if (success) {
-                                            // Show success message using Toast
+                                            if (success) {
+                                                // Show success message using Toast
+                                                Toast.makeText(
+                                                    context,
+                                                    "Login successful",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                                _loginUiState.value = _loginUiState.value.copy(isSuccessLogin = success)
+                                                _currentUser.value = repository.getCurrentUser()
+                                                // Proceed with further actions after successful login
+                                            } else {
+                                                // Show error message using Toast
+                                                Toast.makeText(
+                                                    context,
+                                                    "Login failed: Incorrect username or password",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        } catch (e: Exception) {
+                                            // Handle login error
+                                            Log.e("LoginViewModel", "Login error: ${e.message}", e)
                                             Toast.makeText(
                                                 context,
-                                                "Login successful",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            _loginUiState.value = _loginUiState.value.copy(isSuccessLogin = success)
-                                            _currentUser.value = repository.getCurrentUser()
-                                            // Proceed with further actions after successful login
-                                        } else {
-                                            // Show error message using Toast
-                                            Toast.makeText(
-                                                context,
-                                                "Login failed: Incorrect username or password",
+                                                "Login failed: ${e.message}",
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
-                                    } catch (e: Exception) {
-                                        // Handle login error
-                                        Log.e("LoginViewModel", "Login error: ${e.message}", e)
-                                        Toast.makeText(
-                                            context,
-                                            "Login failed: ${e.message}",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
                                     }
+                                } else {
+                                    // Email is not verified
+                                    Log.d("LoginViewModel", "Email is not verified")
+                                    Toast.makeText(
+                                        context,
+                                        "Email is not verified. Please verify your email.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    // You may choose to sign out the user if the email is not verified
+                                    FirebaseAuth.getInstance().signOut()
                                 }
                             } else {
-                                // Email is not verified
-                                Log.d("LoginViewModel", "Email is not verified")
+                                // Login failed
+                                Log.d("LoginViewModel", "Login failed: ${task.exception?.message}")
                                 Toast.makeText(
                                     context,
-                                    "Email is not verified. Please verify your email.",
+                                    "Login failed: Incorrect username or password",
                                     Toast.LENGTH_SHORT
                                 ).show()
-                                // You may choose to sign out the user if the email is not verified
-                                FirebaseAuth.getInstance().signOut()
                             }
-                        } else {
-                            // Login failed
-                            Log.d("LoginViewModel", "Login failed: ${task.exception?.message}")
+                        }
+                }
+                else {
+                    viewModelScope.launch {
+                        try {
+                            val success = repository.loginUser(
+                                _loginUiState.value.username,
+                                _loginUiState.value.password,
+                                false
+                            )
+
+
+                            if (success) {
+                                // Show success message using Toast
+                                Toast.makeText(
+                                    context,
+                                    "Login successful",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                _loginUiState.value = _loginUiState.value.copy(isSuccessLogin = success)
+                                _currentUser.value = repository.getCurrentUser()
+                                // Proceed with further actions after successful login
+                            } else {
+                                // Show error message using Toast
+                                Toast.makeText(
+                                    context,
+                                    "Login failed: Incorrect username or password",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } catch (e: Exception) {
+                            // Handle login error
+                            Log.e("LoginViewModel", "Login error: ${e.message}", e)
                             Toast.makeText(
                                 context,
-                                "Login failed: Incorrect username or password",
+                                "Login failed: ${e.message}",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
                     }
+                }
+
                 /*val firebaseUser = FirebaseAuth.getInstance().currentUser
                 if (firebaseUser != null && firebaseUser.isEmailVerified) {
                     // Show success message using Toast

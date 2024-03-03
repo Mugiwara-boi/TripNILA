@@ -6196,37 +6196,65 @@ class UserRepository {
         }
     }
 
-    suspend fun loginUser(uid: String, password: String): Boolean {
+    suspend fun loginUser(uid: String, password: String, isEmail: Boolean): Boolean {
         return try {
             val hashedPassword = hashPassword(password)
 
-            val result = touristCollection
-                .whereEqualTo("uid", uid)
-                .whereEqualTo("password", hashedPassword)
-                .get()
-                .await()
+            if(isEmail){
+                val result = touristCollection
+                    .whereEqualTo("uid", uid)
+                    .whereEqualTo("password", hashedPassword)
+                    .get()
+                    .await()
 
-            Log.d("UserRepository", "Query Result: $result")
+                if (result.documents.isNotEmpty()) {
+                    val document = result.documents[0]
+                    val firstName = document.getString("fullName.firstName") ?: ""
+                    val middleName = document.getString("fullName.middleName") ?: ""
+                    val lastName = document.getString("fullName.lastName") ?: ""
+                    val storedUsername = document.getString("username") ?: ""
+                    val touristId = document.id
+
+                    currentUser = Tourist(touristId=touristId, firstName = firstName, middleName = middleName, lastName = lastName, username = storedUsername, uid = uid)
+                    Log.d("UserRepository", "Login result: true")
+                    Log.d("UserRepository", "Current user: $currentUser")
+
+                    getTouristPreferences(touristId)
+                    true
+                } else {
+                    Log.d("UserRepository", "Login result: false")
+                    false
+                }
+            } else{
+                val result = touristCollection
+                    .whereEqualTo("username", uid)
+                    .whereEqualTo("password", hashedPassword)
+                    .get()
+                    .await()
+                if (result.documents.isNotEmpty()) {
+                    val document = result.documents[0]
+                    val firstName = document.getString("fullName.firstName") ?: ""
+                    val middleName = document.getString("fullName.middleName") ?: ""
+                    val lastName = document.getString("fullName.lastName") ?: ""
+                    val storedUsername = document.getString("username") ?: ""
+                    val touristId = document.id
+
+                    currentUser = Tourist(touristId=touristId, firstName = firstName, middleName = middleName, lastName = lastName, username = storedUsername)
+                    Log.d("UserRepository", "Login result: true")
+                    Log.d("UserRepository", "Current user: $currentUser")
+
+                    getTouristPreferences(touristId)
+                    true
+                } else {
+                    Log.d("UserRepository", "Login result: false")
+                    false
+                }
+            }
+
+//            Log.d("UserRepository", "Query Result: $result")
 
             //!result.isEmpty
-            if (result.documents.isNotEmpty()) {
-                val document = result.documents[0]
-                val firstName = document.getString("fullName.firstName") ?: ""
-                val middleName = document.getString("fullName.middleName") ?: ""
-                val lastName = document.getString("fullName.lastName") ?: ""
-                val storedUsername = document.getString("username") ?: ""
-                val touristId = document.id
 
-                currentUser = Tourist(touristId=touristId, firstName = firstName, middleName = middleName, lastName = lastName, username = storedUsername, uid = uid)
-                Log.d("UserRepository", "Login result: true")
-                Log.d("UserRepository", "Current user: $currentUser")
-
-                getTouristPreferences(touristId)
-                true
-            } else {
-                Log.d("UserRepository", "Login result: false")
-                false
-            }
         } catch (e: Exception) {
             e.printStackTrace()
             false
