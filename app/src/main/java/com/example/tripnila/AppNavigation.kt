@@ -834,7 +834,7 @@ fun NavGraphBuilder.hostGraph(
                 //   onNavToNext = { listingType -> navigateToAddListing9(navController, listingType) },
                 onNavToNext = { listingType ->
                     when (listingType) {
-                        "Staycation" -> navigateToAddListingNext(navController, 12, listingType)
+                        "Staycation" -> navigateToAddListingNext(navController, 13, listingType)
                         "Tour" -> navigateToAddListingNext(navController, 15, listingType)
                     }
                 },
