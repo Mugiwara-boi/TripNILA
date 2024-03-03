@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Tourist
 import com.example.tripnila.repository.UserRepository
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +20,9 @@ class ProfileViewModel(private val repository: UserRepository = UserRepository()
 
     private val _isUserVerified = MutableStateFlow<Boolean?>(null)
     val isUserVerified = _isUserVerified.asStateFlow()
+
+
+    private val _userStatus = MutableStateFlow("")
 
 
 

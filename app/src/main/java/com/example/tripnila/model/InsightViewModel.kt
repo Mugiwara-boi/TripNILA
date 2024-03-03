@@ -47,8 +47,15 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
     private val _revenue = MutableStateFlow(0)
     val revenue = _revenue.asStateFlow()
 
+    private val _monthlyViews = MutableStateFlow(0)
+    val monthlyViews= _monthlyViews.asStateFlow()
+
+    private val _yearlyViews = MutableStateFlow(0)
+    val yearlyViews= _yearlyViews.asStateFlow()
+
     private val _monthlyRevenue = MutableStateFlow(0)
     val monthlyRevenue = _monthlyRevenue.asStateFlow()
+
 
     fun setSelectedYear(year: Int,staycationId: String) {
         viewModelScope.launch {
@@ -128,6 +135,35 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
 
         }
     }
+    fun fetchMonthlyViews(serviceId: String, serviceType: String) {
+        viewModelScope.launch {
+            try {
+                // Call the repository to get the current month's view count
+                val viewCount = repository.getCurrentMonthViewCount(serviceId, serviceType)
+                // Set the value of _monthlyViews
+                _monthlyViews.value = viewCount
+            } catch (e: Exception) {
+                // Handle any errors
+                e.printStackTrace()
+                // Optionally, set a default value or handle the error condition
+            }
+        }
+    }
+
+    fun fetchAllViews(serviceId: String) {
+        viewModelScope.launch {
+            try {
+                // Call the repository to get the current month's view count
+                val viewCount = repository.getAllViewCountForServiceId(serviceId)
+                // Set the value of _monthlyViews
+                _yearlyViews.value = viewCount
+            } catch (e: Exception) {
+                // Handle any errors
+                e.printStackTrace()
+                // Optionally, set a default value or handle the error condition
+            }
+        }
+    }
     fun getMonthlyRevenue(staycationBooking: List<StaycationBooking>){
         viewModelScope.launch {
             val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
@@ -148,6 +184,8 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
 
         }
     }
+
+
 
     fun getYearlyRevenue(staycationBooking: List<StaycationBooking>){
         viewModelScope.launch {

@@ -33,10 +33,8 @@ import com.example.tripnila.data.TourBooking
 import com.example.tripnila.data.TourSchedule
 import com.example.tripnila.data.Tourist
 import com.example.tripnila.data.TouristWallet
-import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -131,13 +129,9 @@ class UserRepository {
         verificationStatus: String
     ): Boolean {
         return try {
-            // Upload first valid ID image to Firebase Storage
             val firstValidIdUrl = firstValidIdUri?.let { uploadImageToStorage(it) }
-
-            // Upload second valid ID image to Firebase Storage
             val secondValidIdUrl = secondValidIdUri?.let { uploadImageToStorage(it) }
 
-            // Add verification data to Firestore
             val verificationData = hashMapOf(
                 "firstValidIdType" to firstValidIdType,
                 "firstValidIdUrl" to firstValidIdUrl,
@@ -156,7 +150,6 @@ class UserRepository {
     }
 
     private suspend fun uploadImageToStorage(uri: Uri): String {
-
         val imageRef = storageReference.child("${System.currentTimeMillis()}_${uri.lastPathSegment}")
         val uploadTask = imageRef.putFile(uri)
         val taskSnapshot = uploadTask.await()
@@ -165,33 +158,69 @@ class UserRepository {
 
     suspend fun incrementViewCount(serviceId: String, serviceType: String) {
         try {
-            // Get a reference to the document in the service_view collection
-            val documentReference = serviceViewCollection
+            val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1 // Month is zero-based
+            val querySnapshot = serviceViewCollection
                 .whereEqualTo("serviceId", serviceId)
                 .whereEqualTo("serviceType", serviceType)
+                .whereEqualTo("month", currentMonth)
                 .get()
                 .await()
-                .documents
-                .firstOrNull()
 
-            if (documentReference != null) {
-                // If the document exists, update the viewCount field by incrementing it by 1
-                documentReference.reference.update("viewCount", FieldValue.increment(1)).await()
+            val documentSnapshot = querySnapshot.documents.firstOrNull()
+            if (documentSnapshot != null) {
+                documentSnapshot.reference.update("viewCount", FieldValue.increment(1)).await()
             } else {
-                // If the document does not exist, create a new document with the provided serviceId and initialize viewCount to 1
                 val data = hashMapOf(
                     "serviceId" to serviceId,
                     "serviceType" to serviceType,
-                    "viewCount" to 1
+                    "viewCount" to 1,
+                    "month" to currentMonth
                 )
                 serviceViewCollection.add(data).await()
             }
         } catch (e: Exception) {
-            // Handle any errors
             e.printStackTrace()
         }
     }
 
+    suspend fun getCurrentMonthViewCount(serviceId: String, serviceType: String): Int {
+        try {
+            val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
+            val querySnapshot = serviceViewCollection
+                .whereEqualTo("serviceId", serviceId)
+                .whereEqualTo("serviceType", serviceType)
+                .whereEqualTo("month", currentMonth)
+                .get()
+                .await()
+
+            val documentSnapshot = querySnapshot.documents.firstOrNull()
+            if (documentSnapshot != null) {
+                return documentSnapshot.getLong("viewCount")?.toInt() ?: 0
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return 0
+    }
+
+    suspend fun getAllViewCountForServiceId(serviceId: String): Int {
+        try {
+            val querySnapshot = serviceViewCollection
+                .whereEqualTo("serviceId", serviceId)
+                .get()
+                .await()
+
+            var totalViewCount = 0
+            for (documentSnapshot in querySnapshot.documents) {
+                val viewCount = documentSnapshot.getLong("viewCount")?.toInt() ?: 0
+                totalViewCount += viewCount
+            }
+            return totalViewCount
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return 0
+    }
 
     suspend fun toggleLike(reviewId: String, touristId: String): String {
         val querySnapshot = likeCollection
@@ -201,15 +230,13 @@ class UserRepository {
             .await()
 
         return if (querySnapshot.isEmpty) {
-            // Add like if it doesn't exist
             val likeData = hashMapOf(
                 "reviewId" to reviewId,
                 "touristId" to touristId
             )
             likeCollection.add(likeData).await()
-            touristId // Return the added touristId
+            touristId
         } else {
-            // Remove like if it exists
             for (document in querySnapshot.documents) {
                 likeCollection.document(document.id).delete().await()
             }
@@ -217,16 +244,12 @@ class UserRepository {
         }
     }
 
-
-
     suspend fun likeReview(reviewId: String, userId: String) {
         val like = hashMapOf(
             "reviewId" to reviewId,
             "touristId" to userId
         )
-        likeCollection
-            .add(like)
-            .await()
+        likeCollection.add(like).await()
     }
 
     suspend fun addComment(reviewId: String, userId: String, comment: String) {
@@ -236,11 +259,8 @@ class UserRepository {
             "comment" to comment,
             "commentDate" to Timestamp.now() // Assuming you're using Firestore's Timestamp type
         )
-        commentCollection
-            .add(commentData)
-            .await()
+        commentCollection.add(commentData).await()
     }
-
 
     suspend fun isFavorite(serviceId: String, userId: String): Boolean {
         return try {
@@ -249,7 +269,6 @@ class UserRepository {
                 .whereEqualTo("touristId", userId)
                 .get()
                 .await()
-
             !favoriteRef.isEmpty
         } catch (e: Exception) {
             Log.e("HomeViewModel", "Error checking favorite", e)

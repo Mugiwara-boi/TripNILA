@@ -88,6 +88,8 @@ fun InsightsScreen(
     val completedMonthlyBooking = insightViewModel.completedMonthlyStaycationBookings.collectAsState().value
     val totalRevenue = insightViewModel.revenue.collectAsState().value
     val totalMonthlyRevenue = insightViewModel.monthlyRevenue.collectAsState().value
+    val monthlyViewCount = insightViewModel.monthlyViews.collectAsState().value
+    val yearlyViewCount = insightViewModel.yearlyViews.collectAsState().value
     var isDialogOpen by remember { mutableStateOf(false) }
 
     var insightsSelectedCategory by remember { mutableStateOf("Monthly") }
@@ -154,6 +156,8 @@ fun InsightsScreen(
                         val selectedStaycationId = selectedStaycation.staycationId
                         insightViewModel.getCompletedStaycationBookings(selectedStaycationId)
                         insightViewModel.getCompletedStaycationBookingsForMonth(selectedStaycationId)
+                        insightViewModel.fetchMonthlyViews(selectedStaycationId, "Staycation")
+                        insightViewModel.fetchAllViews(selectedStaycationId)
 
                     }
                     LaunchedEffect(completedBooking){
@@ -198,7 +202,7 @@ fun InsightsScreen(
                                 InsightInfoCard(
                                     modifier = Modifier.weight(.7f),
                                     cardLabel = "Views",
-                                    cardInfoCount = 12
+                                    cardInfoCount = monthlyViewCount
                                 )
                             } else{
                                 InsightInfoCard(
@@ -214,7 +218,7 @@ fun InsightsScreen(
                                 InsightInfoCard(
                                     modifier = Modifier.weight(.7f),
                                     cardLabel = "Views",
-                                    cardInfoCount = 12
+                                    cardInfoCount = yearlyViewCount
                                 )
                             }
                         }
