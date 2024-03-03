@@ -871,6 +871,10 @@ fun BookingHistoryCard(
             true
         }
     )
+    val currentDate = LocalDate.now()
+    val formatter = DateTimeFormatter.ofPattern("E MMM dd HH:mm:ss 'GMT'XXX yyyy")
+    val checkInDate = LocalDate.parse(bookingHistory.checkInDate.toString(), formatter)
+    val daysUntilCheckIn = ChronoUnit.DAYS.between(currentDate, checkInDate)
     val bookingFee = bookingHistory.basePrice * bookingHistory.bookingDuration
     val tripnilaFee = bookingFee * 0.05
 
@@ -1082,6 +1086,7 @@ fun BookingHistoryCard(
                         )
                         if (bookingHistory.rentalStatus == "Pending") {
                             BookingOutlinedButton(
+                                enableButton = daysUntilCheckIn > 7,
                                 buttonText = "Reschedule",
                                 onClick = {
                                     onReschedule(bookingHistory.bookingId)
@@ -1092,6 +1097,7 @@ fun BookingHistoryCard(
                         if (bookingHistory.rentalStatus != "Ongoing") {
                         //    Spacer(modifier = Modifier.weight(1f))
                             BookingFilledButton(
+                                enabled = daysUntilCheckIn > 7,
                                 buttonText = "Cancel",
                                 onClick = {
                                     //  isOpen.value = true
