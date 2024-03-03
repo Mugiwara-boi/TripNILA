@@ -123,7 +123,7 @@ fun AddBusinessScreen8(
                     onCancel = {
                         onNavToBack()
                     },
-                    enableRightButton = addBusinessViewModel?.business?.collectAsState()?.value?.businessMenu?.any { it.photoType == "Cover" } == true && addBusinessViewModel.business.collectAsState().value.businessMenu.any { it.photoType == "Others" } && addBusinessViewModel?.business?.collectAsState()?.value?.minSpend != 0.0
+                    enableRightButton = addBusinessViewModel?.business?.collectAsState()?.value?.businessMenu?.any { it.photoType == "Cover" } == true && addBusinessViewModel.business.collectAsState().value.businessMenu.any { it.photoType == "Others" }
 
                 )
             },

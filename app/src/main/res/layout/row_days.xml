@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="1dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:id="@+id/lnSelect"
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:ignore="MissingConstraints">
+
+        <LinearLayout
+            android:id="@+id/lnDaySelected"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:background="@drawable/layout_bg"
+            android:backgroundTint="#F67E24"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvDaySelected"
+                android:textSize="10sp"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="15dp"
+                android:layout_marginRight="15dp"
+                android:gravity="center"
+                android:text="Day 1"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:id="@+id/tvDayOfWeekSelected"
+                android:textSize="10sp"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="15dp"
+                android:layout_marginRight="15dp"
+                android:gravity="center"
+                android:text="Monday"
+                android:textColor="@color/white" />
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/lnDayUnSelected"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:background="@drawable/layout_bg"
+            android:backgroundTint="#FFFFFF"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvDayUnSelected"
+                android:textSize="10sp"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="15dp"
+                android:layout_marginRight="15dp"
+                android:gravity="center"
+                android:text="Day 1"
+                android:textColor="@color/text_color" />
+
+            <TextView
+                android:id="@+id/tvDayOfWeekUnSelected"
+                android:textSize="10sp"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="15dp"
+                android:layout_marginRight="15dp"
+                android:gravity="center"
+                android:text="Monday"
+                android:textColor="@color/text_color" />
+
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

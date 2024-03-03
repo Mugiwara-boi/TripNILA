@@ -86,7 +86,6 @@ fun AccountVerificationScreen(
     onNavToProfile: (String) -> Unit
 ){
 
-
     val context = LocalContext.current
 
     val validIdOptions = listOf(
@@ -140,7 +139,6 @@ fun AccountVerificationScreen(
         }
 
     }
-
 
     Surface(
         modifier = Modifier

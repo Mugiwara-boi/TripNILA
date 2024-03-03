@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -68,6 +69,7 @@ import com.example.tripnila.data.ProfileData
 import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.ProfileViewModel
 import kotlinx.coroutines.launch
+import com.itenirary.IteniraryActivity
 
 
 @Composable
@@ -124,6 +126,7 @@ fun TouristProfileScreen(
         modifier = Modifier
             .fillMaxSize()
     ) {
+//<<<<<<< HEAD
         if (isLoading!!.value){
             LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
         } else {
@@ -136,6 +139,82 @@ fun TouristProfileScreen(
                             selectedItemIndex = selectedItemIndex,
                             onItemSelected = { newIndex ->
                                 selectedItemIndex = newIndex
+//=======
+        /*Scaffold(
+            bottomBar = {
+                navController?.let {
+                    TouristBottomNavigationBar(
+                        touristId = touristId,
+                        navController = it,
+                        selectedItemIndex = selectedItemIndex,
+                        onItemSelected = { newIndex ->
+                            selectedItemIndex = newIndex
+                        }
+                    )
+                }
+            }
+        ) {
+            LazyColumn(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it)
+            ) {
+                item {
+                    AppTopBarWithIcon(
+                        headerText = "Profile",
+                        headerIcon = ImageVector.vectorResource(id = R.drawable.logout),
+                        onLogout = {
+                            loginViewModel?.updateIsSuccessLogin(false)
+                            onLogout()
+                        }
+
+                    )
+                }
+                item{
+                    UserProfileComposable(
+                        profileData = currentProfileData,
+                        modifier = Modifier.padding(horizontal = horizontalPaddingValue)
+                    )
+                }
+                item{
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 20.dp, bottom = 10.dp)
+                            .padding(horizontal = horizontalPaddingValue),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        AppFilledCard(
+                            cardText = "Bookings",
+                            onClick = {
+                                onNavToBookingHistory(touristId)
+                            }
+                        )
+                        AppOutlinedCard(
+                            cardText = "Preferences",
+                            onClick = {
+                                onNavToPreference(touristId)
+                            }
+                        )
+                        AppFilledCard(
+                            cardText = "Itinerary",
+                            onClick = {
+                                // sa touristId na variable nakastore yung Id ng Current User
+                                // Profile Screen -> Itinerary Planner
+                                // Pagente
+                                *//*Toast.makeText(
+                                    context,
+                                    "TouristId: $touristId",
+                                    Toast.LENGTH_SHORT
+                                ).show()*//*
+
+                                val intent = Intent(context, IteniraryActivity::class.java)
+                                intent.putExtra("cameFromProfile", true)
+                                intent.putExtra("touristId", touristId)
+                                intent.putExtra("staycationId", "-")
+                                context.startActivity(intent)
+>>>>>>> 192e417654c69a0bed929f93b656226992ddfedc*/
                             }
                         )
                     }

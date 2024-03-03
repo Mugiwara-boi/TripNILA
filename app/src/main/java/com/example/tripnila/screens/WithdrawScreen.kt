@@ -4,8 +4,8 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.PaymentMethod
@@ -65,7 +67,7 @@ fun WithdrawScreen(
     val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
     val tourist by touristWalletViewModel.tourist.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-
+    val openAlertDialog = remember { mutableStateOf(false) }
     val amount by touristWalletViewModel.amount.collectAsState()
     val context = LocalContext.current
     touristWalletViewModel.getWallet(touristId)
@@ -92,19 +94,15 @@ fun WithdrawScreen(
 
                     onNext = {
                         coroutineScope.launch {
-                            touristWalletViewModel.withdrawBalance(touristId)
-                            Toast.makeText(
-                                context,
-                                "Successfully withdrawn amount $amount",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            touristWalletViewModel.setAlertDialogMessage()
+                            openAlertDialog.value = true
                         }
-                        onCancel()
 
                     },
                     onCancel = {
                         onCancel()
                     },
+                    enableRightButton = touristWalletViewModel.amount.collectAsState().value != 0.0
                 )
             }
         ) {
@@ -145,6 +143,76 @@ fun WithdrawScreen(
                     )
                 }
             }
+            if (openAlertDialog.value) {
+                Dialog(onDismissRequest = { openAlertDialog.value = false }) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 20.dp
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            //.height(200.dp)
+                            .padding(20.dp),
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+
+                            //   var text =
+
+                            Text(
+                                text = touristWalletViewModel?.alertDialogMessage?.collectAsState()?.value ?: "",
+                                color = Color.Black,
+                                fontSize = 18.sp,
+                                modifier = Modifier
+                                    .padding(horizontal = 20.dp)
+                                    .padding(top = 25.dp),
+                            )
+                            Spacer(modifier = Modifier.height(30.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                //   horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                if (touristWalletViewModel?.alertDialogMessage?.collectAsState()?.value != "Are you sure you want to proceed?") {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                                TextButton(
+                                    onClick = { openAlertDialog.value = false },
+                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                ) {
+                                    Text("Dismiss", color = Color.Black)
+                                }
+                                if (touristWalletViewModel?.alertDialogMessage?.collectAsState()?.value == "Are you sure you want to proceed?") {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    TextButton(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                openAlertDialog.value = false
+                                                touristWalletViewModel.withdrawBalance(touristId)
+                                                onCancel()
+                                                Toast.makeText(
+                                                    context,
+                                                    "Successfully withdrawn amount $amount",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+
+                                        },
+                                        modifier = Modifier.padding(horizontal = 10.dp),
+                                    ) {
+                                        Text("Confirm", color = Color.Black)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
         }
     }
@@ -176,7 +244,7 @@ fun WithdrawCard(
 
     var availableBalance by remember{ mutableDoubleStateOf(0.0) }
 
-    val enoughBalance = inputAmount <= availableBalance
+    val enoughBalance = inputAmount <= currentBalance
     val balanceTextColor = if (enoughBalance) Color.Green else Color.Red
     val balanceText = if (enoughBalance) "There's enough balance." else "There's insufficient balance."
 
@@ -237,7 +305,7 @@ fun WithdrawCard(
             )
             Spacer(modifier = Modifier.height(5.dp))
             Text(
-                text = "Cash in amount",
+                text = "Withdraw amount",
                 color = Color(0xff333333),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium
@@ -394,22 +462,7 @@ fun WithdrawChoosePaymentMethodCard(
                             }
                         )
                     }
-                    Spacer(modifier = Modifier.weight(1f))
-                    BookingFilledButton(
-                        buttonText = "Add",
-                        contentFontSize = 12.sp,
-                        buttonShape = RoundedCornerShape(20.dp),
-                        contentColor = Orange,
-                        contentPadding = PaddingValues(18.dp, 0.dp),
-                        containerColor = Color.White,
-                        onClick = {
-                            // ADD BUTTON FUNCTION
-                        },
-                        modifier = Modifier
-                            .height(30.dp)
-                            .align(Alignment.CenterVertically)
 
-                    )
                 }
 
             }

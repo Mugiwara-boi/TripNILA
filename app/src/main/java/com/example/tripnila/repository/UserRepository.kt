@@ -2641,6 +2641,7 @@ class UserRepository {
                     val noOfInfants = document.getLong("noOfInfants")?.toInt() ?: 0
                     val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
                     val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                    val additionalFee = document.getLong("additionalFee")?.toDouble() ?: 0.0
                     val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
 
                     val staycationBooking = StaycationBooking(
@@ -2648,6 +2649,7 @@ class UserRepository {
                         bookingDate = bookingDate,
                         bookingStatus = bookingStatus,
                         checkInDate = checkInDate,
+                        additionalFee = additionalFee,
                         checkOutDate = checkOutDate,
                         noOfGuests = noOfGuests,
                         noOfInfants = noOfInfants,
@@ -2692,6 +2694,7 @@ class UserRepository {
                     val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
                     val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
                     val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
+                    val additionalFee = document.getLong("additionalFee")?.toDouble() ?: 0.0
 
                     val staycationBooking = StaycationBooking(
                         staycationBookingId = bookingId,
@@ -2701,6 +2704,7 @@ class UserRepository {
                         checkOutDate = checkOutDate,
                         noOfGuests = noOfGuests,
                         noOfInfants = noOfInfants,
+                        additionalFee =additionalFee,
                         noOfPets = noOfPets,
                         staycation = staycation,
                         totalAmount = totalAmount,
@@ -2746,6 +2750,7 @@ class UserRepository {
                     val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
                     val staycationId = document.getString("staycationId") ?: ""
                     val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                    val additionalFee = document.getLong("additionalFee")?.toDouble() ?: 0.0
 
                     val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
 
@@ -2755,6 +2760,7 @@ class UserRepository {
                         bookingStatus = bookingStatus,
                         checkInDate = checkInDate,
                         checkOutDate = checkOutDate,
+                        additionalFee = additionalFee,
                         noOfGuests = noOfGuests,
                         noOfInfants = noOfInfants,
                         noOfPets = noOfPets,
@@ -2801,6 +2807,7 @@ class UserRepository {
                 val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
                 val staycationId = document.getString("staycationId") ?: ""
                 val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                val additionalFee = document.getLong("additionalFee")?.toDouble() ?: 0.0
 
 //                val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
 //                val review = getBookingReview(bookingId, touristId)
@@ -2813,6 +2820,7 @@ class UserRepository {
                     checkOutDate = checkOutDate,
                     noOfGuests = noOfGuests,
                     noOfInfants = noOfInfants,
+                    additionalFee = additionalFee,
                     noOfPets = noOfPets,
                     //     staycation = staycation,
                     totalAmount = totalAmount,
@@ -3568,6 +3576,7 @@ class UserRepository {
         newCheckInDateMillis: Long,
         newCheckOutDateMillis: Long,
         commission: Double,
+        additionalFee: Double,
         amountRefunded: Double,
         newTotalAmount: Double,
         newNoOfGuests: Int,
@@ -3595,6 +3604,7 @@ class UserRepository {
                 "checkInDate" to checkInDatePlus6Hours,
                 "checkOutDate" to checkOutDatePlus4Hours,
                 "totalAmount" to newTotalAmount,
+                "additionalFee" to additionalFee,
                 "noOfGuests" to newNoOfGuests,
                 "noOfPets" to newNoOfPets,
                 "noOfInfants" to newNoOfInfants
@@ -4383,6 +4393,7 @@ class UserRepository {
                 val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
                 val staycationId = document.getString("staycationId") ?: ""
                 val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                val additionalFee = document.getLong("additionalFee")?.toDouble() ?: 0.0
 
                 val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
                 val review = getBookingReview(bookingId, touristId)
@@ -4396,6 +4407,7 @@ class UserRepository {
                     checkInDate = checkInDate,
                     checkOutDate = checkOutDate,
                     noOfGuests = noOfGuests,
+                    additionalFee = additionalFee,
                     noOfInfants = noOfInfants,
                     noOfPets = noOfPets,
                     staycation = staycation,
@@ -6863,37 +6875,65 @@ class UserRepository {
         }
     }
 
-    suspend fun loginUser(username: String, password: String): Boolean {
+    suspend fun loginUser(uid: String, password: String, isEmail: Boolean): Boolean {
         return try {
             val hashedPassword = hashPassword(password)
 
-            val result = touristCollection
-                .whereEqualTo("username", username)
-                .whereEqualTo("password", hashedPassword)
-                .get()
-                .await()
+            if(isEmail){
+                val result = touristCollection
+                    .whereEqualTo("uid", uid)
+                    .whereEqualTo("password", hashedPassword)
+                    .get()
+                    .await()
 
-            Log.d("UserRepository", "Query Result: $result")
+                if (result.documents.isNotEmpty()) {
+                    val document = result.documents[0]
+                    val firstName = document.getString("fullName.firstName") ?: ""
+                    val middleName = document.getString("fullName.middleName") ?: ""
+                    val lastName = document.getString("fullName.lastName") ?: ""
+                    val storedUsername = document.getString("username") ?: ""
+                    val touristId = document.id
+
+                    currentUser = Tourist(touristId=touristId, firstName = firstName, middleName = middleName, lastName = lastName, username = storedUsername, uid = uid)
+                    Log.d("UserRepository", "Login result: true")
+                    Log.d("UserRepository", "Current user: $currentUser")
+
+                    getTouristPreferences(touristId)
+                    true
+                } else {
+                    Log.d("UserRepository", "Login result: false")
+                    false
+                }
+            } else{
+                val result = touristCollection
+                    .whereEqualTo("username", uid)
+                    .whereEqualTo("password", hashedPassword)
+                    .get()
+                    .await()
+                if (result.documents.isNotEmpty()) {
+                    val document = result.documents[0]
+                    val firstName = document.getString("fullName.firstName") ?: ""
+                    val middleName = document.getString("fullName.middleName") ?: ""
+                    val lastName = document.getString("fullName.lastName") ?: ""
+                    val storedUsername = document.getString("username") ?: ""
+                    val touristId = document.id
+
+                    currentUser = Tourist(touristId=touristId, firstName = firstName, middleName = middleName, lastName = lastName, username = storedUsername)
+                    Log.d("UserRepository", "Login result: true")
+                    Log.d("UserRepository", "Current user: $currentUser")
+
+                    getTouristPreferences(touristId)
+                    true
+                } else {
+                    Log.d("UserRepository", "Login result: false")
+                    false
+                }
+            }
+
+//            Log.d("UserRepository", "Query Result: $result")
 
             //!result.isEmpty
-            if (result.documents.isNotEmpty()) {
-                val document = result.documents[0]
-                val firstName = document.getString("fullName.firstName") ?: ""
-                val middleName = document.getString("fullName.middleName") ?: ""
-                val lastName = document.getString("fullName.lastName") ?: ""
-                val storedUsername = document.getString("username") ?: ""
-                val touristId = document.id
 
-                currentUser = Tourist(touristId, firstName, middleName, lastName, storedUsername, "")
-                Log.d("UserRepository", "Login result: true")
-                Log.d("UserRepository", "Current user: $currentUser")
-
-                getTouristPreferences(touristId)
-                true
-            } else {
-                Log.d("UserRepository", "Login result: false")
-                false
-            }
         } catch (e: Exception) {
             e.printStackTrace()
             false
@@ -6911,7 +6951,8 @@ class UserRepository {
                     "lastName" to user.lastName
                 ),
                 "username" to user.username,
-                "password" to hashedPassword
+                "password" to hashedPassword,
+                "uid" to user.uid
             )
 
             val touristDocRef = touristCollection.add(userData).await()

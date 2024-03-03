@@ -23,7 +23,7 @@ class ProfileViewModel(private val repository: UserRepository = UserRepository()
     val isUserVerified = _isUserVerified.asStateFlow()
 
     private val _userStatus = MutableStateFlow("")
-    val 
+    val
 
 
     suspend fun isUserVerified() {

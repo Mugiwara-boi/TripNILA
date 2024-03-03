@@ -112,6 +112,7 @@ data class StaycationBooking(
     val noOfGuests: Int = 0,
     val noOfPets: Int = 0,
     val noOfInfants: Int = 0,
+    val additionalFee: Double = 0.0,
     val commission: Double =0.0,
     val totalAmount: Double = 0.00,
     val bookingStatus: String = "",

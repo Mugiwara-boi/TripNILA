@@ -16,6 +16,7 @@ import com.example.tripnila.model.HostTourViewModel
 import com.example.tripnila.model.LocationViewModel
 import com.example.tripnila.model.LocationViewModelFactory
 import com.example.tripnila.model.MyMap
+import com.example.tripnila.model.MyMapWindow
 import com.example.tripnila.utils.getCurrentLocation
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.MapProperties
@@ -97,6 +98,41 @@ fun MapScreen(
             onChangeMapType = {
                 mapProperties = mapProperties.copy(mapType = it)
             })
+    } else {
+        Text(text = "Loading Map...")
+    }
+}
+
+@Composable
+fun MapWindow(
+    context: Context,
+    lat: Double,
+    lng: Double) {
+    var showMap by remember { mutableStateOf(false) }
+    var location by remember { mutableStateOf(LatLng(0.0, 0.0)) }
+    var mapProperties by remember { mutableStateOf(MapProperties()) }
+    var changeIcon by remember { mutableStateOf(false) }
+
+
+        if(lat != 0.0 && lng != 0.0) {
+            location = LatLng(lat, lng)
+            showMap = true
+            Log.d("Location", "$location")
+        }else{
+            getCurrentLocation(context) {
+                location = it
+                showMap = true
+            }
+        }
+
+
+
+    if (showMap) {
+        MyMapWindow(
+            context = context,
+            latLng = location,
+            mapProperties = mapProperties,
+)
     } else {
         Text(text = "Loading Map...")
     }

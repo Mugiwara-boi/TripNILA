@@ -94,20 +94,23 @@ import androidx.paging.compose.items
 import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.AppConfirmAndPayDivider
-import com.example.tripnila.common.AppDropDownFilter
 import com.example.tripnila.common.AppYourTripRow
 import com.example.tripnila.common.Orange
 import com.example.tripnila.common.Tag
 import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.BookingHistory
+import com.example.tripnila.data.Staycation
 import com.example.tripnila.data.StaycationBooking
 import com.example.tripnila.data.TourBooking
 import com.example.tripnila.model.BookingHistoryViewModel
+import com.example.tripnila.model.DetailViewModel
 import com.example.tripnila.model.TouristWalletViewModel
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.text.DecimalFormat
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -125,6 +128,7 @@ fun BookingHistoryScreen(
     touristId: String = "",
     touristWalletViewModel: TouristWalletViewModel,
     bookingHistoryViewModel: BookingHistoryViewModel,
+    detailViewModel: DetailViewModel,
     navController: NavHostController? = null,
     onNavToChat: (String, String) -> Unit,
     onNavToReschedule: (String, String) -> Unit,
@@ -298,6 +302,7 @@ fun BookingHistoryScreen(
                                     staycationBookingItems = staycationBookingItems,
                                     touristId = touristId,
                                     bookingHistoryViewModel = bookingHistoryViewModel,
+                                    detailViewModel = detailViewModel,
                                     touristWalletViewModel = touristWalletViewModel,
                                     coroutineScope = coroutineScope,
                                     onNavToChat = { receiverId ->
@@ -316,6 +321,7 @@ fun BookingHistoryScreen(
                                     touristId = touristId,
                                     bookingHistoryViewModel = bookingHistoryViewModel,
                                     touristWalletViewModel = touristWalletViewModel,
+                                    detailViewModel = detailViewModel,
                                     coroutineScope = coroutineScope,
                                     onNavToChat = { receiverId ->
                                         onNavToChat(touristId, receiverId)
@@ -335,9 +341,252 @@ fun BookingHistoryScreen(
 }
 
 @Composable
+fun AppPaymentCancelDivider(
+    modifier: Modifier = Modifier,
+    forTourBooking: Boolean = false,
+    forRescheduling: Boolean = false,
+    initialBookingDuration: Int = 0,
+    addFee: Double = 0.0,
+    guests: Int = 0,
+    touristId: String,
+    staycation: Staycation? = null,
+    staycationBooking: StaycationBooking? = null,
+    detailViewModel: DetailViewModel,
+    touristWalletViewModel: TouristWalletViewModel,
+    bookingHistoryViewModel: BookingHistoryViewModel? = null,
+    bookingFee: Double,
+    bookingDuration: Int,
+    maintenanceFee: Double? = null,
+    daysBeforeCheckIn: Int? = null,
+    forCancelBooking: Boolean = false,
+
+    ) {
+
+    val formattedNumber = NumberFormat.getNumberInstance()
+    val formattedNumberWithDecimalFormat = NumberFormat.getNumberInstance() as DecimalFormat
+    formattedNumberWithDecimalFormat.apply {
+        maximumFractionDigits = 2
+        minimumFractionDigits = 2
+    }
+    val additionalFeeIsTrue by detailViewModel.isAddFee.collectAsState()
+
+    var initialAdditionalFeeIsTrue by remember {
+        mutableStateOf(false)
+    }
+
+    val initialGuest by detailViewModel.initialGuest.collectAsState()
+    val allowedGuest by detailViewModel.allowedGuest.collectAsState()
+    val totalFee by touristWalletViewModel.totalFee.collectAsState()
+    val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
+    val percentRefunded by touristWalletViewModel.percentRefunded.collectAsState()
+    val percentRefundedPercentage = percentRefunded * 100
+
+    if (initialGuest!! > allowedGuest!!){
+        initialAdditionalFeeIsTrue = true
+    }
+    var isWalletFetched = false
+    if(!isWalletFetched){
+        touristWalletViewModel.setRefundAmount(totalFee)
+
+        touristWalletViewModel.getWallet(touristId)
+//        touristWalletViewModel.setWallet(touristId)
+        isWalletFetched = true
+    }
+
+//    val staycationBooking = detailViewModel?.staycationBooking?.collectAsState()
+//    val previouslyPaidBookingAmount = staycationBooking?.value?.totalAmount
+
+    val additionalFee by touristWalletViewModel.additionalFee.collectAsState()
+    val currentBalance = touristWallet.currentBalance
+    val extraFee by touristWalletViewModel.extraFee.collectAsState()
+    val productBookingFee = bookingFee * bookingDuration
+    val tripNilaFee = productBookingFee * 0.05
+    val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripNilaFee + addFee
+    val initialProductBookingFee = bookingFee * initialBookingDuration
+    val initialTripNilaFee = initialProductBookingFee * 0.05
+    val initialTotalFeeState = initialProductBookingFee + (maintenanceFee ?: 0.0) + initialTripNilaFee + extraFee
+
+    //  val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripnilaFee
+    touristWalletViewModel.setTotalFee(totalFeeState)
+    touristWalletViewModel.setTripnilaFee(tripNilaFee)
+    touristWalletViewModel.setInitialTotalFee(initialTotalFeeState)
+    touristWalletViewModel.setInitialTripnilaFee(initialTripNilaFee)
+
+    var selectedPaymentMethod by remember { mutableStateOf(-1) }
+    var isSelectionEnabled by remember { mutableStateOf(true) }
+
+/*    val maxGuest = staycation?.maxNoOfGuests
+    val guestCount = staycation?.noOfGuests!!*/
+
+    val selectedGuest = detailViewModel?.guestCount?.collectAsState()
+    val afterBalance = currentBalance - totalFee
+
+
+    if(afterBalance < 0){
+        detailViewModel?.setEnoughBalance(false)
+    }else{
+        detailViewModel?.setEnoughBalance(true)
+    }
+    if (!forCancelBooking) {
+        LaunchedEffect(selectedPaymentMethod) {
+            detailViewModel?.setSelectedPaymentMethod(selectedPaymentMethod)
+            detailViewModel?.setAlertDialogMessage()
+
+            Log.d("selectedPaymentMethod", "$selectedPaymentMethod")
+        }
+    }
+
+
+
+    val initialFormattedTourPaymentRowText = if (initialBookingDuration == 0 || initialBookingDuration == 1) {
+        "₱ ${formattedNumber.format(bookingFee)} x $initialBookingDuration person"
+    } else {
+        "₱ ${formattedNumber.format(bookingFee)} x $initialBookingDuration persons"
+    }
+
+    val initialFormattedStaycationPaymentRowText = if (initialBookingDuration == 0 || initialBookingDuration == 1) {
+        "₱ ${formattedNumber.format(bookingFee)} x $initialBookingDuration night"
+    } else {
+        "₱ ${formattedNumber.format(bookingFee)} x $initialBookingDuration nights"
+    }
+
+    val formattedTourPaymentRowText = if (bookingDuration == 0 || bookingDuration == 1) {
+        "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration person"
+    } else {
+        "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration persons"
+    }
+
+    val formattedStaycationPaymentRowText = if (bookingDuration == 0 || bookingDuration == 1) {
+        "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration night"
+    } else {
+        "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration nights"
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(all = 10.dp)
+    ){
+
+        Text(
+            text = "Payment",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier
+                .padding(bottom = 5.dp)
+        )
+        PaymentRow(
+            feeLabel = if (forTourBooking) formattedTourPaymentRowText else formattedStaycationPaymentRowText,
+            feePrice = productBookingFee
+        )
+
+        if (maintenanceFee != null) {
+            PaymentRow(
+                feeLabel = "Maintenance fee",
+                feePrice = maintenanceFee
+            )
+        }
+
+            PaymentRow(
+                feeLabel = "Additional Fee x $guests guests",
+                feePrice = addFee
+            )
+
+
+
+        PaymentRow(
+            feeLabel = "Tripnila service fee",
+            feePrice = tripNilaFee
+        )
+        Divider(
+            color = Color(0xFFDEDEDE),
+            modifier = Modifier.padding(vertical = 3.dp)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 3.dp)
+        ) {
+            Text(
+                text = if (forCancelBooking) "Total paid" else "Total",
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .weight(1f)
+            )
+            Text(
+                text = "₱ ${formattedNumberWithDecimalFormat.format(totalFee)}",
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        if (forCancelBooking) {
+            touristWalletViewModel.setPercentRefunded(daysBeforeCheckIn!!)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+
+            ) {
+                Text(
+                    text = "Amount refunded",
+                    fontWeight = FontWeight.SemiBold,
+                    color = Orange,
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                Text(
+                    text = "₱ ${formattedNumberWithDecimalFormat.format(totalFee * percentRefunded)}",
+                    fontWeight = FontWeight.SemiBold,
+                    color = Orange
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    text = "$daysBeforeCheckIn days before check in",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 12.sp,
+                    color = Color(0xFF999999),
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                Text(
+                    text = "$percentRefundedPercentage%",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 12.sp,
+                    color = Color(0xFF999999),
+                )
+            }
+        }
+        else {
+            Text(
+                text = "Wallet",
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .padding(vertical = 4.dp)
+            )
+            //   PaymentRow(feeLabel = "Paid", feePrice = initialTotalFeeState)
+            PaymentRow(
+                feeLabel = "Current Balance",
+                feePrice = currentBalance
+            )
+            PaymentRow(
+                feeLabel = "After Balance",
+                feePrice = afterBalance
+            )
+        }
+    }
+    Divider(
+        color = Color(0xFF999999),
+        modifier = Modifier.padding(top = 5.dp) // 10.dp
+    )
+}
+
+@Composable
 fun TourPage(
     tourBookingItems: LazyPagingItems<TourBooking>,
     touristId: String,
+    detailViewModel: DetailViewModel,
     bookingHistoryViewModel: BookingHistoryViewModel,
     touristWalletViewModel: TouristWalletViewModel,
     coroutineScope: CoroutineScope,
@@ -402,6 +651,7 @@ fun TourPage(
                         startTime = tourBooking.startTime,
                         endTime = tourBooking.endTime,
                         noOfPets = 0,
+                        additionalFee = 0.0,
                         noOfInfants = 0,
                         noOfGuests = tourBooking.noOfGuests,
                         hostTouristId = tourBooking.tour.host.touristId,
@@ -415,6 +665,7 @@ fun TourPage(
                         touristId = touristId,
                         bookingHistoryViewModel = bookingHistoryViewModel,
                         touristWalletViewModel = touristWalletViewModel,
+                        detailViewModel = detailViewModel,
                         bookingHistory = bookingHistory,
                         coroutineScope = coroutineScope,
                         modifier = Modifier.padding(top = 15.dp),
@@ -452,6 +703,7 @@ fun TourPage(
 fun StaycationPage(
     staycationBookingItems: LazyPagingItems<StaycationBooking>,
     touristId: String,
+    detailViewModel: DetailViewModel,
     bookingHistoryViewModel: BookingHistoryViewModel,
     touristWalletViewModel: TouristWalletViewModel,
     coroutineScope: CoroutineScope,
@@ -515,6 +767,7 @@ fun StaycationPage(
                         totalAmount = staycationBooking.totalAmount,
                         rentalStatus = staycationBooking.bookingStatus,
                         isReviewed = staycationBooking.bookingReview != null,
+                        additionalFee = staycationBooking.additionalFee,
                         bookingDuration = staycationBooking.getDaysDifference().toInt(),
                         basePrice = staycationBooking.staycation?.staycationPrice ?: 0.0,
                         checkInDate = staycationBooking.checkInDate,
@@ -539,6 +792,7 @@ fun StaycationPage(
                         touristWalletViewModel = touristWalletViewModel,
                         bookingHistory = bookingHistory,
                         coroutineScope = coroutineScope,
+                        detailViewModel = detailViewModel,
                         modifier = Modifier.padding(top = 15.dp),
                         staycationBookingItems = staycationBookingItems,
                         onChatHost = { receiverId ->
@@ -594,6 +848,7 @@ fun BookingHistoryCard(
     touristId: String,
     bookingHistoryViewModel: BookingHistoryViewModel,
     touristWalletViewModel: TouristWalletViewModel,
+    detailViewModel: DetailViewModel,
     bookingHistory: BookingHistory,
     coroutineScope: CoroutineScope,
     onChatHost: (String) -> Unit,
@@ -616,6 +871,10 @@ fun BookingHistoryCard(
             true
         }
     )
+    val currentDate = LocalDate.now()
+    val formatter = DateTimeFormatter.ofPattern("E MMM dd HH:mm:ss 'GMT'XXX yyyy")
+    val checkInDate = LocalDate.parse(bookingHistory.checkInDate.toString(), formatter)
+    val daysUntilCheckIn = ChronoUnit.DAYS.between(currentDate, checkInDate)
     val bookingFee = bookingHistory.basePrice * bookingHistory.bookingDuration
     val tripnilaFee = bookingFee * 0.05
 
@@ -827,6 +1086,7 @@ fun BookingHistoryCard(
                         )
                         if (bookingHistory.rentalStatus == "Pending") {
                             BookingOutlinedButton(
+                                enableButton = daysUntilCheckIn > 7,
                                 buttonText = "Reschedule",
                                 onClick = {
                                     onReschedule(bookingHistory.bookingId)
@@ -837,6 +1097,7 @@ fun BookingHistoryCard(
                         if (bookingHistory.rentalStatus != "Ongoing") {
                         //    Spacer(modifier = Modifier.weight(1f))
                             BookingFilledButton(
+                                enabled = daysUntilCheckIn > 7,
                                 buttonText = "Cancel",
                                 onClick = {
                                     //  isOpen.value = true
@@ -930,8 +1191,6 @@ fun BookingHistoryCard(
                             )
                         }
 
-
-
                         if (bookingHistory != null) {
                             YourTripCancellationDivider(bookingHistory)
                         }
@@ -946,10 +1205,13 @@ fun BookingHistoryCard(
                             ChronoUnit.DAYS.between(LocalDate.now(), it).toInt()
                         } ?: 0
 
-                        AppPaymentDivider(
+                        AppPaymentCancelDivider(
                             touristId = touristId,
                             forCancelBooking = true,
                             bookingHistoryViewModel = bookingHistoryViewModel,
+                            detailViewModel = detailViewModel,
+                            guests = bookingHistory.guestsNo,
+                            addFee = bookingHistory.additionalFee,
                             bookingFee = bookingHistory.basePrice,
                             bookingDuration = if (bookingHistory.staycationId != "") bookingHistory.bookingDuration else bookingHistory.noOfGuests,
                             maintenanceFee = if (bookingHistory.staycationId != "") bookingHistory.basePrice.times(0.10) else null,
@@ -1105,8 +1367,6 @@ fun BookingHistoryTopBar(
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Medium
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                AppDropDownFilter(options = filter)
             }
         },
         modifier = modifier
@@ -1507,12 +1767,14 @@ fun AppRatingBar(
 private fun BookingHistoryScreenPreview(){
 
     val bookingHistoryViewModel = viewModel(modelClass = BookingHistoryViewModel::class.java)
+    val detailViewModel = viewModel(modelClass = DetailViewModel::class.java)
 
 
      BookingHistoryScreen(
          touristId = "n7r1JjE18t5iCP32GXjt",
          touristWalletViewModel = TouristWalletViewModel(),
          bookingHistoryViewModel = bookingHistoryViewModel,
+         detailViewModel = detailViewModel,
          onNavToChat = { _, _ ->
 
          },

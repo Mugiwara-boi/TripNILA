@@ -15,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -43,6 +44,7 @@ fun BusinessManagerScreen(
         businessManagerViewModel?.getSelectedBusiness(businessId)
     }
 
+    val context = LocalContext.current
     val business = businessManagerViewModel?.business?.collectAsState()?.value
     val touristId = hostId.substring(5)
     val minSpend = business?.minSpend ?: 0.0
@@ -237,9 +239,10 @@ fun BusinessManagerScreen(
                 item {
                     AppLocationCard(
                         location = business?.businessLocation ?: "",
-                        locationImage = R.drawable.map_image2,
+                        lat = business?.businessLat!!,
+                        lng = business?.businessLng!!,
+                        context = context,
                         locationDescription =  business?.additionalInfo ?: "", // CHANGE ADDITIONAL INFO INTO LOCATION INFO
-                        withEditButton = false,
                         modifier = Modifier
                             .offset(y = (-5).dp)
                             .padding(bottom = 12.dp)

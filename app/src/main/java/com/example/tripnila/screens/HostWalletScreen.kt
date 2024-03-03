@@ -125,46 +125,6 @@ fun HostWalletScreen(
                     )
                 }
 
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                vertical = verticalPaddingValue,
-                                horizontal = horizontalPaddingValue
-                            )
-                    ) {
-                        Text(
-                            text = "Recent Transactions",
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 16.sp
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        walletTransactions.forEach { walletTransaction ->
-                            RecentTransactionCard(
-                                transaction = walletTransaction,
-                                modifier = Modifier.padding(top = 8.dp, start = 5.dp, end = 5.dp)
-                            )
-                        }
-                        BookingOutlinedButton(
-                            buttonText = "See all transactions",
-                            containerColor = Color(0xFFF8F8F9),
-                            buttonShape = RoundedCornerShape(10.dp),
-                            borderStroke = BorderStroke(1.dp, Color(0xff999999)),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-                            contentFontSize  = 12.sp,
-                            contentFontWeight = FontWeight.Medium,
-                            contentColor = Color(0xff999999),
-                            onClick = {
-
-                            },
-                            modifier = Modifier
-                                .padding(start = 30.dp, end = 30.dp, top = 12.dp)
-                                .fillMaxWidth()
-                                .height(35.dp)
-                        )
-                    }
-                }
 
 //                item {
 //                    RecentTransactionsList(

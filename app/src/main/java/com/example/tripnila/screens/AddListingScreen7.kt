@@ -118,7 +118,55 @@ fun AddListingScreen7(
             PropertyDescription(
                 icon = R.drawable.workspace,
                 label = "Dedicated workspace"
-            )
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Gaming Consoles"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Complimentary Toiletries"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Air Conditioning"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Honesty Snack Bar"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Welcome Basket"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "House Keeping"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Parking"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Refrigerator"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Smoking Area"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Board Games"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Netflix/Disney+"
+            ),
+            PropertyDescription(
+                icon = R.drawable.workspace,
+                label = "Karaoke"
+            ),
         )
     }
     else if (listingType == "Business") {
@@ -169,7 +217,7 @@ fun AddListingScreen7(
     val amenities = listOf(
         PropertyDescription(
             icon = R.drawable.bigger_pool,
-            label = "Pool"
+            label = "Swimming pool"
         ),
         PropertyDescription(
             icon = R.drawable.gym,
@@ -179,13 +227,45 @@ fun AddListingScreen7(
             icon = R.drawable.hot_tub,
             label = "Hot tub"
         ),
+        PropertyDescription(
+            icon = R.drawable.workspace,
+            label = "Sauna"
+        ),
+        PropertyDescription(
+            icon = R.drawable.workspace,
+            label = "Spa Services"
+        ),
+        PropertyDescription(
+            icon = R.drawable.workspace,
+            label = "Play Ground"
+        ),
+        PropertyDescription(
+            icon = R.drawable.workspace,
+            label = "Balcony"
+        ),
+        PropertyDescription(
+            icon = R.drawable.workspace,
+            label = "Billiard Table"
+        ),
     )
 
 
     val views = listOf(
         PropertyDescription(
             icon = R.drawable.condominium,
-            label = "City view"
+            label = "City View"
+        ),
+        PropertyDescription(
+            icon = R.drawable.condominium,
+            label = "Sunset/Sunrise View"
+        ),
+        PropertyDescription(
+            icon = R.drawable.condominium,
+            label = "Garden View"
+        ),
+        PropertyDescription(
+            icon = R.drawable.condominium,
+            label = "Park View"
         ),
     )
 

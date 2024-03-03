@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -72,13 +73,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.tripnila.R
 import com.example.tripnila.common.AppLocationCard
 import com.example.tripnila.common.AppReviewsCard
 import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.ReviewUiState
-import com.example.tripnila.data.TourAvailableDates
 import com.example.tripnila.data.TourSchedule
 import com.example.tripnila.data.Transaction
 import com.example.tripnila.model.TourManagerViewModel
@@ -109,6 +108,7 @@ fun TourManagerScreen(
     val tour = tourManagerViewModel.tour.collectAsState().value
     val touristId = hostId.substring(5)
 
+    val context = LocalContext.current
 
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -356,9 +356,10 @@ fun TourManagerScreen(
                 item {
                     AppLocationCard(
                         location = "Where we'll meet",
-                        locationImage = R.drawable.map_image2,
+                        lat = tour.tourLat,
+                        lng = tour.tourLng,
+                        context = context,
                         locationDescription = tour.tourLocation,
-                        withEditButton = false,
                         modifier = Modifier
                             .offset(y = (-5).dp)
                             .padding(bottom = 12.dp)

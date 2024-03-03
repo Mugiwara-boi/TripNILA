@@ -138,6 +138,13 @@ fun StaycationBookingScreen(
     val titleText: MutableState<String?> = remember { mutableStateOf(null) }
     val enableBottomSaveButton: MutableState<Boolean> = remember { mutableStateOf(true) }
     val openAlertDialog = remember { mutableStateOf(false) }
+    val maxGuest = staycation?.value?.maxNoOfGuests
+    val guestCount = staycation?.value?.noOfGuests!!
+    if(maxGuest != 0 && maxGuest!! > guestCount){
+        detailViewModel.setMaxGuest(maxGuest)
+    } else{
+        detailViewModel.setMaxGuest(guestCount)
+    }
 
     val nights = remember { mutableStateOf(0) }
     val hasNavigationBar = WindowInsets.areNavigationBarsVisible
@@ -496,38 +503,11 @@ fun StaycationBookingScreen(
                         if (clearTrigger != null) {
                             GuestsCounter(
                                 detailViewModel = detailViewModel,
-                                label = "Adults",
+                                label = "Guests",
                                 count = detailViewModel?.adultCount?.collectAsState()?.value ?: 0,
                                 onCountChange = { count -> detailViewModel?.setAdultCount(count) },
-                                totalOccupancyLimit = detailViewModel.staycation.collectAsState().value?.noOfGuests
+                                totalOccupancyLimit = detailViewModel.maxGuest.collectAsState().value
                                     ?: 0,
-                                clearTrigger = clearTrigger,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-                        }
-                    }
-                    if (detailViewModel != null) {
-                        if (clearTrigger != null) {
-                            GuestsCounter(
-                                detailViewModel = detailViewModel,
-                                label = "Children",
-                                count = detailViewModel?.childrenCount?.collectAsState()?.value ?: 0,
-                                onCountChange = { count -> detailViewModel?.setChildrenCount(count) },
-                                totalOccupancyLimit = detailViewModel.staycation.collectAsState().value?.noOfGuests
-                                    ?: 0,
-                                clearTrigger = clearTrigger,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-                        }
-                    }
-                    if (detailViewModel != null) {
-                        if (clearTrigger != null) {
-                            GuestsCounter(
-                                detailViewModel = detailViewModel,
-                                label = "Infant",
-                                count =  detailViewModel?.infantCount?.collectAsState()?.value ?: 0,
-                                onCountChange = { count -> detailViewModel?.setInfantCount(count) },
-                                totalOccupancyLimit = infantOccupancyLimit,
                                 clearTrigger = clearTrigger,
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             )
@@ -536,15 +516,17 @@ fun StaycationBookingScreen(
 
                     if (detailViewModel != null) {
                         if (clearTrigger != null) {
-                            GuestsCounter(
-                                detailViewModel = detailViewModel,
-                                label = "Pets",
-                                count =  detailViewModel?.petCount?.collectAsState()?.value ?: 0,
-                                onCountChange = { count -> detailViewModel?.setPetCount(count) },
-                                totalOccupancyLimit = petOccupancyLimit,
-                                clearTrigger = clearTrigger,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
+                            if(detailViewModel.staycation.value?.allowPets!!) {
+                                GuestsCounter(
+                                    detailViewModel = detailViewModel,
+                                    label = "Pets",
+                                    count = detailViewModel?.petCount?.collectAsState()?.value ?: 0,
+                                    onCountChange = { count -> detailViewModel?.setPetCount(count) },
+                                    totalOccupancyLimit = 5,
+                                    clearTrigger = clearTrigger,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                            }
                         }
                     }
 
@@ -622,10 +604,9 @@ fun StaycationBookingScreen(
                                             detailViewModel.addBooking(touristId)
                                             touristWalletViewModel.setBookingPayment(totalFee,touristId)
                                             touristWalletViewModel.setPendingAmount(totalFee = totalFee,hostWalletId = hostWalletId,tripnilaFee = tripnilaFee)
+
                                         }
-
-
-
+                                        onBack()
 
                                     },
                                     modifier = Modifier.padding(horizontal = 10.dp),
@@ -815,6 +796,9 @@ fun AppPaymentDivider(
         maximumFractionDigits = 2
         minimumFractionDigits = 2
     }
+    var additionalFeeIsTrue by remember {
+        mutableStateOf(false)
+    }
 
     val totalFee by touristWalletViewModel.totalFee.collectAsState()
     val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
@@ -832,11 +816,11 @@ fun AppPaymentDivider(
 
 //    val staycationBooking = detailViewModel?.staycationBooking?.collectAsState()
 //    val previouslyPaidBookingAmount = staycationBooking?.value?.totalAmount
-
+    val additionalFee by touristWalletViewModel.additionalFee.collectAsState()
     val currentBalance = touristWallet.currentBalance
     val productBookingFee = bookingFee * bookingDuration
     val tripNilaFee = productBookingFee * 0.05
-    val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripNilaFee
+    val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripNilaFee + additionalFee
 
     val initialProductBookingFee = bookingFee * initialBookingDuration
     val initialTripNilaFee = initialProductBookingFee * 0.05
@@ -852,8 +836,16 @@ fun AppPaymentDivider(
     var selectedPaymentMethod by remember { mutableStateOf(-1) }
     var isSelectionEnabled by remember { mutableStateOf(true) }
 
+    val maxGuest = detailViewModel?.maxGuest?.collectAsState()
+    val guestCount = detailViewModel?.staycation?.collectAsState()?.value?.noOfGuests
+    val selectedGuest = detailViewModel?.guestCount?.collectAsState()
     val afterBalance = currentBalance - totalFee
 
+    if (selectedGuest!=null) {
+        if (selectedGuest?.value!! > guestCount!!) {
+            additionalFeeIsTrue = true
+        }
+    }
     if(afterBalance < 0){
         detailViewModel?.setEnoughBalance(false)
     }else{
@@ -950,7 +942,7 @@ fun AppPaymentDivider(
 
 
         Text(
-            text = "New Payment",
+            text = "Payment",
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier
@@ -967,6 +959,29 @@ fun AppPaymentDivider(
                 feePrice = maintenanceFee
             )
         }
+        if(forRescheduling){
+            if(additionalFeeIsTrue){
+                val fee = detailViewModel?.staycation?.collectAsState()?.value?.additionalFeePerGuest
+                val guestDiff = selectedGuest?.value!! - guestCount!!
+                val finalFee = fee!! * guestDiff
+                touristWalletViewModel.setAdditionalFee(finalFee)
+                PaymentRow(
+                    feeLabel = "Additional Fee x $guestDiff guests",
+                    feePrice = finalFee
+                )
+            }
+        } else if(additionalFeeIsTrue){
+            val fee = detailViewModel?.staycation?.collectAsState()?.value?.additionalFeePerGuest
+            val guestDiff = selectedGuest?.value!! - guestCount!!
+            val finalFee = fee!! * guestDiff
+            touristWalletViewModel.setAdditionalFee(finalFee)
+            PaymentRow(
+                feeLabel = "Additional Fee x $guestDiff guests",
+                feePrice = finalFee
+            )
+
+        }
+
 
         PaymentRow(
             feeLabel = "Tripnila service fee",
@@ -1360,6 +1375,7 @@ fun GuestsCounter(
 
     var adultsCount = detailViewModel.adultCount.collectAsState().value
     var childrenCount = detailViewModel.childrenCount.collectAsState().value
+    val maxNoOfGuest = detailViewModel.staycation.collectAsState().value?.maxNoOfGuests ?: 0
 
     Row(
         modifier = modifier
