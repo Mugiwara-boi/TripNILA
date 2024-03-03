@@ -305,7 +305,7 @@ fun WithdrawCard(
             )
             Spacer(modifier = Modifier.height(5.dp))
             Text(
-                text = "Cash in amount",
+                text = "Withdraw amount",
                 color = Color(0xff333333),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium

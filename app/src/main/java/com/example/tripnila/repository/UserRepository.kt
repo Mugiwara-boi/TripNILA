@@ -2468,6 +2468,7 @@ class UserRepository {
                     val noOfInfants = document.getLong("noOfInfants")?.toInt() ?: 0
                     val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
                     val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                    val additionalFee = document.getLong("additionalFee")?.toDouble() ?: 0.0
                     val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
 
                     val staycationBooking = StaycationBooking(
@@ -2475,6 +2476,7 @@ class UserRepository {
                         bookingDate = bookingDate,
                         bookingStatus = bookingStatus,
                         checkInDate = checkInDate,
+                        additionalFee = additionalFee,
                         checkOutDate = checkOutDate,
                         noOfGuests = noOfGuests,
                         noOfInfants = noOfInfants,
@@ -2519,6 +2521,7 @@ class UserRepository {
                     val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
                     val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
                     val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
+                    val additionalFee = document.getLong("additionalFee")?.toDouble() ?: 0.0
 
                     val staycationBooking = StaycationBooking(
                         staycationBookingId = bookingId,
@@ -2528,6 +2531,7 @@ class UserRepository {
                         checkOutDate = checkOutDate,
                         noOfGuests = noOfGuests,
                         noOfInfants = noOfInfants,
+                        additionalFee =additionalFee,
                         noOfPets = noOfPets,
                         staycation = staycation,
                         totalAmount = totalAmount,
@@ -2573,6 +2577,7 @@ class UserRepository {
                     val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
                     val staycationId = document.getString("staycationId") ?: ""
                     val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                    val additionalFee = document.getLong("additionalFee")?.toDouble() ?: 0.0
 
                     val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
 
@@ -2582,6 +2587,7 @@ class UserRepository {
                         bookingStatus = bookingStatus,
                         checkInDate = checkInDate,
                         checkOutDate = checkOutDate,
+                        additionalFee = additionalFee,
                         noOfGuests = noOfGuests,
                         noOfInfants = noOfInfants,
                         noOfPets = noOfPets,
@@ -2628,6 +2634,7 @@ class UserRepository {
                 val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
                 val staycationId = document.getString("staycationId") ?: ""
                 val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                val additionalFee = document.getLong("additionalFee")?.toDouble() ?: 0.0
 
 //                val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
 //                val review = getBookingReview(bookingId, touristId)
@@ -2640,6 +2647,7 @@ class UserRepository {
                     checkOutDate = checkOutDate,
                     noOfGuests = noOfGuests,
                     noOfInfants = noOfInfants,
+                    additionalFee = additionalFee,
                     noOfPets = noOfPets,
                     //     staycation = staycation,
                     totalAmount = totalAmount,
@@ -3376,6 +3384,7 @@ class UserRepository {
         newCheckInDateMillis: Long,
         newCheckOutDateMillis: Long,
         commission: Double,
+        additionalFee: Double,
         amountRefunded: Double,
         newTotalAmount: Double,
         newNoOfGuests: Int,
@@ -3403,6 +3412,7 @@ class UserRepository {
                 "checkInDate" to checkInDatePlus6Hours,
                 "checkOutDate" to checkOutDatePlus4Hours,
                 "totalAmount" to newTotalAmount,
+                "additionalFee" to additionalFee,
                 "noOfGuests" to newNoOfGuests,
                 "noOfPets" to newNoOfPets,
                 "noOfInfants" to newNoOfInfants
@@ -4191,6 +4201,7 @@ class UserRepository {
                 val noOfPets = document.getLong("noOfPets")?.toInt() ?: 0
                 val staycationId = document.getString("staycationId") ?: ""
                 val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                val additionalFee = document.getLong("additionalFee")?.toDouble() ?: 0.0
 
                 val staycation = getStaycationDetailsById(staycationId) ?: Staycation()
                 val review = getBookingReview(bookingId, touristId)
@@ -4204,6 +4215,7 @@ class UserRepository {
                     checkInDate = checkInDate,
                     checkOutDate = checkOutDate,
                     noOfGuests = noOfGuests,
+                    additionalFee = additionalFee,
                     noOfInfants = noOfInfants,
                     noOfPets = noOfPets,
                     staycation = staycation,

@@ -117,17 +117,36 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
         val newAmenity = Amenity(amenityName = amenity)
         _staycation.value = _staycation.value.copy(amenities = _staycation.value.amenities + newAmenity)
         var tagName = ""
-
         when (amenity) {
-            "Pool" -> tagName = "Swimming"
+            "Swimming pool" -> tagName = "Swimming"
             "Gym equipment" -> tagName = "Sports"
+            "Gaming Consoles", "Board Games" -> tagName = "Gaming"
+            "Karaoke" -> tagName = "Karaoke"
+            "Kitchen", "Refrigerator" -> tagName = "Foodtrip"
+            "Park View", "Garden View" -> tagName = "Nature"
+            "Smoking Area", "Parking" -> tagName = "Clubs"
+            "City View", "Sunset/Sunrise View" -> tagName = "Sightseeing"
+            "Honesty Snack Bar", "Dedicated workspace" -> tagName = "Shop"
+            "Balcony", "Sauna" -> tagName = "History"
         }
 
-        val newTag = Tag(tagName = tagName)
-        _staycation.value = _staycation.value.copy(staycationTags = _staycation.value.staycationTags + newTag)
-        Log.d("Staycation", "${_staycation.value.staycationTags}")
+        if (tagName.isNotEmpty()) {
+            // Create the Tag object
+            val newTag = Tag(tagName = tagName)
 
+            // Check if the tag already exists in staycationTags
+            val tagExists = _staycation.value.staycationTags.any { it.tagName == tagName }
 
+            // If the tag doesn't exist, add it to staycationTags
+            if (!tagExists) {
+                _staycation.value = _staycation.value.copy(staycationTags = _staycation.value.staycationTags + newTag)
+                Log.d("Staycation", "${_staycation.value.staycationTags}")
+            } else {
+                Log.d("Staycation", "Tag $tagName already exists")
+            }
+        } else {
+            Log.d("Staycation", "Invalid tag name")
+        }
     }
 
     fun addStaycationTag(amenity: String){

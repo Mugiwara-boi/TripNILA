@@ -49,7 +49,6 @@ import com.google.maps.GeoApiContext
 import com.google.maps.model.TransitMode
 import com.google.maps.model.TravelMode
 import com.google.maps.model.VehicleType
-import com.google.type.DateTime
 import com.itenirary.firebaseclass.business
 import com.itenirary.firebaseclass.business_availability
 import com.itenirary.firebaseclass.filter_data
@@ -68,7 +67,6 @@ import java.lang.Math.atan2
 import java.lang.Math.cos
 import java.lang.Math.sin
 import java.lang.Math.sqrt
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
@@ -862,15 +860,16 @@ class IteniraryFragment : Fragment(), OnMapReadyCallback {
                     if (step.travelMode == TravelMode.TRANSIT) {
                         // Transit step, parse transit instructions and mode of transportation
                         val transitDetails = step.transitDetails
-                        val modeOfTransportation = transitDetails.line.vehicle.type // Get mode of transportation
-                        val fare = when (modeOfTransportation) {
-                            VehicleType.BUS,VehicleType.TRAM -> "P20"
-                            VehicleType.SUBWAY,VehicleType.COMMUTER_TRAIN,VehicleType.RAIL -> "P30"
+                        val modeOfTransportFare = transitDetails.line.vehicle.type
+                        val modeOfTransportation = if(transitDetails.line.vehicle.type.toString() != "TRAM") transitDetails.line.vehicle.type else ""// Get mode of transportation
+                        val fare = when (modeOfTransportFare) {
+                            VehicleType.BUS,VehicleType.TRAM -> "₱20"
+                            VehicleType.SUBWAY,VehicleType.COMMUTER_TRAIN,VehicleType.RAIL -> "₱30"
                             else -> {
-                                "for free"
+                                "free"
                             }
                         }
-                        val transitInstruction = "Take the $modeOfTransportation ${transitDetails.line.name} towards ${transitDetails.headsign} $fare"
+                        val transitInstruction = "Take the $modeOfTransportation ${transitDetails.line.name} towards ${transitDetails.headsign} for $fare"
 
                         instructionList.add(instruction(transitInstruction))
                     } else if (step.travelMode == TravelMode.WALKING) {

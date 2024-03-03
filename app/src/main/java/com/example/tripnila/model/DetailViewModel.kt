@@ -21,7 +21,7 @@ import java.util.TimeZone
 class DetailViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
 
     private val _staycation = MutableStateFlow<Staycation?>(null)
-    val staycation: StateFlow<Staycation?> get() = _staycation
+    val staycation = _staycation.asStateFlow()
 
     private val _staycationBooking = MutableStateFlow<StaycationBooking?>(null)
     val staycationBooking = _staycationBooking.asStateFlow()
@@ -40,6 +40,9 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
 
     private val _totalBookingAmount = MutableStateFlow<Double?>(0.0)
     val totalBookingAmount: StateFlow<Double?> = _totalBookingAmount
+
+    private val _additionalFee = MutableStateFlow<Double?>(0.0)
+    val additionalFee: StateFlow<Double?> = _additionalFee
 
     private val _loadingState = MutableStateFlow(false)
     val loadingState: StateFlow<Boolean> get() = _loadingState
@@ -65,8 +68,23 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
     private val _petCount = MutableStateFlow<Int?>(0)
     val petCount: StateFlow<Int?> = _petCount
 
+    private val _maxGuest = MutableStateFlow<Int?>(0)
+    val maxGuest: StateFlow<Int?> = _maxGuest
+
+    private val _initialGuest = MutableStateFlow<Int?>(0)
+    val initialGuest: StateFlow<Int?> = _initialGuest
+
+    private val _allowedGuest = MutableStateFlow<Int?>(0)
+    val allowedGuest: StateFlow<Int?> = _allowedGuest
+
+    private val _extraGuest = MutableStateFlow<Int?>(0)
+    val extraGuest: StateFlow<Int?> = _extraGuest
+
     private val _clearTrigger = MutableStateFlow(false)
     val clearTrigger: StateFlow<Boolean> = _clearTrigger
+
+    private val _isAddFee = MutableStateFlow(false)
+    val isAddFee: StateFlow<Boolean> = _isAddFee
 
     private val _selectedPaymentMethod = MutableStateFlow<Int?>(-1)
     val selectedPaymentMethod: StateFlow<Int?> get() = _selectedPaymentMethod//.asStateFlow()
@@ -89,6 +107,19 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
     private val _initialPetCount = MutableStateFlow<Int?>(null)
     val initialPetCount: StateFlow<Int?> = _initialPetCount
 
+    fun setMaxGuest(amount: Int){
+        _maxGuest.value = amount
+    }
+
+
+    fun setInitialAllowedGuest(initial: Int, allowed: Int){
+        _initialGuest.value = initial
+        _allowedGuest.value = allowed
+        _extraGuest.value = initial - allowed
+        Log.d("ViewModel", "${_initialGuest.value}")
+        Log.d("ViewModel", "${_allowedGuest.value}")
+    }
+
     fun setSelectedPaymentMethod(index: Int?) {
         _selectedPaymentMethod.value = index
         Log.d("ViewModel", "${_selectedPaymentMethod.value}")
@@ -99,6 +130,7 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
 
     private val _isEnoughBalance = MutableStateFlow(false)
     val isEnoughBalance = _isEnoughBalance.asStateFlow()
+
 
     private fun setTotalBookingAmount(totalBookingAmount: Double?) {
         _totalBookingAmount.value = totalBookingAmount
@@ -137,11 +169,18 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
 
     private fun setGuestCount() {
         _guestCount.value = _childrenCount.value?.let { childrenCount -> _adultCount.value?.plus(childrenCount) }
+        if(_guestCount.value!! > _allowedGuest.value!!){
+            _isAddFee.value = true
+        } else{
+            _isAddFee.value = false
+        }
+        Log.d("Set Start Date", _guestCount.value.toString())
     }
 
     fun setAdultCount(count: Int?) {
         _adultCount.value = count
         setGuestCount()
+
     }
 
     fun setChildrenCount(count: Int?) {
@@ -291,7 +330,7 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
         }
     }
 
-    suspend fun rescheduleBooking() {
+    suspend fun rescheduleBooking(addFee: Double) {
         _loadingState.value = true
         try {
             viewModelScope.launch {
@@ -305,7 +344,7 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
 
                 val productBookingFee = (_staycation.value?.staycationPrice)?.times(_nightsDifference.value!!)
                 val tripNilaFee = productBookingFee?.times(0.05)
-                val totalFeeState = (productBookingFee?.plus(maintenanceFee!!))?.plus(tripNilaFee!!)
+                val totalFeeState = (productBookingFee?.plus(maintenanceFee!!))?.plus(tripNilaFee!!)?.plus(addFee)
 
                 val totalFeeDifference = totalFeeState?.let { initialTotalFeeState?.minus(it) }
 
@@ -335,6 +374,7 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
                     initialCheckOutDateMillis = _initialEndDate.value ?: 0,
                     newCheckInDateMillis = _startDate.value ?: 0,
                     newCheckOutDateMillis = _endDate.value ?: 0,
+                    additionalFee = addFee,
                     commission = tripNilaFee ?: 0.0,
                     amountRefunded = amountRefunded.toDouble(),
                     newTotalAmount = totalFeeState ,
