@@ -56,6 +56,45 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
     private val _monthlyRevenue = MutableStateFlow(0)
     val monthlyRevenue = _monthlyRevenue.asStateFlow()
 
+    private val _cancelledBooks = MutableStateFlow(0.0)
+    val cancelledBooks= _cancelledBooks.asStateFlow()
+
+    private val _allBooks = MutableStateFlow(0)
+    val allBooks = _allBooks.asStateFlow()
+
+    private val _reviewCount = MutableStateFlow(0)
+    val reviewCount = _reviewCount.asStateFlow()
+
+    private val _aveRating = MutableStateFlow(0.0)
+    val aveRating = _aveRating.asStateFlow()
+
+    fun getCancellationRate(staycationId: String){
+        viewModelScope.launch{
+            val cancelBook = repository.getCancelledBookingCount(staycationId)
+            val allBook = repository.getTotalBookingCountForStaycation(staycationId)
+
+            if(allBook != 0 && cancelBook != 0) {
+                val cancelRate = (cancelBook.toDouble() / allBook.toDouble()) * 100
+                _cancelledBooks.value = cancelRate
+                Log.d("Cancel Rate Computed", "$cancelRate")
+                Log.d("Cancel Rate cancelBook", "$cancelBook")
+                Log.d("Cancel Rate allBook", "$allBook")
+            } else {
+                _cancelledBooks.value = 0.0
+            }
+            Log.d("Cancel Rate", "${_cancelledBooks.value}")
+        }
+    }
+
+    fun getReviewRatings(staycationId: String){
+        viewModelScope.launch {
+            val (averageRating, reviewCount) = repository.getAverageRatingAndReviewCountForStaycation(staycationId)
+            _aveRating.value = averageRating
+            _reviewCount.value = reviewCount
+            Log.d("ReviewCount", "$reviewCount")
+            Log.d("AveRating", "$averageRating")
+        }
+    }
 
     fun setSelectedYear(year: Int,staycationId: String) {
         viewModelScope.launch {

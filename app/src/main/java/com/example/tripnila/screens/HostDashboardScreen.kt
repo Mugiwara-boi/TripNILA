@@ -62,7 +62,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.tripnila.R
-import com.example.tripnila.common.AppBottomNavigationBar
 import com.example.tripnila.common.HostBottomNavigationBar
 import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.common.Orange

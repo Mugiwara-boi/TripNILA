@@ -3460,7 +3460,40 @@ class UserRepository {
             false
         }
     }
+    suspend fun getCancelledBookingCount(staycationId: String): Int {
+        return try {
+            val querySnapshot = staycationBookingCollection
+                .whereEqualTo("staycationId", staycationId)
+                .whereEqualTo("bookingStatus", "Cancelled")
+                .get()
+                .await()
 
+            val cancelledBookingCount = querySnapshot.size() // Get the number of cancelled bookings
+            Log.d("TOTAL CANCELLED BOOKS","$cancelledBookingCount")
+            cancelledBookingCount // Return the count of cancelled bookings
+        } catch (e: Exception) {
+            // Handle any errors
+            e.printStackTrace()
+            0 // Return 0 if an error occurs
+        }
+    }
+
+    suspend fun getTotalBookingCountForStaycation(staycationId: String): Int {
+        return try {
+            val querySnapshot = staycationBookingCollection
+                .whereEqualTo("staycationId", staycationId)
+                .get()
+                .await()
+
+            val totalBookingCount = querySnapshot.size() // Get the total number of bookings
+            Log.d("TOTAL BOOKS","$totalBookingCount")
+            totalBookingCount // Return the total count of bookings
+        } catch (e: Exception) {
+            // Handle any errors
+            e.printStackTrace()
+            0 // Return 0 if an error occurs
+        }
+    }
 
     suspend fun getTouristProfile(touristId: String): Tourist? {
         try {
@@ -3490,6 +3523,48 @@ class UserRepository {
             // Handle the error case as needed
         }
         return null
+    }
+
+    suspend fun getAverageRatingAndReviewCountForStaycation(staycationId: String): Pair<Double, Int> {
+        var totalRating = 0.0
+        var reviewCount = 0
+
+        try {
+            // Step 1: Query the staycationBookingCollection for the booking IDs
+            val bookingIdsSnapshot = staycationBookingCollection
+                .whereEqualTo("staycationId", staycationId)
+                .get()
+                .await()
+
+            // Step 2: Iterate through the booking IDs and query the review collection for each booking
+            for (doc in bookingIdsSnapshot.documents) {
+                val bookingId = doc.id
+
+                val reviewsSnapshot = reviewCollection
+                    .whereEqualTo("bookingId", bookingId)
+                    .get()
+                    .await()
+
+                // Step 3: Extract reviewRating from each review and calculate totalRating and reviewCount
+                for (reviewDoc in reviewsSnapshot.documents) {
+                    val reviewRating = reviewDoc.getDouble("reviewRating") ?: 0.0
+                    totalRating += reviewRating
+                    reviewCount++
+                }
+            }
+        } catch (e: Exception) {
+            // Handle any errors
+            e.printStackTrace()
+        }
+
+        // Step 4: Calculate the average rating
+        val averageRating = if (reviewCount > 0) {
+            totalRating / reviewCount
+        } else {
+            0.0
+        }
+
+        return Pair(averageRating, reviewCount)
     }
 
     suspend fun getHostProfile(touristId: String): Host? {

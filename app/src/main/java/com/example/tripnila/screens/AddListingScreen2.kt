@@ -28,11 +28,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,7 +58,8 @@ fun AddListingScreen2(
     onNavToNext: (String) -> Unit,
     onNavToBack: () -> Unit,
 ){
-
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var selectedPropertyLabel by when (listingType) {
         "Staycation" -> remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationType) }
         "Tour" -> remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourType) }
@@ -184,9 +187,11 @@ fun AddListingScreen2(
             topBar = {
                 TopAppBar(
                     title = {
-                        SaveAndExitButton(
-                            onClick = { /*TODO*/ }
-                        )
+                        /*SaveAndExitButton(
+                            onClick = {
+
+                            }
+                        )*/
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.White

@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedCard
@@ -90,6 +89,9 @@ fun InsightsScreen(
     val totalMonthlyRevenue = insightViewModel.monthlyRevenue.collectAsState().value
     val monthlyViewCount = insightViewModel.monthlyViews.collectAsState().value
     val yearlyViewCount = insightViewModel.yearlyViews.collectAsState().value
+    val cancelRate = insightViewModel.cancelledBooks.collectAsState().value
+    val aveRating = insightViewModel.aveRating.collectAsState().value
+    val reviewCount = insightViewModel.reviewCount.collectAsState().value
     var isDialogOpen by remember { mutableStateOf(false) }
 
     var insightsSelectedCategory by remember { mutableStateOf("Monthly") }
@@ -154,10 +156,17 @@ fun InsightsScreen(
                     val yearlyBookingCount = remember { mutableStateOf(0) }
                     LaunchedEffect(selectedStaycation){
                         val selectedStaycationId = selectedStaycation.staycationId
-                        insightViewModel.getCompletedStaycationBookings(selectedStaycationId)
-                        insightViewModel.getCompletedStaycationBookingsForMonth(selectedStaycationId)
-                        insightViewModel.fetchMonthlyViews(selectedStaycationId, "Staycation")
-                        insightViewModel.fetchAllViews(selectedStaycationId)
+                        if (selectedStaycationId != null) {
+                            Log.d("Selected Staycation ID", selectedStaycationId)
+                            insightViewModel.getCompletedStaycationBookings(selectedStaycationId)
+                            insightViewModel.getCancellationRate(selectedStaycationId)
+                            insightViewModel.getReviewRatings(selectedStaycationId)
+                            insightViewModel.getCompletedStaycationBookingsForMonth(selectedStaycationId)
+                            insightViewModel.fetchMonthlyViews(selectedStaycationId, "Staycation")
+                            insightViewModel.fetchAllViews(selectedStaycationId)
+                        } else {
+                            Log.e("Selected Staycation ID", "Staycation ID is null or empty")
+                        }
 
                     }
                     LaunchedEffect(completedBooking){
@@ -255,23 +264,13 @@ fun InsightsScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
 
-                            AppDropDownFilterWithCallback(
-                                options = listOf("Daily", "Weekly", "Monthly", "Yearly", "All"),
-                                fontSize = 10.sp,
-                                selectedCategory = staycationStatsSelectedCategory,
-                                onCategorySelected = { newCategory ->
-                                    staycationStatsSelectedCategory = newCategory },
-                                modifier = Modifier
-                                    .padding(bottom = 3.dp)
-                            )
-
                         }
                         ServiceStatsCard(
                             modifier = Modifier,
-                            overallRating = 4.7,
-                            totalReviewsCount = 270,
+                            overallRating = aveRating,
+                            totalReviewsCount = reviewCount,
                             responseRate = .98,
-                            cancellationRate = .1,
+                            cancellationRate = cancelRate,
                             earnings = 4250,
                             views = 20,
                             bookings = 1,
@@ -725,94 +724,19 @@ fun ServiceStatsCard(
                         fontWeight = FontWeight.Medium
                     )
                 }
-                // RESPONSE RATE
-                Column {
-                    Text(
-                        text = "${(responseRate * 100).toInt()}%",
-                        color = Color(0xff333333),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Response Rate",
-                        color = Color(0xff333333),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+
                 // CANCELLATION RATE
                 Column {
+                    val cancellationRateFormatted = String.format("%.1f", cancellationRate)
+                    val text = "$cancellationRateFormatted"
                     Text(
-                        text = "${(cancellationRate * 100).toInt()}%",
+                        text = "$text%",
                         color = Color(0xff333333),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "Cancellation Rate",
-                        color = Color(0xff333333),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-            Divider(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 5.dp),
-                color = Color(0xffdedede)
-            )
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                // EARNINGS
-                Column(
-                    modifier = Modifier.weight(.3f)
-                ) {
-                    Text(
-                        text = "₱ ${formattedNumber.format(earnings)}",
-                        color = Color(0xff333333),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "$categoryText earnings",
-                        color = Color(0xff333333),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                // VIEWS
-                Column(
-                    modifier = Modifier.weight(.3f)
-                ) {
-                    Text(
-                        text = formattedNumber.format(views),
-                        color = Color(0xff333333),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "$categoryText views",
-                        color = Color(0xff333333),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                // BOOKINGS
-                Column(
-                    modifier = Modifier.weight(.3f)
-                ) {
-                    Text(
-                        text = formattedNumber.format(bookings),
-                        color = Color(0xff333333),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "$categoryText bookings",
                         color = Color(0xff333333),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium

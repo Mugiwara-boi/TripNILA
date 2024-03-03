@@ -25,11 +25,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.common.Orange
-import com.example.tripnila.data.Discount
 import com.example.tripnila.data.Promotion
 import com.example.tripnila.model.AddListingViewModel
 
@@ -95,9 +89,9 @@ fun AddListingScreen12(
             topBar = {
                 TopAppBar(
                     title = {
-                        SaveAndExitButton(
-                            onClick = { /*TODO*/ }
-                        )
+                        /*SaveAndExitButton(
+                            onClick = { *//*TODO*//* }
+                        )*/
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.White

@@ -20,7 +20,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.HostTourViewModel
@@ -74,9 +73,9 @@ fun AddListingScreen6(
             topBar = {
                 TopAppBar(
                     title = {
-                        SaveAndExitButton(
-                            onClick = { /*TODO*/ }
-                        )
+                        /*SaveAndExitButton(
+                            onClick = { *//*TODO*//* }
+                        )*/
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.White
