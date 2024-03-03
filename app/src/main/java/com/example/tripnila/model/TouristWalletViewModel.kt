@@ -15,6 +15,8 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
     private val _touristWallet = MutableStateFlow(TouristWallet())
     val touristWallet = _touristWallet.asStateFlow()
 
+
+
     private val _adminWallet = MutableStateFlow(TouristWallet())
     val adminWallet = _adminWallet.asStateFlow()
 
@@ -68,6 +70,14 @@ class TouristWalletViewModel(private val repository: UserRepository = UserReposi
 
     private val _remainingBalance = MutableStateFlow(0.0)
     val remainingBalance = _remainingBalance.asStateFlow()
+
+    private val _alertDialogMessage = MutableStateFlow<String?>(null)
+    val alertDialogMessage: StateFlow<String?> get() = _alertDialogMessage
+
+    fun setAlertDialogMessage() {
+        _alertDialogMessage.value =  "Are you sure you want to proceed?" // No issues, return null for no alert dialog
+
+    }
     fun setSelectedMethod(method: String) {
         _selectedMethod.value = method
         Log.d("SelectedMethod", "${selectedMethod.value}")
