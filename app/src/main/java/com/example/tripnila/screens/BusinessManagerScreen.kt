@@ -45,6 +45,8 @@ fun BusinessManagerScreen(
 
     val business = businessManagerViewModel?.business?.collectAsState()?.value
     val touristId = hostId.substring(5)
+    val minSpend = business?.minSpend ?: 0.0
+    val entranceFee = business?.entranceFee ?: 0.0
 
     val amenities = business?.amenities?.map { amenity ->
         AmenityBrief(
@@ -215,8 +217,8 @@ fun BusinessManagerScreen(
                 }
                 item {
                     BusinessMenuCard(
-                        menuImage = business?.businessMenu?.find { it.photoType == "Cover" }?.photoUrl  ?: "",
-                        promos = promos,
+                        menuImage = business?.businessMenu?.find { it.photoType == "Cover" }?.photoUrl  ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                        entranceFee = entranceFee,
                         withEditButton = false,
                         modifier = Modifier
                             .offset(y = (-5).dp)

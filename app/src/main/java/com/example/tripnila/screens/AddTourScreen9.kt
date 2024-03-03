@@ -2,6 +2,7 @@ package com.example.tripnila.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -44,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -51,12 +56,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -83,11 +92,14 @@ fun AddTourScreen9(
 
     val tourSchedules = hostTourViewModel?.tour?.collectAsState()?.value?.schedule
 
-    var openingHour by remember { mutableStateOf(0) }
-    var openingMinute by remember { mutableStateOf(0) }
+    var openingHour by remember { mutableIntStateOf(0) }
+    var openingMinute by remember { mutableIntStateOf(0) }
 
-    var closingHour by remember { mutableStateOf(0) }
-    var closingMinute by remember { mutableStateOf(0) }
+    var closingHour by remember { mutableIntStateOf(0) }
+    var closingMinute by remember { mutableIntStateOf(0) }
+
+    var isFocused by remember { mutableStateOf(false) }
+    var slot by remember { mutableIntStateOf(0) }
 
     var currentDate by remember { mutableStateOf(LocalDate.now()) }
     var openDialogBox by remember { mutableStateOf(false) }
@@ -96,12 +108,12 @@ fun AddTourScreen9(
     var showClosingDialog by remember { mutableStateOf(false) }
 
 
-    var openingTimePickerState = rememberTimePickerState(
+    val openingTimePickerState = rememberTimePickerState(
         initialHour = openingHour,
         initialMinute = openingMinute,
         is24Hour = false
     )
-    var closingTimePickerState = rememberTimePickerState(
+    val closingTimePickerState = rememberTimePickerState(
         initialHour = closingHour,
         initialMinute = closingMinute,
         is24Hour = false
@@ -125,12 +137,14 @@ fun AddTourScreen9(
     val formattedOpeningTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(openingCalendar.time)
     val formattedClosingTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(closingCalendar.time)
 
+
     LaunchedEffect(openDialogBox) {
         if (!openDialogBox) {
             openingHour = 0
             openingMinute = 0
             closingHour = 0
             closingMinute = 0
+            slot = 0
         }
     }
 
@@ -302,7 +316,7 @@ fun AddTourScreen9(
                                     TourScheduleCard(
                                         tourSchedule = tourSchedule,
                                         onDelete = { sched ->
-                                            hostTourViewModel?.removeSchedule(sched)
+                                            hostTourViewModel.removeSchedule(sched)
                                         },
                                         modifier = Modifier
                                             .padding(horizontal = 20.dp)
@@ -354,7 +368,11 @@ fun AddTourScreen9(
                                     }
 
                                     if (openDialogBox) {
-                                        Dialog(onDismissRequest = { openDialogBox = false }) {
+                                        Dialog(
+                                            onDismissRequest = {
+                                                openDialogBox = false
+                                            }
+                                        ) {
                                             // Draw a rectangle shape with rounded corners inside the dialog
                                             Card(
                                                 colors = CardDefaults.outlinedCardColors(
@@ -491,6 +509,73 @@ fun AddTourScreen9(
                                                             }
                                                         }
                                                     }
+                                                    // SLOT
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .padding(
+                                                                horizontal = 20.dp,
+                                                                vertical = 3.dp
+                                                            )
+                                                            .fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.Start,
+                                                    ) {
+                                                        Text(
+                                                            text = "Slot",
+                                                            color = Color(0xff333333),
+                                                            fontSize = 12.sp,
+                                                            fontWeight = FontWeight.Medium,
+                                                            modifier = Modifier.padding(
+                                                                end = 10.dp,
+                                                                top = 5.dp
+                                                            )
+                                                        )
+                                                        BasicTextField(
+                                                            value = slot.toString(),
+                                                            onValueChange = { newValue ->
+                                                                val newText = newValue.filter { it.isDigit() }
+                                                                slot = if (newText.isNotEmpty()) newText.toInt() else 0
+                                                            },
+                                                            textStyle = TextStyle(
+                                                                fontWeight = FontWeight.Medium,
+                                                                color = Color.Black
+                                                            ),
+                                                            keyboardOptions = KeyboardOptions(
+                                                                imeAction = ImeAction.Done,
+                                                                keyboardType = KeyboardType.Number
+                                                            ),
+                                                            singleLine = true,
+                                                            decorationBox = { innerTextField ->
+                                                                Row(
+                                                                    modifier = Modifier
+                                                                        .background(color = Color.White, shape = RoundedCornerShape(size = 10.dp))
+                                                                        .border(
+                                                                            width = 1.dp,
+                                                                            color = if (isFocused) {
+                                                                                Orange
+                                                                            } else {
+                                                                                Color(0xffc2c2c2)
+                                                                            },
+                                                                            shape = RoundedCornerShape(size = 10.dp)
+                                                                        )
+                                                                        .padding(horizontal = 8.dp), // inner padding
+                                                                    verticalAlignment = Alignment.CenterVertically
+                                                                ) {
+                                                                    innerTextField()
+                                                                }
+                                                            },
+                                                            modifier = Modifier
+                                                               // .width(80.dp)
+                                                                .width(75.dp)
+                                                                .height(30.dp)
+                                                                .offset(x = 5.dp)
+                                                                .onFocusChanged { focusState ->
+                                                                    isFocused = focusState.isFocused
+                                                                }
+                                                        )
+                                                    }
+
+
+
                                                     Row(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
@@ -510,12 +595,21 @@ fun AddTourScreen9(
                                                             buttonText = "Add",
                                                             contentPadding = PaddingValues(vertical = 0.dp),
                                                             onClick = {
-                                                                hostTourViewModel?.setSchedule(TourSchedule(date = currentDate, startTime = formattedOpeningTime, endTime = formattedClosingTime))
+                                                                hostTourViewModel?.setSchedule(
+                                                                    TourSchedule(
+                                                                        date = currentDate,
+                                                                        startTime = formattedOpeningTime,
+                                                                        endTime = formattedClosingTime,
+                                                                        slot = slot,
+                                                                        bookedSlot = 0
+                                                                    )
+                                                                )
                                                                 openDialogBox = false
                                                             },
                                                             modifier = Modifier
                                                                 .width(105.dp)
                                                                 .height(30.dp)
+
                                                         )
                                                     }
 
@@ -715,10 +809,20 @@ fun AddTourScreen9(
 
 @Composable
 fun TourScheduleCard(
-    tourSchedule: TourSchedule = TourSchedule(),
+    modifier: Modifier = Modifier,
+    tourSchedule: TourSchedule = TourSchedule(
+        tourScheduleId = "",
+        date = LocalDate.now(),
+        startTime = "00:00 AM",
+        endTime = "00:00 PM",
+        slot = 0,
+        bookedSlot = 0
+    ),
     onDelete: (TourSchedule) -> Unit,
-    modifier: Modifier = Modifier
 ) {
+
+    val remainingSlot = tourSchedule.slot - tourSchedule.bookedSlot
+    val slotText = if (remainingSlot == 0 || remainingSlot == 1) "$remainingSlot remaining slot" else "$remainingSlot remaining slots"
 
     Card(
         border = BorderStroke(0.5.dp, Color(0xff999999)),
@@ -740,7 +844,7 @@ fun TourScheduleCard(
         ) {
             Column {
                 Text(
-                    text = tourSchedule.date.format(DateTimeFormatter.ofPattern("EEE, MMM d")),//"Mon, Sep 11",
+                    text = tourSchedule.date.format(DateTimeFormatter.ofPattern("EEE, MMM d")) + "  •  $slotText",//"Mon, Sep 11",
                     color = Color(0xff333333),
                     style = TextStyle(
                         fontSize = 10.sp,
@@ -787,9 +891,15 @@ private fun AddTourScreen9Preview() {
   //
     val hostTourViewModel = viewModel(modelClass = HostTourViewModel::class.java)
 
-//    AddTourScreen9(
-//        hostTourViewModel = hostTourViewModel
-//    )
+    AddTourScreen9(
+        hostTourViewModel = hostTourViewModel,
+        onNavToNext = {
+
+        },
+        onNavToBack = {
+
+        }
+    )
 
   //  TourScheduleCard()
 

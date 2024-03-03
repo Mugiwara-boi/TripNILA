@@ -1,7 +1,6 @@
 package com.example.tripnila.screens
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Divider
@@ -26,12 +24,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,7 +42,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.common.Orange
 import com.example.tripnila.model.AddListingViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,8 +64,14 @@ fun AddListingScreen14(
     val hasSecurityCamera = addListingViewModel?.staycation?.collectAsState()?.value?.hasSecurityCamera
     val hasWeapon = addListingViewModel?.staycation?.collectAsState()?.value?.hasWeapon
     val hasDangerousAnimal = addListingViewModel?.staycation?.collectAsState()?.value?.hasDangerousAnimal
-
+    val staycationAdditionalInformation = remember { mutableStateOf(addListingViewModel?.staycation?.value?.additionalInfo) }
     val staycation = addListingViewModel?.staycation?.collectAsState()?.value
+    val hasFirstAid = addListingViewModel?.staycation?.collectAsState()?.value?.hasFirstAid
+    val hasFireExit = addListingViewModel?.staycation?.collectAsState()?.value?.hasFireExit
+    val hasFireExtinguisher = addListingViewModel?.staycation?.collectAsState()?.value?.hasFireExtinguisher
+    val allowPets = addListingViewModel?.staycation?.collectAsState()?.value?.allowPets
+    val allowSmoking = addListingViewModel?.staycation?.collectAsState()?.value?.allowSmoking
+    val noisePolicy = addListingViewModel?.staycation?.collectAsState()?.value?.noisePolicy
 
     val alreadySubmitted = addListingViewModel?.isSuccessAddListing?.collectAsState()?.value
 
@@ -170,9 +170,9 @@ fun AddListingScreen14(
                                 selected = hasSecurityCamera,
                                 onSelectedChange = { isSelected ->
                                     if (isSelected) {
-                                        addListingViewModel.setHasSecurityCamera(true)
+                                        addListingViewModel?.setHasSecurityCamera(true)
                                     } else {
-                                        addListingViewModel.setHasSecurityCamera(false)
+                                        addListingViewModel?.setHasSecurityCamera(false)
                                     }
                                 }
                             )
@@ -185,9 +185,9 @@ fun AddListingScreen14(
                                 selected = hasWeapon,
                                 onSelectedChange = { isSelected ->
                                     if (isSelected) {
-                                        addListingViewModel.setHasWeapon(true)
+                                        addListingViewModel?.setHasWeapon(true)
                                     } else {
-                                        addListingViewModel.setHasWeapon(false)
+                                        addListingViewModel?.setHasWeapon(false)
                                     }
                                 }
                             )
@@ -200,14 +200,128 @@ fun AddListingScreen14(
                                 selected = hasDangerousAnimal,
                                 onSelectedChange = { isSelected ->
                                     if (isSelected) {
-                                        addListingViewModel.setHasDangerousAnimal(true)
+                                        addListingViewModel?.setHasDangerousAnimal(true)
                                     } else {
-                                        addListingViewModel.setHasDangerousAnimal(false)
+                                        addListingViewModel?.setHasDangerousAnimal(false)
                                     }
                                 }
                             )
                         }
                     }
+                    item {
+                        if (hasFireExit != null) {
+                            CheckboxRow(
+                                rowLabel = "Fire exit plan",
+                                selected = hasFireExit,
+                                onSelectedChange = { isSelected ->
+                                    if (isSelected) {
+                                        addListingViewModel?.sethasFireExit(true)
+                                    } else {
+                                        addListingViewModel?.sethasFireExit(false)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    item {
+                        if (hasFireExtinguisher != null) {
+                            CheckboxRow(
+                                rowLabel = "Fire extinguisher",
+                                selected = hasFireExtinguisher,
+                                onSelectedChange = { isSelected ->
+                                    if (isSelected) {
+                                        addListingViewModel?.sethasFireExtinguisher(true)
+                                    } else {
+                                        addListingViewModel?.sethasFireExtinguisher(false)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    item {
+                        if (hasFirstAid != null) {
+                            CheckboxRow(
+                                rowLabel = "First aid kit",
+                                selected = hasFirstAid,
+                                onSelectedChange = { isSelected ->
+                                    if (isSelected) {
+                                        addListingViewModel?.sethasFirstAidKit(true)
+                                    } else {
+                                        addListingViewModel?.sethasFirstAidKit(false)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    item {
+                        Text(
+                            text = "Does your place allow any of these?",
+                            color = Color(0xff333333),
+                            fontSize = 12.sp
+                        )
+                    }
+                    item {
+                        if (allowSmoking != null) {
+                            CheckboxRow(
+                                rowLabel = "Smoking",
+                                selected = allowSmoking,
+                                onSelectedChange = { isSelected ->
+                                    if (isSelected) {
+                                        addListingViewModel?.setAllowSmoking(true)
+                                    } else {
+                                        addListingViewModel?.setAllowSmoking(false)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    item {
+                        if (allowPets != null) {
+                            CheckboxRow(
+                                rowLabel = "Pets",
+                                selected = allowPets,
+                                onSelectedChange = { isSelected ->
+                                    if (isSelected) {
+                                        addListingViewModel?.setAllowPets(true)
+                                    } else {
+                                        addListingViewModel?.setAllowPets(false)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    item {
+                        if (noisePolicy != null) {
+                            CheckboxRow(
+                                rowLabel = "Late night noise",
+                                selected = noisePolicy,
+                                onSelectedChange = { isSelected ->
+                                    if (isSelected) {
+                                        addListingViewModel?.setNoisePolicy(true)
+                                    } else {
+                                        addListingViewModel?.setNoisePolicy(false)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    item {
+                        Text(
+                            text = "Any additional information about your staycation?",
+                            color = Color(0xff333333),
+                            fontSize = 12.sp
+                        )
+                    }
+                    item {
+                        LongBasicTextFieldWithCharacterLimit(
+                            inputText = staycationAdditionalInformation,
+                            maxCharacterLimit = 500,
+                            onTextChanged = { newText ->
+                                addListingViewModel?.setStaycationAdditionalInfo(newText)
+                            }
+                        )
+                    }
+
 //                    items(checkboxLabels) { label ->
 //                        CheckboxRow(
 //                            rowLabel = label,

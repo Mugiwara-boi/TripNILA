@@ -1,8 +1,7 @@
 package com.example.tripnila.screens
 
-import com.example.tripnila.data.AmenityBrief
-
-
+import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,7 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
@@ -27,6 +29,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,92 +44,98 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.AppLocationCard
 import com.example.tripnila.common.AppOutlinedButton
 import com.example.tripnila.common.AppReviewsCard
+import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.common.Tag
 import com.example.tripnila.common.UnderlinedText
+import com.example.tripnila.data.AmenityBrief
 import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.ReviewUiState
+import com.example.tripnila.data.setImageForAmenity
+import com.example.tripnila.model.BusinessDetailViewModel
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BusinessDetailsScreen(){
-    val amenities = listOf(
+fun BusinessDetailsScreen(
+    touristId: String = "",
+    businessId: String = "",
+    businessDetailViewModel: BusinessDetailViewModel
+){
+
+    LaunchedEffect(businessId) {
+        businessDetailViewModel.getSelectedBusiness(businessId)
+        Log.d("Tourist Id", touristId)
+    }
+
+    val business by businessDetailViewModel.business.collectAsState()
+
+    val amenities = business.amenities.map { amenity ->
         AmenityBrief(
-            image = R.drawable.person,
-            count = 4,
-            name = "person"
-        ),
-        AmenityBrief(
-            image = R.drawable.pool,
-            count = 1,
-            name = "swimming pool"
-        ),
-        AmenityBrief(
-            image = R.drawable.bedroom,
-            count = 2,
-            name = "bedroom"
-        ),
-        AmenityBrief(
-            image = R.drawable.bathroom,
-            count = 2,
-            name = "bathroom"
-        ),
-        AmenityBrief(
-            image = R.drawable.kitchen,
-            count = 1,
-            name = "kitchen"
+            image = setImageForAmenity(amenity.amenityName),
+            name = amenity.amenityName
         )
-    )
-    val promos = listOf("Senior citizen & PWD : 20%")
-    val tags = listOf("Food", "Bar")
+    }
+
+    val pagerState = rememberPagerState(
+        initialPage = 0,
+        initialPageOffsetFraction = 0f
+    ) {
+        business.businessImages.size
+    }
+
     val dailySchedule = listOf(
         DailySchedule(
             day = "Monday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = true
+            openingTime = business.schedule.find { it.day == "Monday" }?.openingTime ?: "00:00 AM",
+            closingTime = business.schedule.find { it.day == "Monday" }?.closingTime ?: "00:00 PM",
+            isOpen = business.schedule.any { it.day == "Monday" }
         ),
         DailySchedule(
             day = "Tuesday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = true
+            openingTime = business.schedule.find { it.day == "Tuesday" }?.openingTime ?: "00:00 AM",
+            closingTime = business.schedule.find { it.day == "Tuesday" }?.closingTime ?: "00:00 PM",
+            isOpen = business.schedule.any { it.day == "Tuesday" }
         ),
         DailySchedule(
             day = "Wednesday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = true
+            openingTime = business.schedule.find { it.day == "Wednesday" }?.openingTime ?: "00:00 AM",
+            closingTime = business.schedule.find { it.day == "Wednesday" }?.closingTime ?: "00:00 PM",
+            isOpen = business.schedule.any { it.day == "Wednesday" }
         ),
         DailySchedule(
             day = "Thursday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = true
+            openingTime = business.schedule.find { it.day == "Thursday" }?.openingTime ?: "00:00 AM",
+            closingTime = business.schedule.find { it.day == "Thursday" }?.closingTime ?: "00:00 PM",
+            isOpen = business.schedule.any { it.day == "Thursday" }
         ),
         DailySchedule(
             day = "Friday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = true
+            openingTime = business.schedule.find { it.day == "Friday" }?.openingTime ?: "00:00 AM",
+            closingTime = business.schedule.find { it.day == "Friday" }?.closingTime ?: "00:00 PM",
+            isOpen = business.schedule.any { it.day == "Friday" }
         ),
         DailySchedule(
             day = "Saturday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = true
+            openingTime = business.schedule.find { it.day == "Saturday" }?.openingTime ?: "00:00 AM",
+            closingTime = business.schedule.find { it.day == "Saturday" }?.closingTime ?: "00:00 PM",
+            isOpen = business.schedule.any { it.day == "Saturday" }
         ),
         DailySchedule(
             day = "Sunday",
-            openingTime = "9:00 am",
-            closingTime = "7:00 pm",
-            isOpen = false
+            openingTime = business.schedule.find { it.day == "Sunday" }?.openingTime ?: "00:00 AM",
+            closingTime = business.schedule.find { it.day == "Sunday" }?.closingTime ?: "00:00 PM",
+            isOpen = business.schedule.any { it.day == "Sunday" }
         )
     )
+
+//    val promos = listOf("Senior citizen & PWD : 20%")
+//    val tags = listOf("Food", "Bar")
 
     val reviews = listOf(
         ReviewUiState(
@@ -172,110 +183,168 @@ fun BusinessDetailsScreen(){
     )
 
 
-
     Surface(
         modifier = Modifier
             .fillMaxSize(),
         color = Color(0xFFEFEFEF)
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.business1),
-                        contentDescription = "Business",
-                        contentScale = ContentScale.FillWidth
+        if (businessDetailViewModel.isStateRetrieved.collectAsState().value == false) {
+            LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                item {
+                    HorizontalPager(
+                        state = pagerState, // Specify the count of items in the pager
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        val image = business.businessImages.sortedBy { it.photoType }.getOrNull(page)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp)
+                        ) {
+                            if (image != null) {
+                                AsyncImage(
+                                    model = image.photoUrl,
+                                    contentDescription = "",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color.Black.copy(alpha = 0.69f)
+                                ),
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(horizontal = 15.dp, vertical = 25.dp)
+                                    .width(30.dp)
+                                    .height(20.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "${page + 1}/${business.businessImages.size}",
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                }
+
+                            }
+
+
+                        }
+
+                    }
+
+
+
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .height(240.dp)
+//                )  {
+//                    AsyncImage(
+//                        model = if ( business.businessImages.find { it.photoType == "Cover" }?.photoUrl == "") "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png" else business.businessImages.find { it.photoType == "Cover" }?.photoUrl,//imageLoader,
+//                        contentDescription = "",
+//                        contentScale = ContentScale.Crop,
+//                        modifier = Modifier.fillMaxSize()
+//                    )
+//                   // TopBarIcons()
+//                }
+                }
+                item {
+                    BusinessDescriptionCard1(
+                        businessName = business.businessTitle,
+                        tags = business.businessTags.map { it.tagName },
+                        location = business.businessLocation,
+                        averageRating = 4.7,
+                        totalReviews = 254,
+                        modifier = Modifier
+                            .offset(y = (-17).dp)
                     )
-                    TopBarIcons()
+                }
+                item {
+                    BusinessDescriptionCard2(
+                        hostImage = business.host.profilePicture,
+                        hostName = business.host.firstName,
+                        businessDescription = business.businessDescription,
+                        modifier = Modifier
+                            .offset(y = (-5).dp)
+                            .padding(bottom = 12.dp)
+                    )
+                }
+                item {
+                    BusinessAmenitiesCard(
+                        amenities = amenities,
+                        modifier = Modifier
+                            .offset(y = (-5).dp)
+                            .padding(bottom = 12.dp)
+                    )
+                }
+                item {
+                    BusinessMenuCard(
+                        menuImage = business.businessMenu.find { it.photoType == "Cover" }?.photoUrl  ?: "",
+                        entranceFee = business.entranceFee,
+                        modifier = Modifier
+                            .offset(y = (-5).dp)
+                            .padding(bottom = 12.dp)
+                    )
+                }
+                item {
+                    BusinessScheduleCard(
+                        dailySchedule = dailySchedule,
+                        modifier = Modifier
+                            .offset(y = (-5).dp)
+                            .padding(bottom = 12.dp)
+                    )
+                }
+                item {
+                    AppLocationCard(
+                        location = business.businessLocation,
+                        locationImage = R.drawable.map_image2,
+                        locationDescription =  business.additionalInfo, // CHANGE ADDITIONAL INFO INTO LOCATION INFO
+                        modifier = Modifier
+                            .offset(y = (-5).dp)
+                            .padding(bottom = 12.dp)
+                    )
+
+                }
+                item {
+                    AppReviewsCard(
+                        reviews = reviews,
+                        modifier = Modifier
+                            .offset(y = (-5).dp)
+                            .padding(bottom = 7.dp)
+                    )
+                }
+                item {
+                    BusinessBottomBookingBar()
                 }
             }
-            item {
-                BusinessDescriptionCard1(
-                    businessName = "Leo’s Bar & Grill",
-                    tags = tags,
-                    location = "Rainforest, Pasig City",
-                    averageRating = 4.7,
-                    totalReviews = 254,
-                    modifier = Modifier
-                        .offset(y = (-17).dp)
-                )
-            }
-            item {
-                BusinessDescriptionCard2(
-                    hostImage = "R.drawable.joshua",
-                    hostName = "Juswa",
-                    businessDescription = "Enjoy our wide selection of meat and vegetables in our menu, along with our selection of cocktails and drinks. Chill and have fun with your families and friends.",
-                    modifier = Modifier
-                        .offset(y = (-5).dp)
-                        .padding(bottom = 12.dp)
-                )
-            }
-            item {
-                BusinessAmenitiesCard(
-                    amenities = amenities,
-                    modifier = Modifier
-                        .offset(y = (-5).dp)
-                        .padding(bottom = 12.dp)
-                )
-            }
-            item {
-                BusinessMenuCard(
-                    menuImage = "R.drawable.business1",
-                    promos = promos,
-                    modifier = Modifier
-                        .offset(y = (-5).dp)
-                        .padding(bottom = 12.dp)
-                )
-            }
-            item {
-                BusinessScheduleCard(
-                    dailySchedule = dailySchedule,
-                    modifier = Modifier
-                        .offset(y = (-5).dp)
-                        .padding(bottom = 12.dp)
-                )
-            }
-            item {
-                AppLocationCard(
-                    location = "North Greenhills",
-                    locationImage = R.drawable.map_image2,
-                    locationDescription = "Located on the rooftop of Building A, beside savemore.",
-                    modifier = Modifier
-                        .offset(y = (-5).dp)
-                        .padding(bottom = 12.dp)
-                )
 
-            }
-            item {
-                AppReviewsCard(
-                    reviews = reviews,
-                    modifier = Modifier
-                        .offset(y = (-5).dp)
-                        .padding(bottom = 7.dp)
-                )
-            }
-            item {
-                BusinessBottomBookingBar()
-            }
         }
+
     }
 }
 
 @Composable
 fun BusinessDescriptionCard1(
+    modifier: Modifier = Modifier,
     businessName: String,
     tags: List<String>,
     location: String,
     averageRating: Double,
     totalReviews: Int,
     withEditButton: Boolean = false,
-    modifier: Modifier = Modifier
 ) {
 
     Box(
@@ -357,11 +426,11 @@ fun BusinessDescriptionCard1(
 
 @Composable
 fun BusinessDescriptionCard2(
+    modifier: Modifier = Modifier,
     hostImage: String,
     hostName: String,
     businessDescription: String,
-    withEditButton: Boolean = false,
-    modifier: Modifier = Modifier
+    withEditButton: Boolean = false
 ){
 
     Box(
@@ -430,9 +499,10 @@ fun BusinessDescriptionCard2(
 
 @Composable
 fun BusinessAmenitiesCard(
+    modifier: Modifier = Modifier,
     amenities: List<AmenityBrief>,
     withEditButton: Boolean = false,
-    modifier: Modifier = Modifier
+
 ) {
 
     Box(
@@ -507,10 +577,11 @@ fun BusinessAmenitiesCard(
 
 @Composable
 fun BusinessMenuCard(
+    modifier: Modifier = Modifier,
     menuImage: String,
-    promos: List<String>,
+    entranceFee: Double,
     withEditButton: Boolean = false,
-    modifier: Modifier = Modifier
+
 ) {
     Box(
         modifier = modifier
@@ -575,16 +646,24 @@ fun BusinessMenuCard(
 //                )
             }
             Text(
-                text = "Discount and promos",
+                text = "Entrance Fee",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .padding(top = 10.dp)
                     .align(Alignment.Start)
             )
-            promos.forEach { promoText ->
+            if(entranceFee != 0.0){
                 Text(
-                    text = promoText,
+                    text = "₱ $entranceFee",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                )
+            } else{
+                Text(
+                    text = "No Entrance Fee",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
@@ -593,15 +672,17 @@ fun BusinessMenuCard(
             }
 
 
+
         }
     }
 }
 
 @Composable
 fun BusinessScheduleCard(
+    modifier: Modifier = Modifier,
     dailySchedule: List<DailySchedule>,
     withEditButton: Boolean = false,
-    modifier: Modifier = Modifier
+
 ) {
 
     Box(
@@ -735,18 +816,24 @@ fun BusinessAmenityDetail(amenity: AmenityBrief, modifier: Modifier = Modifier){
     }
 }
 
-@Preview
-@Composable
-private fun BusinessDetailsItemPreviews(){
-
-    BusinessBottomBookingBar()
-}
+//@Preview
+//@Composable
+//private fun BusinessDetailsItemPreviews(){
+//
+//    BusinessBottomBookingBar()
+//}
 
 
 @Preview
 @Composable
 private fun BusinessDetailsPreview() {
 
-    BusinessDetailsScreen()
+    val businessDetailViewModel = viewModel(modelClass = BusinessDetailViewModel::class.java)
+
+    BusinessDetailsScreen(
+        touristId = "ITZbCFfF7Fzqf1qPBiwx",
+        businessId = "10005",
+        businessDetailViewModel = businessDetailViewModel
+    )
 
 }

@@ -93,7 +93,7 @@ fun PreferenceScreen(
             ) {
 
                 Text(
-                    text = "Choose you interests",
+                    text = "Choose your interests",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier

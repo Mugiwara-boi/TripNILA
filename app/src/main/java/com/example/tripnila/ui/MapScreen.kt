@@ -1,6 +1,7 @@
 package com.example.tripnila.ui
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,15 +33,52 @@ fun MapScreen(
     var mapProperties by remember { mutableStateOf(MapProperties()) }
     var changeIcon by remember { mutableStateOf(false) }
 
+    var staycationLat by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationLat?: 0.0) }
+    var staycationLng by remember { mutableStateOf(addListingViewModel?.staycation?.value?.staycationLng?: 0.0) }
+    var businessLat by remember { mutableStateOf(addBusinessViewModel?.business?.value?.businessLat?: 0.0) }
+    var businessLng by remember { mutableStateOf(addBusinessViewModel?.business?.value?.businessLng?: 0.0) }
+    var tourLat by remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourLat?: 0.0) }
+    var tourLng by remember { mutableStateOf(hostTourViewModel?.tour?.value?.tourLng?: 0.0) }
+
     val viewModelStore = LocalViewModelStoreOwner.current?.viewModelStore
     val locationViewModel = remember {
         ViewModelProvider(viewModelStore!!, locationViewModelFactory)[LocationViewModel::class.java]
     }
-
-    getCurrentLocation(context) {
-        location = it
-        showMap = true
+    if(listingType=="Staycation"){
+        if(staycationLat != 0.0 && staycationLng != 0.0) {
+            location = LatLng(staycationLat, staycationLng)
+            showMap = true
+            Log.d("Location", "$location")
+        }else{
+            getCurrentLocation(context) {
+                location = it
+                showMap = true
+            }
+        }
+    } else if(listingType == "Business"){
+        if(businessLat != 0.0 && businessLng != 0.0) {
+            location = LatLng(businessLat, businessLng)
+            showMap = true
+            Log.d("Location", "$location")
+        }else{
+            getCurrentLocation(context) {
+                location = it
+                showMap = true
+            }
+        }
+    } else{
+        if(tourLat != 0.0 && tourLng != 0.0) {
+            location = LatLng(tourLat, tourLng)
+            showMap = true
+            Log.d("Location", "$location")
+        } else{
+            getCurrentLocation(context) {
+                location = it
+                showMap = true
+            }
+        }
     }
+
 
     if (showMap) {
         MyMap(

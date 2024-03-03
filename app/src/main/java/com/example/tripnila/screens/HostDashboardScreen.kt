@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,6 +54,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,6 +67,7 @@ import com.example.tripnila.common.Orange
 import com.example.tripnila.data.HostProperty
 import com.example.tripnila.data.Transaction
 import com.example.tripnila.model.HostDashboardViewModel
+import com.example.tripnila.model.TouristWalletViewModel
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.ZoneId
@@ -74,6 +77,7 @@ import java.util.Locale
 @Composable
 fun HostDashboardScreen(
     touristId: String,
+    touristWalletViewModel: TouristWalletViewModel,
     hostDashboardViewModel: HostDashboardViewModel? = null,
     onNavToAddListing: (String, String, String) -> Unit,
     onNavToHostTour: (String, String, String) -> Unit,
@@ -89,8 +93,12 @@ fun HostDashboardScreen(
 
     LaunchedEffect(touristId) {
         hostDashboardViewModel?.getHostDetailsByTouristId(touristId)
-    }
 
+    }
+    touristWalletViewModel.getWallet(touristId)
+//    touristWalletViewModel.setWallet(touristId)
+    val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
+    val currentBalance = touristWallet.currentBalance
     val host = hostDashboardViewModel?.host?.collectAsState()?.value
 
     val horizontalPaddingValue = 16.dp
@@ -169,7 +177,7 @@ fun HostDashboardScreen(
                     item {
                         HostWalletCard(
                             hostName = "${host?.firstName} ${host?.lastName}" ,
-                            hostBalance = 7600.00,
+                            hostBalance = currentBalance,
                             onArrowClick = {
                                 host?.hostId?.let { hostId -> onNavToHostWallet(hostId) }
                             },
@@ -704,7 +712,10 @@ fun HostPropertyCard(
                     text = propertyDescription,
                     fontWeight = FontWeight.Medium,
                     fontSize = 12.sp,
-                    color = Orange
+                    color = Orange,
+                    maxLines = 1, // Set the maximum number of lines
+                    overflow = TextOverflow.Ellipsis, // Show ellipsis when text exceeds
+                    modifier = Modifier.widthIn(max = 170.dp)
                 )
                 Row {
                     Icon(
@@ -717,7 +728,10 @@ fun HostPropertyCard(
                         text = if (hostProperty.location == "") "Somewhere in Metro Manila" else hostProperty.location,
                         fontWeight = FontWeight.Medium,
                         fontSize = 10.sp,
-                        color = Color(0xFF999999)
+                        color = Color(0xFF999999),
+                        maxLines = 1, // Set the maximum number of lines
+                        overflow = TextOverflow.Ellipsis, // Show ellipsis when text exceeds
+                        modifier = Modifier.widthIn(max = 170.dp)
                     )
                 }
             }

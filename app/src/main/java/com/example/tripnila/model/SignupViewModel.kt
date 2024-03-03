@@ -1,18 +1,14 @@
 package com.example.tripnila.model
 
-import android.content.Context
-import android.widget.Toast
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Tourist
 import com.example.tripnila.repository.UserRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.util.regex.Pattern
 
 class SignupViewModel(
@@ -22,6 +18,33 @@ class SignupViewModel(
     private val _signupUiState = MutableStateFlow(SignUpUiState())
     val signupUiState: StateFlow<SignUpUiState> = _signupUiState
 
+    private val _email = MutableStateFlow("")
+    val email = _email.asStateFlow()
+
+    fun setEmail(email:String){
+        _signupUiState.value = _signupUiState.value.copy(email = email)
+    }
+    fun registerUser() {
+
+        FirebaseAuth.getInstance().createUserWithEmailAndPassword(_signupUiState.value.email, _signupUiState.value.password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    // Registration successful
+                    val user = FirebaseAuth.getInstance().currentUser
+                    user?.sendEmailVerification()?.addOnCompleteListener { verificationTask ->
+                        if (verificationTask.isSuccessful) {
+                            createUser(user?.uid ?: "")
+                        } else {
+                            // Email verification failed
+                            // Handle the error appropriately
+                        }
+                    }
+                } else {
+                    // Registration failed
+                    // Handle the error appropriately
+                }
+            }
+    }
     fun setFirstName(newFirstName: String) {
         _signupUiState.value = _signupUiState.value.copy(firstName = newFirstName)
     }
@@ -82,7 +105,7 @@ class SignupViewModel(
         }
     }
 
-    fun createUser() {
+    fun createUser(uid: String) {
         viewModelScope.launch {
             try {
                 if (!validateSignUpForm()) {
@@ -111,8 +134,13 @@ class SignupViewModel(
                     return@launch
                 }
                 _signupUiState.value = _signupUiState.value.copy(isLoading = true, signInError = null)
+
+                // Create user in Firebase Authentication
+
+
                 val userCreated = repository.addUser(
                     Tourist(
+                        uid = uid,
                         firstName = _signupUiState.value.firstName,
                         middleName = _signupUiState.value.middleName,
                         lastName = _signupUiState.value.lastName,
@@ -137,6 +165,7 @@ data class SignUpUiState(
     val middleName: String = "",
     val lastName: String = "",
     val username: String = "",
+    val email: String = "",
     val password: String = "",
     val confirmPassword: String = "",
     val isAgree: Boolean = false,

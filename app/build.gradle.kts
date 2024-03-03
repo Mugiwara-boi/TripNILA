@@ -87,6 +87,8 @@ dependencies {
 
     implementation("com.paypal.checkout:android-sdk:1.2.0")
 
+    implementation("androidx.compose.material:material-icons-extended:1.5.3")
+
     // maps compose
     implementation ("com.google.maps.android:maps-compose:2.11.5")
 

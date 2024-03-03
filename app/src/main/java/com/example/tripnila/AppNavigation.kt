@@ -21,14 +21,15 @@ import com.example.tripnila.model.HostTourViewModel
 import com.example.tripnila.model.InboxViewModel
 import com.example.tripnila.model.InsightViewModel
 import com.example.tripnila.model.ItineraryViewModel
-import com.example.tripnila.model.LocationViewModel
 import com.example.tripnila.model.LocationViewModelFactory
 import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.PreferenceViewModel
 import com.example.tripnila.model.ProfileViewModel
 import com.example.tripnila.model.SignupViewModel
 import com.example.tripnila.model.StaycationManagerViewModel
+import com.example.tripnila.model.TourDetailsViewModel
 import com.example.tripnila.model.TourManagerViewModel
+import com.example.tripnila.model.TouristWalletViewModel
 import com.example.tripnila.screens.AccountVerificationScreen
 import com.example.tripnila.screens.AddBusinessScreen10
 import com.example.tripnila.screens.AddBusinessScreen4
@@ -62,13 +63,16 @@ import com.example.tripnila.screens.InsightsScreen
 import com.example.tripnila.screens.ItineraryScreen
 import com.example.tripnila.screens.LoginScreen
 import com.example.tripnila.screens.PreferenceScreen
-import com.example.tripnila.screens.TouristProfileScreen
 import com.example.tripnila.screens.SignupScreen
+import com.example.tripnila.screens.StaycationBookingRescheduleScreen
 import com.example.tripnila.screens.StaycationBookingScreen
 import com.example.tripnila.screens.StaycationDetailsScreen
 import com.example.tripnila.screens.StaycationManagerScreen
+import com.example.tripnila.screens.TourBookingScreen
 import com.example.tripnila.screens.TourDatesScreen
+import com.example.tripnila.screens.TourDetailsScreen
 import com.example.tripnila.screens.TourManagerScreen
+import com.example.tripnila.screens.TouristProfileScreen
 import com.example.tripnila.screens.TouristWalletScreen
 import com.example.tripnila.screens.WithdrawScreen
 
@@ -90,6 +94,13 @@ enum class HomeRoutes {
     EditProfile,
     AccountVerification,
     Preference,
+
+    StaycationReschedule,
+
+    TourDetails,
+    TourDates,
+    TourBooking,
+    TourReschedule,
 
     TouristWallet,
     CashIn
@@ -159,6 +170,7 @@ fun Navigation(
     inboxViewModel: InboxViewModel,
     chatViewModel: ChatViewModel,
     insightViewModel: InsightViewModel,
+    tourDetailsViewModel: TourDetailsViewModel
 ) {
 
     NavHost(
@@ -169,7 +181,7 @@ fun Navigation(
         homeGraph(
             navController = navController, homeViewModel = homeViewModel, detailViewModel = detailViewModel,
             profileViewModel = profileViewModel, loginViewModel = loginViewModel, bookingHistoryViewModel = bookingHistoryViewModel,
-            itineraryViewModel = itineraryViewModel, inboxViewModel = inboxViewModel, chatViewModel = chatViewModel
+            itineraryViewModel = itineraryViewModel, inboxViewModel = inboxViewModel, chatViewModel = chatViewModel, tourDetailsViewModel = tourDetailsViewModel
         )
         hostGraph(
             navController = navController, hostDashboardViewModel = hostDashboardViewModel, addListingViewModel = addListingViewModel, locationViewModelFactory = locationViewModelFactory,
@@ -231,6 +243,7 @@ fun NavGraphBuilder.homeGraph(
     itineraryViewModel: ItineraryViewModel,
     inboxViewModel: InboxViewModel,
     chatViewModel: ChatViewModel,
+    tourDetailsViewModel: TourDetailsViewModel,
 ) {
     navigation(startDestination = HomeRoutes.Home.name, route = NestedRoutes.Main.name) {
         composable(
@@ -246,7 +259,10 @@ fun NavGraphBuilder.homeGraph(
                 onNavToDetailScreen = { touristId, staycationId ->
                     navigateToDetail(navController, touristId, staycationId)
                 },
-                navController = navController,
+                onNavToTourDetails = { touristId, tourId ->
+                    navigateToTourDetails(navController, touristId, tourId)
+                },
+                navController = navController
             )
         }
 
@@ -277,13 +293,37 @@ fun NavGraphBuilder.homeGraph(
             route = HomeRoutes.Booking.name + "/{touristId}/{staycationId}",
             arguments = listOf(
                 navArgument("touristId") { type = NavType.StringType },
-                navArgument("staycationId") { type = NavType.StringType }
+                navArgument("staycationId") { type = NavType.StringType },
             )
         ) {entry ->
             StaycationBookingScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
                 staycationId = entry.arguments?.getString("staycationId") ?: "",
                 detailViewModel = detailViewModel,
+                onBack = {
+                    navController.popBackStack()
+                },
+                touristWalletViewModel = TouristWalletViewModel()
+
+            )
+        }
+
+        composable(
+            route = HomeRoutes.StaycationReschedule.name + "/{touristId}/{staycationBookingId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType },
+                navArgument("staycationBookingId") { type = NavType.StringType }
+            )
+        ) {entry ->
+            StaycationBookingRescheduleScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                staycationBookingId = entry.arguments?.getString("staycationBookingId") ?: "",
+                detailViewModel = detailViewModel,
+                onBack = {
+                    navController.popBackStack()
+                },
+                touristWalletViewModel = TouristWalletViewModel()
+
             )
         }
 
@@ -344,9 +384,13 @@ fun NavGraphBuilder.homeGraph(
             BookingHistoryScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
                 bookingHistoryViewModel = bookingHistoryViewModel,
+                touristWalletViewModel = TouristWalletViewModel(),
                 navController = navController,
                 onNavToChat = { senderTouristId, receiverTouristId ->
                     navigateToChat(navController, senderTouristId, receiverTouristId)
+                },
+                onNavToReschedule = { touristId, staycationBookingId ->
+                    navigateToReschedule(navController, touristId, staycationBookingId)
                 },
                 onBack = { navController.popBackStack() }
             )
@@ -393,6 +437,7 @@ fun NavGraphBuilder.homeGraph(
         ) {entry ->
             TouristWalletScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
+                touristWalletViewModel = TouristWalletViewModel(),
                 onBack = {
                     navController.popBackStack()
                 },
@@ -410,6 +455,7 @@ fun NavGraphBuilder.homeGraph(
         ) {entry ->
             CashInScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
+                touristWalletViewModel = TouristWalletViewModel(),
                 onCancel = {
                     navController.popBackStack()
                 },
@@ -417,6 +463,63 @@ fun NavGraphBuilder.homeGraph(
             )
         }
 
+        composable(
+            route = HomeRoutes.TourDetails.name + "/{touristId}/{tourId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType },
+                navArgument("tourId") { type = NavType.StringType }
+            )
+        ) {entry ->
+            TourDetailsScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                tourId = entry.arguments?.getString("tourId") ?: "",
+                tourDetailsViewModel = tourDetailsViewModel,
+                onNavToChooseDate = { touristId ->
+                    navigateToTourDates(navController, touristId)
+                },
+                onNavToChat = { senderTouristId, receiverTouristId ->
+                    navigateToChat(navController, senderTouristId, receiverTouristId)
+                },
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = HomeRoutes.TourDates.name + "/{touristId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType },
+            )
+        ) {entry ->
+            TourDatesScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                tourDetailsViewModel = tourDetailsViewModel,
+                onNavToTourBookingScreen = { touristId ->
+                    navigateToTourBooking(navController, touristId)
+                },
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = HomeRoutes.TourBooking.name + "/{touristId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType },
+            )
+        ) {entry ->
+            TourBookingScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                tourDetailsViewModel = tourDetailsViewModel,
+                touristWalletViewModel = TouristWalletViewModel(),
+                onBack = {
+                    navController.popBackStack()
+                },
+
+            )
+        }
     }
 }
 
@@ -460,6 +563,7 @@ fun NavGraphBuilder.hostGraph(
                 onNavToTourManager = { hostId, tourId ->
                     navigateToTourManager(navController, hostId, tourId)
                 },
+                touristWalletViewModel = TouristWalletViewModel(),
                 hostDashboardViewModel = hostDashboardViewModel,
                 onNavToInsights = { hostId ->
                     navigateToInsights(navController,hostId)
@@ -846,6 +950,7 @@ fun NavGraphBuilder.hostGraph(
         ) {entry ->
             HostWalletScreen(
                 hostId = entry.arguments?.getString("hostId") ?: "",
+                touristWalletViewModel = TouristWalletViewModel(),
                 onBack = {
                     navController.popBackStack()
                 },
@@ -863,6 +968,7 @@ fun NavGraphBuilder.hostGraph(
         ) {entry ->
             WithdrawScreen(
                 hostId = entry.arguments?.getString("hostId") ?: "",
+                touristWalletViewModel = TouristWalletViewModel(),
                 onCancel = {
                     navController.popBackStack()
                 },
@@ -914,6 +1020,30 @@ fun NavGraphBuilder.hostGraph(
 
 
 // Navigation functions
+
+private fun navigateToReschedule(navController: NavHostController, touristId: String, staycationBookingId: String ) {
+    navController.navigate("${HomeRoutes.StaycationReschedule.name}/$touristId/$staycationBookingId") {
+        launchSingleTop = true
+    }
+}
+
+private fun navigateToTourDetails(navController: NavHostController, touristId: String, tourId: String ) {
+    navController.navigate("${HomeRoutes.TourDetails.name}/$touristId/$tourId") {
+        launchSingleTop = true
+    }
+}
+fun navigateToTourDates(navController: NavHostController, touristId: String) {
+    navController.navigate("${HomeRoutes.TourDates.name}/$touristId") {
+        launchSingleTop = true
+    }
+}
+
+private fun navigateToTourBooking(navController: NavHostController, touristId: String) {
+    navController.navigate("${HomeRoutes.TourBooking.name}/$touristId") {
+        launchSingleTop = true
+    }
+}
+
 
 
 private fun navigateToTouristWallet(navController: NavHostController, touristId: String) {

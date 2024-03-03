@@ -1,7 +1,5 @@
 package com.example.tripnila.screens
 
-import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,7 +33,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -57,12 +55,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
 import com.example.tripnila.R
 import com.example.tripnila.common.*
-import com.example.tripnila.data.Tourist
 import com.example.tripnila.model.LoginViewModel
-import com.example.tripnila.repository.UserRepository
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,7 +72,8 @@ fun LoginScreen(
  //   val currentUserState: State<Tourist?>? = loginViewModel?.currentUser?.collectAsState()
 //    val currentUser: Tourist? = currentUserState?.value
 
-    var localFocusManager = LocalFocusManager.current
+    val context = LocalContext.current
+    val localFocusManager = LocalFocusManager.current
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = SheetState(
             skipPartiallyExpanded = true, // true
@@ -180,15 +176,6 @@ fun LoginScreen(
                         modifier = Modifier
                             .height(23.dp)
                     )
-                    UnderlinedText(
-                        textLabel = "Forgot your password?",
-                        color = Color.Black.copy(alpha = 0.4f),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                        onClick = {
-
-                        }
-                    )
                     Spacer(
                         modifier = Modifier
                             .height(43.dp)
@@ -196,7 +183,16 @@ fun LoginScreen(
                     BookingFilledButton(
                         buttonText = "Sign in",
                         onClick = {
-                            loginViewModel?.loginUser()
+                            loginViewModel?.loginUser(context)
+//                            if (loginUiState != null) {
+//                                if (loginUiState.value.isSuccessLogin == true) {
+//                                    if (loginViewModel.currentUser.value?.preferences?.isEmpty() == true) {
+//                                        loginViewModel.currentUser.value?.let { onNavToPreferenceScreen.invoke(it.touristId) }
+//                                    } else {
+//                                        loginViewModel.currentUser.value?.let { onNavToHomeScreen.invoke(it.touristId) }
+//                                    }
+//                                }
+//                            }
                         },
                         modifier = Modifier.width(width = 216.dp),
                         isLoading = loginUiState?.value?.isLoading ?: false
@@ -205,25 +201,14 @@ fun LoginScreen(
 
                     LaunchedEffect(loginUiState?.value?.isSuccessLogin) {
                         val isSuccess = loginUiState?.value?.isSuccessLogin
-
                         isSuccess?.let { success ->
-                            val snackbarMessage = if (success) {
-                                "Login successful"
-                            } else {
-                                "Login failed"
-                            }
-
                             if (success) {
-                                if (loginViewModel.currentUser?.value?.preferences?.isEmpty() == true) {
+                                if (loginViewModel.currentUser.value?.preferences?.isEmpty() == true) {
                                     loginViewModel.currentUser.value?.let { onNavToPreferenceScreen.invoke(it.touristId) }
                                 } else {
                                     loginViewModel.currentUser.value?.let { onNavToHomeScreen.invoke(it.touristId) }
                                 }
-
                             }
-//                            coroutineScope.launch {
-//                                scaffoldState.snackbarHostState.showSnackbar(snackbarMessage)
-//                            }
                         }
                     }
                 }

@@ -1,9 +1,7 @@
 package com.example.tripnila.screens
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,18 +21,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,7 +44,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -59,23 +54,19 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
@@ -89,19 +80,21 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.AppConfirmAndPayDivider
 import com.example.tripnila.common.AppYourTripRow
 import com.example.tripnila.common.Orange
-import com.example.tripnila.data.PaymentMethod
-import com.example.tripnila.data.PaymentSingleton
-import com.example.tripnila.data.Staycation
+import com.example.tripnila.data.Host
 import com.example.tripnila.model.BookingHistoryViewModel
 import com.example.tripnila.model.DetailViewModel
-import kotlinx.coroutines.flow.firstOrNull
+import com.example.tripnila.model.TouristWalletViewModel
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.text.NumberFormat
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 @SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -110,17 +103,26 @@ fun StaycationBookingScreen(
     touristId: String,
     staycationId: String,
     detailViewModel: DetailViewModel? = null,
+    onBack: () -> Unit,
+    touristWalletViewModel: TouristWalletViewModel,
 ){
 
-    var staycation = detailViewModel?.staycation?.collectAsState()
-    var duration = detailViewModel?.nightsDifference?.collectAsState()
-    var selectedStart = detailViewModel?.startDate?.collectAsState()
-    var selectedEnd = detailViewModel?.endDate?.collectAsState()
+    val staycation = detailViewModel?.staycation?.collectAsState()
+    val duration = detailViewModel?.nightsDifference?.collectAsState()
+    val selectedStart = detailViewModel?.startDate?.collectAsState()
+    val selectedEnd = detailViewModel?.endDate?.collectAsState()
+    val adultCount = detailViewModel?.adultCount?.collectAsState()
+
 
     //var totalOccupancyLimit = staycation?.value?.noOfGuests
-    var infantOccupancyLimit = 5 // /*TODO*/
-    var petOccupancyLimit = 0 // /*TODO*/
+    val infantOccupancyLimit = 5 // /*TODO*/
+    val petOccupancyLimit = 0 // /*TODO*/
     val context = LocalContext.current
+
+    val host = staycation?.value?.host?: Host()
+    val hostId = host.hostId
+    val hostWalletId = hostId.removePrefix("HOST-")
+    val totalFee by touristWalletViewModel.totalFee.collectAsState()
 
     val dateRangePickerState = rememberDateRangePickerState()
 
@@ -129,34 +131,32 @@ fun StaycationBookingScreen(
         skipPartiallyExpanded = true
     )
     val snackbarHostState = remember { SnackbarHostState() }
-    var openCalendarBottomSheet = remember { mutableStateOf(false) }
-    var openGuestBottomSheet = remember { mutableStateOf(false) }
-    var isSaveButtonClicked = remember { mutableStateOf(true) }
+    val openCalendarBottomSheet = remember { mutableStateOf(false) }
+    val openGuestBottomSheet = remember { mutableStateOf(false) }
+    val isSaveButtonClicked = remember { mutableStateOf(true) }
     var isClearButtonClicked = remember { mutableStateOf(false) }
-    var titleText: MutableState<String?> = remember { mutableStateOf(null) }
-    var enableBottomSaveButton: MutableState<Boolean> = remember { mutableStateOf(true) }
+    val titleText: MutableState<String?> = remember { mutableStateOf(null) }
+    val enableBottomSaveButton: MutableState<Boolean> = remember { mutableStateOf(true) }
     val openAlertDialog = remember { mutableStateOf(false) }
 
-    var nights = remember { mutableStateOf(0) }
-    var hasNavigationBar = WindowInsets.areNavigationBarsVisible
-
-    var isInitial = remember { mutableStateOf(true) }
-
+    val nights = remember { mutableStateOf(0) }
+    val hasNavigationBar = WindowInsets.areNavigationBarsVisible
+    val tripnilaFee by touristWalletViewModel.tripnilaFee.collectAsState()
+    val isInitial = remember { mutableStateOf(true) }
+    touristWalletViewModel.getHostWallet(hostWalletId)
+//    touristWalletViewModel.setWallet(touristId)
 
     LaunchedEffect(touristId) {
         // Set initial values for dateRangePickerState
         dateRangePickerState.setSelection(selectedStart?.value, selectedEnd?.value)
         detailViewModel?.setAdultCount(1)
-        isInitial.value = true
+        
     }
 
-    LaunchedEffect(openAlertDialog) {
-        detailViewModel?.setAlertDialogMessage()
-    }
 
     LaunchedEffect(detailViewModel?.bookingResult?.collectAsState()?.value) {
         if (detailViewModel?.bookingResult?.value != null) {
-            snackbarHostState.showSnackbar(detailViewModel?.bookingResult?.value!!)
+            snackbarHostState.showSnackbar(detailViewModel.bookingResult.value!!)
         }
 
     }
@@ -165,6 +165,11 @@ fun StaycationBookingScreen(
         dateRangePickerState.selectedStartDateMillis,
         dateRangePickerState.selectedEndDateMillis
     ) {
+
+        Log.d("Before (Booking)", "${dateRangePickerState.selectedStartDateMillis}")
+        Log.d("Before (BOoking)", "${dateRangePickerState.selectedEndDateMillis}")
+
+
         val countNights = if (dateRangePickerState.selectedStartDateMillis != null && dateRangePickerState.selectedEndDateMillis != null) {
             calculateNights(dateRangePickerState.selectedStartDateMillis!!,
                 dateRangePickerState.selectedEndDateMillis!!
@@ -182,6 +187,7 @@ fun StaycationBookingScreen(
         if (countNights != null && countNights <= 0) {
             dateRangePickerState.setSelection(startDateMillis = null, endDateMillis = null)
         }
+
 
         titleText.value = countNights?.let { "$it nights" } ?: "Select date"
         nights.value = countNights?.toInt() ?: 0
@@ -208,15 +214,15 @@ fun StaycationBookingScreen(
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) }
         ) {
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.staycation1),
+                AsyncImage(
+                    model = staycation?.value?.staycationImages?.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
                     contentDescription = "Staycation Image",
-                    contentScale = ContentScale.FillWidth
+                    contentScale = ContentScale.FillWidth,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Box(
                     modifier = Modifier
@@ -224,7 +230,6 @@ fun StaycationBookingScreen(
                         .fillMaxHeight()
                         .background(color = Color(0xff1a1a1a).copy(alpha = 0.42f))
                 )
-
             }
             Box(
                 modifier = Modifier
@@ -244,17 +249,36 @@ fun StaycationBookingScreen(
                         .padding(it)
                         .background(Color.White)
                 ) {
-                    Text(
-                        text = "Confirm and pay",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Confirm and pay",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Close",
+                            tint = Color(0xFFCECECE),
+                            modifier = Modifier
+                                .size(30.dp)
+                                .offset(x = 5.dp, y = (-5).dp)
+                                .clickable {
+                                    onBack()
+                                }
+                        )
+                    }
+
+
                     AppConfirmAndPayDivider(
-                        image = R.drawable.staycation1, // PLACEHOLDER
+                        image = staycation?.value?.staycationImages?.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
                         itinerary = staycation?.value?.staycationTitle ?: "",
                         price = staycation?.value?.staycationPrice ?: 0.0,
                         unit = "night"
                     )
+
                     detailViewModel?.let { detailViewModel ->
                         YourTripDivider(
                             detailViewModel = detailViewModel,
@@ -268,28 +292,27 @@ fun StaycationBookingScreen(
                         )
                     }
                     AppPaymentDivider(
+                        touristId = touristId,
                         detailViewModel = detailViewModel,
+                        touristWalletViewModel = touristWalletViewModel,
                         bookingFee = staycation?.value?.staycationPrice ?: 2500.00,
                         bookingDuration = duration?.value?.toInt() ?: 5,
-                        maintenanceFee = staycation?.value?.staycationPrice?.times(0.02) ?: 250.00,
-                        tripnilaFee = staycation?.value?.staycationPrice?.times(0.05) ?: 625.00
+                        maintenanceFee = staycation?.value?.staycationPrice?.times(0.10) ?: 250.00,
+                      //  tripnilaFee = staycation?.value?.staycationPrice?.times(0.05) ?: 625.00
                     )
                     PaymentAgreementText()
-                    Spacer(modifier = Modifier.padding(vertical = 15.dp))
+//                    Spacer(modifier = Modifier.padding(vertical = 15.dp))
                     BookingFilledButton(
                         buttonText = "Confirm and pay",
                         onClick = {
-                            //openAlertDialog.value = true
-                            PaymentSingleton.ViewModelHolder.detailViewModel = detailViewModel
-                            val intent = Intent(context, PaymentScreen::class.java).apply {
-                                putExtra("touristId", touristId)
-                            }
-                            context.startActivity(intent)
+                            detailViewModel?.setAlertDialogMessage()
+                            openAlertDialog.value = true
                         },
                         modifier = Modifier
                             .padding(horizontal = 10.dp)
                             .fillMaxWidth()
                     )
+
                 }
 
             }
@@ -337,14 +360,13 @@ fun StaycationBookingScreen(
                 onDismissRequest = { openCalendarBottomSheet.value = false },
                 sheetState = bottomSheetState,
                 modifier = Modifier
-                    .fillMaxHeight(0.8f) //0.693
+                    .fillMaxHeight(0.85f) //0.693
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     Spacer(modifier = Modifier
                         .weight(1f)
-                        //  .height(15.dp)
                     )
                     DateRangePicker(
                         modifier = Modifier
@@ -373,12 +395,22 @@ fun StaycationBookingScreen(
                             todayContentColor = Color.Black
                         ),
                         dateValidator = { date ->
+
+                            val selectedDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate()
+                            val today = LocalDateTime.now().toLocalDate()
+
                             val adjustedDates = staycation?.value?.availableDates?.map {
                                 it.availableDate?.toDate()?.time?.plus(28800000) ?: 0
                             } ?: emptyList()
 
-                            val threshold = 60000
-                            adjustedDates.any { Math.abs(date - it) <= threshold }
+                            adjustedDates.contains(date) && selectedDate.isAfter(today)
+
+//                            val adjustedDates = staycation?.value?.availableDates?.map {
+//                                it.availableDate?.toDate()?.time?.plus(28800000) ?: 0
+//                            } ?: emptyList()
+//
+//                            val threshold = 60000
+//                            adjustedDates.any { Math.abs(date - it) <= threshold }
                         },
                     )
 
@@ -586,7 +618,10 @@ fun StaycationBookingScreen(
 
                                         coroutineScope.launch {
                                             openAlertDialog.value = false
-                                            detailViewModel?.addBooking(touristId)
+
+                                            detailViewModel.addBooking(touristId)
+                                            touristWalletViewModel.setBookingPayment(totalFee,touristId)
+                                            touristWalletViewModel.setPendingAmount(totalFee = totalFee,hostWalletId = hostWalletId,tripnilaFee = tripnilaFee)
                                         }
 
 
@@ -614,9 +649,9 @@ fun ConfirmGuest(
     detailViewModel: DetailViewModel,
 ) {
 
-    var guestCount = detailViewModel.guestCount.collectAsState().value
-    var infantCount = detailViewModel.infantCount.collectAsState().value
-    var petCount = detailViewModel.petCount.collectAsState().value
+    val guestCount = detailViewModel.guestCount.collectAsState().value
+    val infantCount = detailViewModel.infantCount.collectAsState().value
+    val petCount = detailViewModel.petCount.collectAsState().value
 
     val guestInfoText = buildAnnotatedString {
         append("$guestCount ${guestCount?.let { detailViewModel.pluralize("Guest", it) }}")
@@ -691,9 +726,9 @@ fun YourTripDivider(
    val formattedDateRange = detailViewModel.formattedDateRange.collectAsState().value
    // val guestCount = detailViewModel.guestCount.collectAsState().value
 
-    var guestCount = detailViewModel.guestCount.collectAsState().value
-    var infantCount = detailViewModel.infantCount.collectAsState().value
-    var petCount = detailViewModel.petCount.collectAsState().value
+    val guestCount = detailViewModel.guestCount.collectAsState().value
+    val infantCount = detailViewModel.infantCount.collectAsState().value
+    val petCount = detailViewModel.petCount.collectAsState().value
 
     val guestInfoText = buildAnnotatedString {
         append("$guestCount ${guestCount?.let { detailViewModel.pluralize("guest", it) }}")
@@ -759,15 +794,20 @@ fun YourTripDivider(
 
 @Composable
 fun AppPaymentDivider(
+    modifier: Modifier = Modifier,
+    forTourBooking: Boolean = false,
+    forRescheduling: Boolean = false,
+    initialBookingDuration: Int = 0,
+    touristId: String,
     detailViewModel: DetailViewModel? = null,
+    touristWalletViewModel: TouristWalletViewModel,
     bookingHistoryViewModel: BookingHistoryViewModel? = null,
     bookingFee: Double,
     bookingDuration: Int,
     maintenanceFee: Double? = null,
-    tripnilaFee: Double,
     daysBeforeCheckIn: Int? = null,
     forCancelBooking: Boolean = false,
-    modifier: Modifier = Modifier
+
 ) {
     val formattedNumber = NumberFormat.getNumberInstance()
     val formattedNumberWithDecimalFormat = NumberFormat.getNumberInstance() as DecimalFormat
@@ -776,12 +816,49 @@ fun AppPaymentDivider(
         minimumFractionDigits = 2
     }
 
+    val totalFee by touristWalletViewModel.totalFee.collectAsState()
+    val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
+    val percentRefunded by touristWalletViewModel.percentRefunded.collectAsState()
+    val percentRefundedPercentage = percentRefunded * 100
+
+    var isWalletFetched = false
+    if(!isWalletFetched){
+        touristWalletViewModel.setRefundAmount(totalFee)
+
+        touristWalletViewModel.getWallet(touristId)
+//        touristWalletViewModel.setWallet(touristId)
+        isWalletFetched = true
+    }
+
+//    val staycationBooking = detailViewModel?.staycationBooking?.collectAsState()
+//    val previouslyPaidBookingAmount = staycationBooking?.value?.totalAmount
+
+    val currentBalance = touristWallet.currentBalance
     val productBookingFee = bookingFee * bookingDuration
-    val totalFee = productBookingFee + (maintenanceFee ?: 0.0) + tripnilaFee
+    val tripNilaFee = productBookingFee * 0.05
+    val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripNilaFee
+
+    val initialProductBookingFee = bookingFee * initialBookingDuration
+    val initialTripNilaFee = initialProductBookingFee * 0.05
+    val initialTotalFeeState = initialProductBookingFee + (maintenanceFee ?: 0.0) + initialTripNilaFee
+
+
+  //  val totalFeeState = productBookingFee + (maintenanceFee ?: 0.0) + tripnilaFee
+    touristWalletViewModel.setTotalFee(totalFeeState)
+    touristWalletViewModel.setTripnilaFee(tripNilaFee)
+    touristWalletViewModel.setInitialTotalFee(initialTotalFeeState)
+    touristWalletViewModel.setInitialTripnilaFee(initialTripNilaFee)
 
     var selectedPaymentMethod by remember { mutableStateOf(-1) }
     var isSelectionEnabled by remember { mutableStateOf(true) }
 
+    val afterBalance = currentBalance - totalFee
+
+    if(afterBalance < 0){
+        detailViewModel?.setEnoughBalance(false)
+    }else{
+        detailViewModel?.setEnoughBalance(true)
+    }
     if (!forCancelBooking) {
         LaunchedEffect(selectedPaymentMethod) {
             detailViewModel?.setSelectedPaymentMethod(selectedPaymentMethod)
@@ -791,30 +868,96 @@ fun AppPaymentDivider(
         }
     }
 
-//    if (!forCancelBooking) {
-//        LaunchedEffect(selectedPaymentMethod) {
-//            bookingHistoryViewModel?.setSelectedPaymentMethod(selectedPaymentMethod)
-//            bookingHistoryViewModel?.setAlertDialogMessage()
-//
-//            Log.d("selectedPaymentMethod", "$selectedPaymentMethod")
-//        }
-//    }
 
+
+    val initialFormattedTourPaymentRowText = if (initialBookingDuration == 0 || initialBookingDuration == 1) {
+        "₱ ${formattedNumber.format(bookingFee)} x $initialBookingDuration person"
+    } else {
+        "₱ ${formattedNumber.format(bookingFee)} x $initialBookingDuration persons"
+    }
+
+    val initialFormattedStaycationPaymentRowText = if (initialBookingDuration == 0 || initialBookingDuration == 1) {
+        "₱ ${formattedNumber.format(bookingFee)} x $initialBookingDuration night"
+    } else {
+        "₱ ${formattedNumber.format(bookingFee)} x $initialBookingDuration nights"
+    }
+
+    val formattedTourPaymentRowText = if (bookingDuration == 0 || bookingDuration == 1) {
+        "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration person"
+    } else {
+        "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration persons"
+    }
+
+    val formattedStaycationPaymentRowText = if (bookingDuration == 0 || bookingDuration == 1) {
+        "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration night"
+    } else {
+        "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration nights"
+    }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(all = 10.dp)
     ){
+
+        if (forRescheduling) {
+            Text(
+                text = "Previous Payment",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .padding(bottom = 5.dp)
+            )
+
+            PaymentRow(
+                feeLabel = if (forTourBooking) initialFormattedTourPaymentRowText else initialFormattedStaycationPaymentRowText,
+                feePrice = initialProductBookingFee
+            )
+
+            if (maintenanceFee != null) {
+                PaymentRow(
+                    feeLabel = "Maintenance fee",
+                    feePrice = maintenanceFee
+                )
+            }
+
+            PaymentRow(
+                feeLabel = "Tripnila service fee",
+                feePrice = initialTripNilaFee
+            )
+            Divider(
+                color = Color(0xFFDEDEDE),
+                modifier = Modifier.padding(vertical = 3.dp)
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 3.dp)
+            ) {
+                Text(
+                    text = "Total paid",
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                Text(
+                    text = "₱ ${formattedNumberWithDecimalFormat.format(initialTotalFeeState)}",
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+        }
+
+
         Text(
-            text = "Payment",
+            text = "New Payment",
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier
                 .padding(bottom = 5.dp)
         )
         PaymentRow(
-            feeLabel = "₱ ${formattedNumber.format(bookingFee)} x $bookingDuration nights",
+            feeLabel = if (forTourBooking) formattedTourPaymentRowText else formattedStaycationPaymentRowText,
             feePrice = productBookingFee
         )
 
@@ -827,7 +970,7 @@ fun AppPaymentDivider(
 
         PaymentRow(
             feeLabel = "Tripnila service fee",
-            feePrice = tripnilaFee
+            feePrice = tripNilaFee
         )
         Divider(
             color = Color(0xFFDEDEDE),
@@ -850,6 +993,7 @@ fun AppPaymentDivider(
             )
         }
         if (forCancelBooking) {
+            touristWalletViewModel.setPercentRefunded(daysBeforeCheckIn!!)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -863,7 +1007,7 @@ fun AppPaymentDivider(
                         .weight(1f)
                 )
                 Text(
-                    text = "₱ ${formattedNumberWithDecimalFormat.format(totalFee * 0.80)}",
+                    text = "₱ ${formattedNumberWithDecimalFormat.format(totalFee * percentRefunded)}",
                     fontWeight = FontWeight.SemiBold,
                     color = Orange
                 )
@@ -881,7 +1025,7 @@ fun AppPaymentDivider(
                         .weight(1f)
                 )
                 Text(
-                    text = "80%",
+                    text = "$percentRefundedPercentage%",
                     fontWeight = FontWeight.Medium,
                     fontSize = 12.sp,
                     color = Color(0xFF999999),
@@ -889,8 +1033,25 @@ fun AppPaymentDivider(
             }
         }
         else {
-
             Text(
+                text = "Wallet",
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .padding(vertical = 4.dp)
+            )
+         //   PaymentRow(feeLabel = "Paid", feePrice = initialTotalFeeState)
+            PaymentRow(
+                feeLabel = "Current Balance",
+                feePrice = currentBalance
+            )
+            PaymentRow(
+                feeLabel = "After Balance",
+                feePrice = afterBalance
+            )
+
+
+
+            /*Text(
                 text = "Payment method",
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
@@ -939,7 +1100,7 @@ fun AppPaymentDivider(
                         .padding(top = 5.dp)
                         .height(30.dp)
                 )
-            }
+            }*/
         }
     }
     Divider(
@@ -1258,6 +1419,21 @@ fun GuestsCounter(
             )
         }
     }
+}
+
+@Preview
+@Composable
+private fun StaycationBookingScreenPreview() {
+
+    val touristId = "n7r1JjE18t5iCP32GXjt"
+
+//    StaycationBookingScreen(
+//        touristId = touristId,
+//        staycationId = ,
+//        staycationBookingId = ,
+//        onBack = { /*TODO*/ },
+//        touristWalletViewModel = TouristWalletViewModel()
+//    )
 }
 
 

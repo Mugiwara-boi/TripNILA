@@ -9,13 +9,16 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.example.tripnila.data.BookingHistory
+import com.example.tripnila.data.BookingInfo
 import com.example.tripnila.data.Review
 import com.example.tripnila.data.ReviewPhoto
 import com.example.tripnila.data.StaycationBooking
+import com.example.tripnila.data.TourBooking
 import com.example.tripnila.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -30,14 +33,15 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
     private val _selectedBookingHistory = MutableStateFlow<BookingHistory?>(null)
     val selectedBookingHistory: StateFlow<BookingHistory?> = _selectedBookingHistory
 
+    private val _selectedTab = MutableStateFlow("Staycation")
+    val selectedTab = _selectedTab.asStateFlow()
 
 
-    fun getStaycationBookingsForTourist(touristId: String): Flow<PagingData<StaycationBooking>> {
-        return Pager(
-            config = PagingConfig(pageSize = 5, enablePlaceholders = false),
-            pagingSourceFactory = { StaycationBookingPagingSource(repository, touristId) }
-        ).flow.cachedIn(viewModelScope)
-    }
+    private val _hostId = MutableStateFlow("")
+    val hostId = _hostId.asStateFlow()
+
+    private val pageSize = 3
+    private val initialLoadSize = 6
 
     private val _selectedImageUris = MutableStateFlow<List<Uri>>(emptyList())
     val selectedImageUris: StateFlow<List<Uri>> = _selectedImageUris
@@ -46,7 +50,7 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
     val userInputReview: StateFlow<Review> = _userInputReview
 
     private val _logCheckOutDatesResult = MutableStateFlow<String>("")
-    val logCheckOutDatesResult: StateFlow<String> = _logCheckOutDatesResult
+    val logCheckOutDatesResult = _logCheckOutDatesResult.asStateFlow()
 
     private val _isLoadingAddReview = MutableStateFlow(false)
     val isLoadingAddReview: StateFlow<Boolean> = _isLoadingAddReview
@@ -61,11 +65,21 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
     private val _alertDialogMessage = MutableStateFlow<String?>(null)
     val alertDialogMessage: StateFlow<String?> get() = _alertDialogMessage
 
+    private val _completedBookings = MutableStateFlow<Map<String, Pair<String, BookingInfo>>>(emptyMap())
+    val completedBookings = _completedBookings.asStateFlow()
+
+    private val _completedTourBookings = MutableStateFlow<Map<String, Pair<String, BookingInfo>>>(emptyMap())
+    val completedTourBookings = _completedTourBookings.asStateFlow()
+
     private val _isLoadingCancelBooking = MutableStateFlow(false)
     val isLoadingCancelBooking: StateFlow<Boolean> = _isLoadingCancelBooking
 
     private val _isSuccessCancelBooking = MutableStateFlow<Boolean?>(null)
     val isSuccessCancelBooking: StateFlow<Boolean?> = _isSuccessCancelBooking
+
+    fun selectTab(selectedTab: String) {
+        _selectedTab.value = selectedTab
+    }
 
     fun clearSuccessCancelBooking() {
         _isSuccessCancelBooking.value = null
@@ -92,38 +106,80 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
 
 
     fun setRating(rating: Int) {
-        _userInputReview.value?.let {
+        _userInputReview.value.let {
             val updatedReview = it.copy(rating = rating)
             _userInputReview.value = updatedReview
         }
-        Log.d("Comment", "${_userInputReview.value?.rating}")
+        Log.d("Comment", "${_userInputReview.value.rating}")
     }
 
     fun setComment(comment: String) {
         _userInputReview.value = _userInputReview.value.copy(comment = comment)
-        Log.d("Comment", "${_userInputReview.value.comment}")
+        Log.d("Comment", _userInputReview.value.comment)
     }
 
     fun setPhotos(photos: List<ReviewPhoto>) {
-        _userInputReview.value?.let {
+        _userInputReview.value.let {
             val updatedReview = it.copy(reviewPhotos = photos)
             _userInputReview.value = updatedReview
         }
         Log.d("Comment", "${_userInputReview.value}")
     }
 
-    fun updateStaycationBookingsStatus() {
+    fun checkReviewValues(bookingId: String) {
+        val reviewComment = _userInputReview.value.comment
+        val reviewRating = _userInputReview.value.rating
+        val serviceType = "Staycation"
+        val reviewPhotos = _selectedImageUris.value
+
+        Log.d("CHECK VALUES", "$reviewComment, $reviewRating, $bookingId, $reviewPhotos")
+    }
+
+    fun getStaycationBookingsForTourist(touristId: String): Flow<PagingData<StaycationBooking>> {
+        return Pager(
+            config = PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize),
+            pagingSourceFactory = { StaycationBookingPagingSource(repository, touristId, initialLoadSize) }
+        ).flow.cachedIn(viewModelScope)
+    }
+
+    fun getTourBookingsForTourist(touristId: String): Flow<PagingData<TourBooking>> {
+        return Pager(
+            config = PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize),
+            pagingSourceFactory = { TourBookingPageSource(repository, touristId, initialLoadSize) }
+        ).flow.cachedIn(viewModelScope)
+    }
+
+    fun updateStaycationBookingsStatus(touristId: String) {
         viewModelScope.launch {
             try {
-                repository.updateBookingStatusToOngoingIfCheckInDatePassed()
+                repository.updateBookingStatusToOngoingIfCheckInDatePassed(touristId)
                 _logCheckOutDatesResult.value = "Fetched successfully."
 
-                repository.updateBookingStatusToFinishedIfExpired()
+                val completedBooking = repository.updateBookingStatusToFinishedIfExpired()
+                val completedTourBooking = repository.updateBookingStatusToFinishedIfExpiredForTours()
+
+                Log.d("Completed TOURS", completedTourBooking.toString())
+                Log.d("Completed BOOKINGS", completedBooking.toString())
+
+                _completedBookings.value = repository.processCompletedBookings(completedBooking)
+                val hostMap = extractHostTotalMap(_completedBookings.value)
+                val hostAdminMap = extractHostTotalMapForAdmin(_completedBookings.value)
+                repository.updatePendingBalance(hostMap)
+                repository.updateAdminPendingBalance(hostAdminMap)
+
+                _completedTourBookings.value = repository.processCompletedTourBookings(completedTourBooking)
+                val tourHostMap = extractHostTotalMap(_completedTourBookings.value)
+                val tourHostAdminMap = extractHostTotalMapForAdmin(_completedTourBookings.value)
+                repository.updatePendingBalance(tourHostMap)
+                repository.updateAdminPendingBalance(tourHostAdminMap)
+
                 _logCheckOutDatesResult.value = "Fetched successfully."
 
 //                val bookings = repository.getStaycationBookingsForTourist(touristId)
 //                _staycationBookingList.value = bookings
-
+                Log.d("Update", "${_completedBookings.value}")
+                Log.d("Update", "${_completedTourBookings.value}")
+           //     Log.d("Update", "$hostMap")
             } catch (e: Exception) {
                 e.printStackTrace()
                 _logCheckOutDatesResult.value = "Fetch failed: ${e.message}"
@@ -131,6 +187,34 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
         }
     }
 
+
+    fun extractHostTotalMap(staycationDetailsMap: Map<String, Pair<String, BookingInfo>>): Map<String, Double> {
+        val hostTotalMap = mutableMapOf<String, Double>()
+
+        for ((_, pair) in staycationDetailsMap) {
+            val (hostId, bookingInfo) = pair
+            val cleanedHostId = hostId.removePrefix("HOST-")
+            val totalAmount = bookingInfo.totalAmount
+            val commission = bookingInfo.commission
+            val amount = totalAmount - commission
+            hostTotalMap[cleanedHostId] = hostTotalMap.getOrDefault(cleanedHostId, 0.0) + amount
+        }
+
+        return hostTotalMap
+    }
+
+    fun extractHostTotalMapForAdmin(staycationDetailsMap: Map<String, Pair<String, BookingInfo>>): Map<String, Double> {
+        val hostTotalMap = mutableMapOf<String, Double>()
+
+        for ((_, pair) in staycationDetailsMap) {
+            val (hostId, bookingInfo) = pair
+            val cleanedHostId = hostId.removePrefix("HOST-")
+            val commission = bookingInfo.commission
+            hostTotalMap[cleanedHostId] = hostTotalMap.getOrDefault(cleanedHostId, 0.0) + commission
+        }
+
+        return hostTotalMap
+    }
 
 
 
@@ -147,33 +231,22 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
 //    }
 
 
-    fun cancelStaycationBooking(bookingId: String) {
+    
+
+    fun cancelStaycationBooking(bookingId: String, staycationId: String, checkInDate: Date, checkOutDate: Date) {
+
         viewModelScope.launch {
             try {
 
                 _isLoadingCancelBooking.value = true
 
-                val staycationBookings = _staycationBookingList.value
-                val booking = staycationBookings.find { it?.staycationBookingId == bookingId }
-                val checkInDate: Date? = booking?.checkInDate
-                val checkOutDate: Date? = booking?.checkOutDate
-                val staycationId = booking?.staycation?.staycationId
-
-
                 repository.cancelStaycationBooking(bookingId)
 
-                if (staycationId != null && checkInDate != null && checkOutDate != null) {
-                    // Call makeAvailabilityInRange with the required parameters
-                    repository.makeAvailabilityInRange(staycationId, checkInDate.time, checkOutDate.time)
+                Log.d("CANCELLING", "$staycationId ${checkInDate.time} ${checkOutDate.time}")
 
-
-                } else {
-                    // Handle the case where required parameters are null
-                }
-
+                repository.makeAvailabilityInRange(staycationId, checkInDate.time, checkOutDate.time)
 
                 _isSuccessCancelBooking.value = true
-               // _rentalStatus.value = "Cancelled"
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -185,27 +258,57 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
         }
     }
 
-    fun setStaycationReview(bookingId: String) {
+    fun cancelTourBooking(bookingId: String, tourAvailabilityId: String, guestCount: Int) {
+
+        viewModelScope.launch {
+            try {
+
+                _isLoadingCancelBooking.value = true
+
+                repository.cancelTourBooking(
+                    bookingId = bookingId,
+                    tourAvailabilityId = tourAvailabilityId,
+                    guestCount = guestCount
+                )
+
+                _isSuccessCancelBooking.value = true
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+
+                _isSuccessCancelBooking.value = false
+            } finally {
+                _isLoadingCancelBooking.value = false
+            }
+        }
+    }
+
+    fun getHostId(staycationId:String){
+        viewModelScope.launch {
+            _hostId.value = repository.getHostIdFromStaycation(staycationId)!!
+        }
+    }
+
+
+    fun setServiceReview(bookingId: String, serviceType: String) {
         viewModelScope.launch {
             try {
                 _isLoadingAddReview.value = true
 
-                _userInputReview.value?.let { userInputReview ->
+                _userInputReview.value.let { userInputReview ->
                     // Validate that the rating is not empty
                     if (userInputReview.rating <= 0) {
                         _addReviewResult.value = "Please provide a valid rating."
                         _isSuccessAddReview.value = false
                     } else {
                         // Manually assign fields from _userInputReview to parameters
-                        val bookingId = bookingId
                         val reviewComment = userInputReview.comment
                         val reviewRating = userInputReview.rating
-                        val serviceType = "Staycation"
                         val reviewPhotos = _selectedImageUris.value
 
                         // Call addStaycationReview with the assigned values
-                        val success = reviewComment?.let {
-                            repository.addStaycationReview(
+                        val success = reviewComment.let {
+                            repository.addReview(
                                 bookingId = bookingId,
                                 reviewComment = it,
                                 reviewRating = reviewRating,
@@ -214,7 +317,7 @@ class BookingHistoryViewModel(private val repository: UserRepository = UserRepos
                             )
                         }
 
-                        if (success == true) {
+                        if (success) {
                             _addReviewResult.value = "Review added successfully."
                             _isSuccessAddReview.value = true
                         } else {

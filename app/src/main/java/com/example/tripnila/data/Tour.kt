@@ -43,5 +43,7 @@ data class TourSchedule(
     val tourScheduleId: String = "",
     val date: LocalDate = LocalDate.now(),
     val startTime: String = "00:00 AM",
-    val endTime: String = "00:00 PM"
+    val endTime: String = "00:00 PM",
+    val slot: Int,
+    val bookedSlot: Int
 )

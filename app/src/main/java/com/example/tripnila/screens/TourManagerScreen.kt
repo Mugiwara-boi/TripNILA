@@ -2,8 +2,10 @@ package com.example.tripnila.screens
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,7 +21,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -43,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -58,6 +66,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -81,23 +91,32 @@ import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TourManagerScreen(
     tourId: String = "",
     hostId: String = "",
     onNavToEditTour: (String, String, String) -> Unit,
     onNavToDashboard: (String) -> Unit,
-    tourManagerViewModel: TourManagerViewModel? = null
+    tourManagerViewModel: TourManagerViewModel
 ){
 
     Log.d("Tour", "$tourId $hostId")
 
     LaunchedEffect(tourId) {
-        tourManagerViewModel?.getSelectedTour(tourId)
+        tourManagerViewModel.getSelectedTour(tourId)
     }
 
-    var tour = tourManagerViewModel?.tour?.collectAsState()?.value
+    val tour = tourManagerViewModel.tour.collectAsState().value
     val touristId = hostId.substring(5)
+
+
+    val pagerState = rememberPagerState(
+        initialPage = 0,
+        initialPageOffsetFraction = 0f
+    ) {
+        tour.tourImages.size
+    }
 
 
 //    var tourAvailableDates = tour?.schedule
@@ -112,48 +131,7 @@ fun TourManagerScreen(
 //        )
 //    }
 
-    val availableDates = listOf(
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-        TourAvailableDates(
-            day = "Mon",
-            date = "Sep 11",
-            startingTime = "1:00",
-            endingTime = "23:00",
-            description = "Book for private group",
-            price = 3100.00
-        ),
-    )
+
     val reviews = listOf(
         ReviewUiState(
             rating = 4.5,
@@ -227,7 +205,8 @@ fun TourManagerScreen(
             .fillMaxSize(),
         color = Color(0xFFEFEFEF)
     ) {
-        if (tourManagerViewModel?.isStateRetrieved?.collectAsState()?.value == false) {
+        // tourManagerViewModel.isStateRetrieved.collectAsState().value == false
+        if (tour.tourId != tourId) {
             LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
         } else {
             LazyColumn(
@@ -235,33 +214,92 @@ fun TourManagerScreen(
                     .fillMaxSize()
             ) {
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp)
-                    ) {
-                        AsyncImage(
-                            model = if ( tour?.tourImages?.find { it.photoType == "Cover" }?.photoUrl == "") "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png" else tour?.tourImages?.find { it.photoType == "Cover" }?.photoUrl,//imageLoader,
-                            contentDescription = "",
-                            contentScale = ContentScale.Crop,
+//                    Box(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .height(240.dp)
+//                    ) {
+//                        AsyncImage(
+//                            model = if ( tour?.tourImages?.find { it.photoType == "Cover" }?.photoUrl == "") "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png" else tour?.tourImages?.find { it.photoType == "Cover" }?.photoUrl,//imageLoader,
+//                            contentDescription = "",
+//                            contentScale = ContentScale.Crop,
+//
+//                            )
+//                        ManagerTopBarIcons(
+//                            onEdit = {
+//                                onNavToEditTour(tourId, hostId, "Tour")
+//                            },
+//                            onBack = {
+//                                onNavToDashboard(touristId)
+//                            }
+//
+//                        )
+//                    }
+
+                    HorizontalPager(
+                        state = pagerState, // Specify the count of items in the pager
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        val image = tour.tourImages.sortedBy { it.photoType }.getOrNull(page)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp)
+                        ) {
+                            if (image != null) {
+                                AsyncImage(
+                                    model = image.photoUrl,
+                                    contentDescription = "",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            ManagerTopBarIcons(
+                                onEdit = {
+                                    onNavToEditTour(tourId, hostId, "Tour")
+                                },
+                                onBack = {
+                                    onNavToDashboard(touristId)
+                                }
 
                             )
-                        ManagerTopBarIcons(
-                            onEdit = {
-                                onNavToEditTour(tourId, hostId, "Tour")
-                            },
-                            onBack = {
-                                onNavToDashboard(touristId)
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color.Black.copy(alpha = 0.69f)
+                                ),
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(horizontal = 15.dp, vertical = 25.dp)
+                                    .width(30.dp)
+                                    .height(20.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "${page + 1}/${tour.tourImages.size}",
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                }
+
                             }
 
-                        )
+
+                        }
+
                     }
+
                 }
                 item {
                     TourDescriptionCard1(
-                        tourName = tour?.tourTitle ?: "",
-                        tags = tour?.tourTags?.map { it.tagName } ?: emptyList(),
-                        location = tour?.tourLocation ?: "",
+                        tourName = tour.tourTitle,
+                        tags = tour.tourTags.map { it.tagName },
+                        location = tour.tourLocation,
                         averageRating = 4.7,
                         totalReviews = 254,
                         withEditButton = false,
@@ -271,10 +309,10 @@ fun TourManagerScreen(
                 }
                 item {
                     TourDescriptionCard2(
-                        hostImage = tour?.host?.profilePicture ?: "",
-                        hostName = tour?.host?.firstName ?: "",
-                        duration = tour?.tourDuration ?: "",
-                        language = tour?.tourLanguage ?: "",
+                        hostImage = tour.host.profilePicture,
+                        hostName = tour.host.firstName,
+                        duration = tour.tourDuration,
+                        language = tour.tourLanguage,
                         withEditButton = false,
                         modifier = Modifier
                             .offset(y = (-5).dp)
@@ -283,10 +321,10 @@ fun TourManagerScreen(
                 }
                 item {
                     TourDescriptionCard3(
-                        image1 = tour?.tourImages?.find { it.photoType == "Cover" }?.photoUrl ?: "",
-                        image2 = tour?.tourImages?.find { it.photoType == "Cover" }?.photoUrl ?: "",
-                        image3 = tour?.tourImages?.find { it.photoType == "Cover" }?.photoUrl ?: "",
-                        description = tour?.tourDescription ?: "",
+                        image1 = tour.tourImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                        image2 = tour.tourImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                        image3 = tour.tourImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                        description = tour.tourDescription,
                         withEditButton = false,
                         modifier = Modifier
                             .offset(y = (-5).dp)
@@ -324,7 +362,7 @@ fun TourManagerScreen(
                     AppLocationCard(
                         location = "Where we'll meet",
                         locationImage = R.drawable.map_image2,
-                        locationDescription = tour?.tourLocation ?: "",
+                        locationDescription = tour.tourLocation,
                         withEditButton = false,
                         modifier = Modifier
                             .offset(y = (-5).dp)
@@ -404,12 +442,16 @@ fun TourAvailableDatesCard(
     tourManagerViewModel: TourManagerViewModel?,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
         modifier = modifier
             .fillMaxWidth()
-            //.height(height = 139.dp)
-            .clip(shape = RoundedCornerShape(20.dp))
-            .background(color = Color.White)
     ) {
         Column(
             modifier = Modifier
@@ -425,7 +467,7 @@ fun TourAvailableDatesCard(
                 horizontalArrangement = Arrangement.Start
             ){
                 Text(
-                    text = "What you'll do",
+                    text = "Available schedules",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
@@ -452,11 +494,14 @@ fun TourDateSelector(
 
     val tourSchedules = tourManagerViewModel?.tour?.collectAsState()?.value?.schedule?.sortedWith(compareBy({ it.date }, { LocalTime.parse(it.startTime, DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)) }))
 
-    var openingHour by remember { mutableStateOf(0) }
-    var openingMinute by remember { mutableStateOf(0) }
+    var isFocused by remember { mutableStateOf(false) }
+    var slot by remember { mutableIntStateOf(0) }
 
-    var closingHour by remember { mutableStateOf(0) }
-    var closingMinute by remember { mutableStateOf(0) }
+    var openingHour by remember { mutableIntStateOf(0) }
+    var openingMinute by remember { mutableIntStateOf(0) }
+
+    var closingHour by remember { mutableIntStateOf(0) }
+    var closingMinute by remember { mutableIntStateOf(0) }
 
     var currentDate by remember { mutableStateOf(LocalDate.now()) }
     var openDialogBox by remember { mutableStateOf(false) }
@@ -465,12 +510,12 @@ fun TourDateSelector(
     var showClosingDialog by remember { mutableStateOf(false) }
 
 
-    var openingTimePickerState = rememberTimePickerState(
+    val openingTimePickerState = rememberTimePickerState(
         initialHour = openingHour,
         initialMinute = openingMinute,
         is24Hour = false
     )
-    var closingTimePickerState = rememberTimePickerState(
+    val closingTimePickerState = rememberTimePickerState(
         initialHour = closingHour,
         initialMinute = closingMinute,
         is24Hour = false
@@ -500,6 +545,7 @@ fun TourDateSelector(
             openingMinute = 0
             closingHour = 0
             closingMinute = 0
+            slot = 0
         }
     }
 
@@ -600,7 +646,7 @@ fun TourDateSelector(
                 TourScheduleCard(
                     tourSchedule = tourSchedule,
                     onDelete = { sched ->
-                        tourManagerViewModel?.removeSchedule(sched)
+                        tourManagerViewModel.removeSchedule(sched)
                     },
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
@@ -786,6 +832,73 @@ fun TourDateSelector(
                                         }
                                     }
                                 }
+
+                                // SLOT
+                                Row(
+                                    modifier = Modifier
+                                        .padding(
+                                            horizontal = 20.dp,
+                                            vertical = 3.dp
+                                        )
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Start,
+                                ) {
+                                    Text(
+                                        text = "Slot",
+                                        color = Color(0xff333333),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.padding(
+                                            end = 10.dp,
+                                            top = 5.dp
+                                        )
+                                    )
+                                    BasicTextField(
+                                        value = slot.toString(),
+                                        onValueChange = { newValue ->
+                                            val newText = newValue.filter { it.isDigit() }
+                                            slot = if (newText.isNotEmpty()) newText.toInt() else 0
+                                        },
+                                        textStyle = TextStyle(
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color.Black
+                                        ),
+                                        keyboardOptions = KeyboardOptions(
+                                            imeAction = ImeAction.Done,
+                                            keyboardType = KeyboardType.Number
+                                        ),
+                                        singleLine = true,
+                                        decorationBox = { innerTextField ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .background(color = Color.White, shape = RoundedCornerShape(size = 10.dp))
+                                                    .border(
+                                                        width = 1.dp,
+                                                        color = if (isFocused) {
+                                                            Orange
+                                                        } else {
+                                                            Color(0xffc2c2c2)
+                                                        },
+                                                        shape = RoundedCornerShape(size = 10.dp)
+                                                    )
+                                                    .padding(horizontal = 8.dp), // inner padding
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                innerTextField()
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            // .width(80.dp)
+                                            .width(75.dp)
+                                            .height(30.dp)
+                                            .offset(x = 5.dp)
+                                            .onFocusChanged { focusState ->
+                                                isFocused = focusState.isFocused
+                                            }
+                                    )
+                                }
+
+
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -805,7 +918,8 @@ fun TourDateSelector(
                                         buttonText = "Add",
                                         contentPadding = PaddingValues(vertical = 0.dp),
                                         onClick = {
-                                            tourManagerViewModel?.setSchedule(TourSchedule(date = currentDate, startTime = formattedOpeningTime, endTime = formattedClosingTime))
+                                            tourManagerViewModel?.setSchedule(
+                                                TourSchedule(date = currentDate, startTime = formattedOpeningTime, endTime = formattedClosingTime, slot = slot, bookedSlot = 0))
                                             openDialogBox = false
                                         },
                                         modifier = Modifier
@@ -1017,17 +1131,20 @@ private fun TourManagerScreenPreview() {
     val tourManagerViewModel = viewModel(modelClass = TourManagerViewModel::class.java)
     val tourId = "20019"
 
-    LaunchedEffect(tourId) {
-        tourManagerViewModel?.getSelectedTour(tourId)
-    }
+//    LaunchedEffect(tourId) {
+//        tourManagerViewModel?.getSelectedTour(tourId)
+//    }
 //
-//    TourManagerScreen(
-//        tourId = tourId,
-//        hostId = "HOST-ITZbCFfF7Fzqf1qPBiwx",
-//        onNavToEditTour = { para1,para2,para3 ->
-//
-//        },
-//        tourManagerViewModel = tourManagerViewModel
-//    )
+    TourManagerScreen(
+        tourId = tourId,
+        hostId = "HOST-ITZbCFfF7Fzqf1qPBiwx",
+        onNavToEditTour = { para1,para2,para3 ->
+
+        },
+        onNavToDashboard = {
+
+        },
+        tourManagerViewModel = tourManagerViewModel
+    )
 
 }
