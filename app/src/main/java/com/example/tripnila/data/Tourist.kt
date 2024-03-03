@@ -2,6 +2,7 @@ package com.example.tripnila.data
 
 data class Tourist(
     val touristId: String = "",
+    val uid: String = "",
     val firstName: String = "",
     val middleName: String = "",
     val lastName: String = "",
