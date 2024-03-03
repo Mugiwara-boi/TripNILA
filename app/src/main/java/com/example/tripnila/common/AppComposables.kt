@@ -80,6 +80,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
@@ -107,11 +108,16 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
+import coil.request.ImageRequest
 import com.example.tripnila.R
 import com.example.tripnila.data.BottomNavigationItem
 import com.example.tripnila.data.ReviewUiState
 import java.text.NumberFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 val Orange = Color(0xfff9a664)
 
@@ -856,6 +862,97 @@ fun TouristBottomNavigationBar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HostBottomNavigationBar(
+    hostId: String = "",
+    selectedItemIndex: Int,
+    onItemSelected: (Int) -> Unit,
+    navController: NavHostController
+) {
+    val items = listOf(
+        BottomNavigationItem(
+            title = "Dashboard",
+            selectedIcon = R.drawable.home_filled,
+            unselectedIcon = R.drawable.home_outlined,
+            hasNews = false,
+
+            ),
+//        BottomNavigationItem(
+//            title = "Itinerary",
+//            selectedIcon = R.drawable.map_filled,
+//            unselectedIcon = R.drawable.map_outlined,
+//            hasNews = false,
+//            //badgeCount = 45
+//        ),
+        BottomNavigationItem(
+            title = "HostInbox",
+            selectedIcon = R.drawable.inbox_filled,
+            unselectedIcon = R.drawable.inbox_outlined,
+            hasNews = false,
+        ),
+        BottomNavigationItem(
+            title = "HostProfile",
+            selectedIcon = R.drawable.account_filled,
+            unselectedIcon = R.drawable.account_outlined,
+            hasNews = false,
+        )
+    )
+
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    NavigationBar(
+        containerColor = Color.White,
+        tonalElevation = 10.dp
+    ) {
+        items.forEachIndexed { index, item ->
+            NavigationBarItem(
+                selected = currentDestination?.hierarchy?.any { it.route == item.title } == true,
+                onClick = {
+                    navController.navigate(route = "${item.title}/$hostId") {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                    //  onItemSelected(index)
+
+                    Log.d("Navigation", "Navigating to ${item.title} with touristId: ")
+//                    navController.navigate(route = "${item.title}/{touristId}") {
+//                        // ... rest of your navigation code
+//                    }
+                },
+                icon = {
+                    BadgedBox(
+                        badge = {
+                            if(item.badgeCount != null) {
+                                Badge {
+                                    Text(text = item.badgeCount.toString())
+                                }
+                            } else if(item.hasNews) {
+                                Badge()
+                            }
+                        }
+                    ) {
+                        Icon(
+                            painter = if (index == selectedItemIndex) {
+                                painterResource(id = item.selectedIcon)
+                            } else painterResource(id = item.unselectedIcon),
+                            contentDescription = item.title,
+                            tint = if (index == selectedItemIndex) Orange else Color.Gray,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+                }
+            )
+        }
+    }
+}
+
+
 
 @Composable
 fun Tag(tag: String, modifier: Modifier = Modifier){
@@ -888,6 +985,87 @@ fun AppReviewsCard(
     totalReviews: Int = 254,
     averageRating: Double = 4.7,
     reviews: List<ReviewUiState>,
+    onSeeAllReviews: () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = 25.dp,
+                vertical = 20.dp
+            ),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(modifier = Modifier.align(Alignment.Start)) {
+                Icon(
+                    modifier = Modifier.height(24.dp),
+                    painter = painterResource(id = R.drawable.star),
+                    contentDescription = "Star"
+                )
+                Text(
+                    text = averageRating.toString(),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(start = 3.dp, end = 20.dp)
+                )
+
+                Text(
+                    text = "$totalReviews reviews",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    textDecoration = TextDecoration.Underline
+                )
+            }
+
+
+            if (reviews.isEmpty()) {
+                // If reviews list is empty, display a default review
+                EmptyPlaceholder(
+                    modifier = Modifier.padding(bottom = 10.dp, top = 7.dp)
+                )
+            } else {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp),
+                ) {
+                    items(reviews) { review ->
+                        ReviewCard(
+                            review = review,
+                            modifier = Modifier.padding(top = 7.dp, end = 12.dp)
+                        )
+                    }
+                }
+            }
+
+            AppOutlinedButton(
+                buttonText = "See all reviews",
+                onClick = {
+                    onSeeAllReviews()
+                },
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        }
+    }
+}
+
+
+/*
+@Composable
+fun AppReviewsCard(
+    modifier: Modifier = Modifier,
+    totalReviews: Int = 254,
+    averageRating: Double = 4.7,
+    reviews: List<ReviewUiState>,
+    onSeeAllReviews: () -> Unit,
 ){
 
     Card(
@@ -948,9 +1126,9 @@ fun AppReviewsCard(
                 }
             }
             AppOutlinedButton(
-                buttonText = "See all",
+                buttonText = "See all reviews",
                 onClick = {
-
+                    onSeeAllReviews()
                 },
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
@@ -959,9 +1137,19 @@ fun AppReviewsCard(
         }
     }
 }
+*/
 
 @Composable
 fun ReviewCard(review: ReviewUiState, modifier: Modifier = Modifier) {
+
+    val formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH)
+    val providedDate = LocalDateTime.parse(review.reviewDate, formatter)
+
+    val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
+    val formattedDate = providedDate.format(dateFormatter)
+
+
+
     OutlinedCard(
         modifier = modifier
             .width(width = 135.dp)
@@ -1013,11 +1201,11 @@ fun ReviewCard(review: ReviewUiState, modifier: Modifier = Modifier) {
                     val hostImage = review.touristImage
                     val placeholderImage = "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
 
-                    val imageLoader = rememberImagePainter(
-                        data = hostImage ?: placeholderImage,
-                        builder = {
-                            crossfade(true)
-                        }
+                    val imageLoader = rememberAsyncImagePainter(
+                        ImageRequest.Builder(LocalContext.current)
+                            .data(data = hostImage ?: placeholderImage).apply(block = fun ImageRequest.Builder.() {
+                                crossfade(true)
+                            }).build()
                     )
                     Image(
                         painter = imageLoader,
@@ -1037,7 +1225,7 @@ fun ReviewCard(review: ReviewUiState, modifier: Modifier = Modifier) {
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = review.reviewDate,
+                        text = formattedDate,
                         fontSize = 7.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF999999)
@@ -1045,6 +1233,31 @@ fun ReviewCard(review: ReviewUiState, modifier: Modifier = Modifier) {
                 }
             }
 
+        }
+    }
+}
+
+@Composable
+fun EmptyPlaceholder(modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height = 116.dp),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(0.5.dp, Color(0xff999999)),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.LightGray
+        ),
+
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 6.dp, vertical = 4.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(painter = painterResource(id = R.drawable.no_data), contentDescription = null)
         }
     }
 }

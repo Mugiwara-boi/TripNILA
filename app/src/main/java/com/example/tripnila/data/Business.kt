@@ -24,8 +24,6 @@ data class Business (
     val promotions: List<Promotion> = emptyList(),
     val schedule: List<DailySchedule> = emptyList(),
     val reviews: List<Review> = emptyList(),
-//    val locationImage: Int,
-//    val locationDescription: String,
 )
 
 

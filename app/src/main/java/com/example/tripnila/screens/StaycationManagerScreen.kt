@@ -2,6 +2,7 @@ package com.example.tripnila.screens
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
@@ -79,6 +83,7 @@ import com.example.tripnila.common.Tag
 import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.data.Transaction
 import com.example.tripnila.model.StaycationManagerViewModel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -86,6 +91,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StaycationManagerScreen(
     staycationId: String = "",
@@ -101,8 +107,15 @@ fun StaycationManagerScreen(
         staycationManagerViewModel.getSelectedStaycation(staycationId)
     }
 
-    var staycation = staycationManagerViewModel?.staycation?.collectAsState()
+    val staycation = staycationManagerViewModel?.staycation?.collectAsState()
     val touristId = hostId.substring(5)
+
+    val pagerState = rememberPagerState(
+        initialPage = 0,
+        initialPageOffsetFraction = 0f
+    ) {
+        staycation?.value?.staycationImages?.size ?: 0
+    }
 
     val availableDates = staycationManagerViewModel.staycation.collectAsState().value.availableDates
         .map { it.availableDate }
@@ -172,7 +185,71 @@ fun StaycationManagerScreen(
                     .fillMaxSize()
             ) {
                 item {
-                    Box(
+                    HorizontalPager(
+                        state = pagerState, // Specify the count of items in the pager
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        val image = staycation?.value!!.staycationImages.sortedBy { it.photoType }.getOrNull(page)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp)
+                        ) {
+                            if (image != null) {
+                                AsyncImage(
+                                    model = image.photoUrl,
+                                    contentDescription = "",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                AsyncImage(
+                                    model = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                                    contentDescription = "",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            ManagerTopBarIcons(
+                                onEdit = {
+                                    onNavToEditStaycation(staycationId, hostId, "Staycation")
+                                },
+                                onBack = {
+                                    onNavToDashboard(touristId)
+                                }
+                            )
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color.Black.copy(alpha = 0.69f)
+                                ),
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(horizontal = 15.dp, vertical = 25.dp)
+                                    .width(30.dp)
+                                    .height(20.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "${page + 1}/${staycation.value!!.staycationImages.size}",
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                }
+
+                            }
+
+
+                        }
+
+                    }
+
+                   /* Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(240.dp)
@@ -190,7 +267,7 @@ fun StaycationManagerScreen(
                                 onNavToDashboard(touristId)
                             }
                         )
-                    }
+                    }*/
                 }
                 item {
                     StaycationDescriptionCard1(
@@ -253,6 +330,9 @@ fun StaycationManagerScreen(
                             AppReviewsCard(
                                 totalReviews = totalReviews,
                                 averageRating = averageRating,
+                                onSeeAllReviews = {
+
+                                },
                                 reviews = reviews,
                                 modifier = Modifier
                                     .offset(y = (-5).dp)
@@ -267,8 +347,14 @@ fun StaycationManagerScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTransactionsCard(transactions: List<Transaction>, modifier: Modifier = Modifier){
+
+
+    val seeAll = remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
@@ -309,11 +395,74 @@ fun AppTransactionsCard(transactions: List<Transaction>, modifier: Modifier = Mo
             AppOutlinedButton(
                 buttonText = "See all transactions",
                 onClick = {
-
+                    seeAll.value = true
                 },
                 modifier = Modifier
                     .padding(top = 12.dp)
             )
+
+        }
+    }
+
+    if (seeAll.value) {
+        ModalBottomSheet(
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White,
+            dragHandle = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = { seeAll.value = false },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Close"
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+
+                }
+            },
+            onDismissRequest = { seeAll.value = false },
+            sheetState = sheetState,
+            modifier = Modifier
+                .fillMaxHeight(0.8f) //0.693
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    // .padding(horizontal = 25.dp,)
+                    .background(Color.White)
+            ) {
+                Text(
+                    text = "All transactions",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
+                        .fillMaxWidth()
+                )
+
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    items(transactions) { transaction ->
+                        TransactionCard(
+                            transaction = transaction,
+                            modifier = Modifier.padding(top = 7.dp)
+                        )
+                    }
+                }
+            }
 
         }
     }
@@ -389,20 +538,20 @@ fun TransactionCard(transaction: Transaction, modifier: Modifier = Modifier){
                     color = Orange,
                     modifier = Modifier.offset(x = (-10).dp)
                 )
-                IconButton(
-                    onClick = { /*TODO*/ },
-                    modifier = Modifier
-                        .size(36.dp)
-                        .align(Alignment.End)
-                        .offset(x = 10.dp, y = (-7).dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowRight,
-                        contentDescription = "Expand",
-                        tint = Color(0xFF999999),
-                        modifier = Modifier.size(36.dp)
-                    )
-                }
+//                IconButton(
+//                    onClick = { /*TODO*/ },
+//                    modifier = Modifier
+//                        .size(36.dp)
+//                        .align(Alignment.End)
+//                        .offset(x = 10.dp, y = (-7).dp)
+//                ) {
+//                    Icon(
+//                        imageVector = Icons.Filled.KeyboardArrowRight,
+//                        contentDescription = "Expand",
+//                        tint = Color(0xFF999999),
+//                        modifier = Modifier.size(36.dp)
+//                    )
+//                }
             }
 
         }
@@ -454,10 +603,13 @@ fun AvailabilityAndPricingCard(
 
 
     Card(
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),
-        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
         modifier = modifier
             .fillMaxWidth()
     ) {
@@ -1202,11 +1354,16 @@ fun StaycationManagerAdditionalInformationCard(withEditButton: Boolean = false, 
         skipPartiallyExpanded = true
     )
 
-    Box(
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
         modifier = modifier
             .fillMaxWidth()
-            .clip(shape = RoundedCornerShape(20.dp))
-            .background(color = Color.White)
     ) {
 
         Column(
@@ -2058,12 +2215,12 @@ private fun StaycationManagerPreview() {
 private fun StaycationManagerScreenPreview() {
 
     val staycationManagerViewModel = viewModel(modelClass = StaycationManagerViewModel::class.java)
-    var staycationId = "LxpNxRFdwkQzBxujF3gx"
+    val staycationId = "LxpNxRFdwkQzBxujF3gx"
 
-
-    LaunchedEffect(staycationId) {
-        staycationManagerViewModel.getSelectedStaycation(staycationId)
-    }
+//
+//    LaunchedEffect(staycationId) {
+//        staycationManagerViewModel.getSelectedStaycation(staycationId)
+//    }
 
   //  AvailabilityAndPricingCard(staycationManagerViewModel)
 

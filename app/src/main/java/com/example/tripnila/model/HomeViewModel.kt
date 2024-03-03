@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.SortedSet
 
 class HomeViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
@@ -109,6 +110,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
 
     private val _touristId = MutableStateFlow("") // Default tab
     val touristId: StateFlow<String> get() = _touristId
+
 
 
     fun updateSearchText(newSearchText: String) {
@@ -228,6 +230,22 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
         Log.d("Selected Tab (VM)", _selectedTab.value)
     }
 
+
+    suspend fun isFavorite(serviceId: String, userId: String): Boolean {
+        return try {
+            repository.isFavorite(serviceId, userId)
+        } catch (e: Exception) {
+            Log.e("HomeViewModel", "Error checking favorite", e)
+            false
+        }
+    }
+
+    // Function to toggle favorite status
+    suspend fun toggleFavorite(serviceId: String, userId: String, serviceType: String) {
+        viewModelScope.launch {
+            repository.toggleFavorite(serviceId, userId, serviceType)
+        }
+    }
 
     fun getUserPreference(touristId: String) {
         viewModelScope.launch {

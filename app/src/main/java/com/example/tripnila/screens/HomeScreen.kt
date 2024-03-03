@@ -117,10 +117,12 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.Orange
+import com.example.tripnila.common.Tag
 import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.HomePagingItem
 import com.example.tripnila.model.HomeViewModel
 import com.patrykandpatrick.vico.core.extension.mutableListOf
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -383,8 +385,10 @@ fun HomeScreen(
                                         if (service != null) {
                                             ServiceListingCard(
                                                 service = service,
-                                                cardHeight = cardHeight.dp,
+                                                homeViewModel = homeViewModel,
                                                 imageHeight = imageHeight.dp,
+                                                touristId = touristId,
+                                                scope = scope,
                                                 onItemClick = { serviceType ->
                                                     if (serviceType == "Tour") {
                                                         onNavToTourDetails(touristId, service.serviceId)
@@ -1116,68 +1120,6 @@ fun HomeScreen(
 
 }
 
-
-@Composable
-fun StaggeredGridListing(
-    serviceList: LazyPagingItems<HomePagingItem>,
-    onItemClick: (String,String) -> Unit
-) {
-
-    val loadState = serviceList.loadState
-
-  //  val lazyListState = rememberLazyStaggeredGridState()
-
-
-    Column(
-        verticalArrangement = Arrangement.Top,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        LazyVerticalGrid(
-            state = rememberLazyGridState(),
-            columns = GridCells.Fixed(2), // Number of columns
-            contentPadding = PaddingValues(16.dp),
-            //verticalItemSpacing = 16.dp,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-
-            items(serviceList.itemCount) { index ->
-
-                val service = serviceList[index]
-
-                val cardHeight = (150..180).random()
-                val imageHeight = cardHeight - 55
-
-                // Step 2: Create a Composable for a single grid item
-                if (service != null) {
-                    ServiceListingCard(
-                        service = service,
-                        cardHeight = cardHeight.dp,
-                        imageHeight = imageHeight.dp,
-                        onItemClick = { serviceType ->
-                            onItemClick.invoke(service.serviceId, serviceType)
-                        }
-                    )
-                }
-            }
-
-        }
-
-        if (loadState.refresh is LoadState.Loading) {
-
-            CircularProgressIndicator(
-                modifier = Modifier
-                    .size(50.dp)
-                    .padding(16.dp)
-                    .align(CenterHorizontally)
-            )
-
-        }
-    }
-
-
-}
-
 @Composable
 fun FilterBottomBar(
     modifier: Modifier = Modifier,
@@ -1295,22 +1237,58 @@ fun FilterBottomBar(
 //
 //}
 
+@Composable
+fun FavoriteButton(
+    modifier: Modifier = Modifier,
+    isFavorite: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+
+   // var isFavorite by remember { mutableStateOf(false) }
+
+    IconToggleButton(
+        modifier = modifier,
+        checked = isFavorite,
+        onCheckedChange = {
+            onCheckedChange(it)
+          //  isFavorite = !isFavorite
+        }
+    ) {
+        Image(
+            imageVector = ImageVector.vectorResource(id = R.drawable.favorite_off),
+            contentDescription = "",
+            colorFilter = if(isFavorite) ColorFilter.tint(Color(220, 20, 60)) else null
+        )
+
+    }
+}
+
 
 @Composable
 fun ServiceListingCard(
     service: HomePagingItem,
-    cardHeight: Dp,
+    homeViewModel: HomeViewModel,
     imageHeight: Dp,
+    scope: CoroutineScope,
+    touristId: String,
     onItemClick: (String) -> Unit
 ){
 
     val serviceImage = service.serviceCoverPhoto //?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png"
 
+    var isFavorite by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(touristId) {
+        isFavorite = homeViewModel.isFavorite(service.serviceId, touristId)
+    }
+
+  //  val is
+
     Card(
         modifier = Modifier
-            //  .height(cardHeight)
             .fillMaxWidth()
-            // .width(171.dp)
             .clickable {
                 onItemClick(service.serviceType)
             },
@@ -1331,20 +1309,36 @@ fun ServiceListingCard(
                         .height(imageHeight)
 
                 )
-//                Image(
-//                    modifier = Modifier
-//                        //.height(103.dp)
-//                        .height(imageHeight)
-//                        .fillMaxWidth(),
-//                    painter = painterResource(id = R.drawable.image_placeholder),
-//                    contentDescription = "Staycation Unit",
-//                    contentScale = ContentScale.Crop
-//                )
-//                FavoriteButton(
-//                    Modifier
-//                        .offset(x = (-7).dp, y = (-9).dp)
-//                        .width(14.dp)
-//                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 7.dp, end = 7.dp)
+                ) {
+                    FavoriteButton(
+                        isFavorite = isFavorite,
+                        onCheckedChange = { isChecked ->
+
+                            scope.launch {
+                                homeViewModel.toggleFavorite(
+                                    service.serviceId,
+                                    touristId,
+                                    service.serviceType
+                                )
+                                isFavorite = isChecked
+                            }
+
+                        },
+                        modifier = Modifier
+                            .offset(y = (-9).dp)
+                            .width(16.dp)
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Tag(
+                        tag = service.serviceType,
+                        modifier = Modifier.padding(top = 3.dp)
+                    )
+                    
+                }
             }
             Column(
                 modifier = Modifier
@@ -1557,26 +1551,6 @@ fun SearchField(
 }
 
 
-@Composable
-fun FavoriteButton(modifier: Modifier = Modifier) {
-
-    var isFavorite by remember { mutableStateOf(false) }
-
-    IconToggleButton(
-        modifier = modifier,
-        checked = isFavorite,
-        onCheckedChange = {
-            isFavorite = !isFavorite
-        }
-    ) {
-        Image(
-            imageVector = ImageVector.vectorResource(id = R.drawable.favorite_off),
-            contentDescription = "",
-            colorFilter = if(isFavorite) ColorFilter.tint(Color.Red) else null
-
-        )
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1800,7 +1774,6 @@ fun LocationTextField(
     onValueChange: (String) -> Unit
 ) {
 
-//    var text by remember { mutableStateOf(initialValue) }
     var isFocused by remember { mutableStateOf(false) }
     val localFocusManager = LocalFocusManager.current
 
@@ -1979,9 +1952,6 @@ private fun HomeScreenPreview() {
 
 
     HomeScreen("mgPPHdYnYlJXMFxCaJOj", homeViewModel, { a,b -> }, { c,d ->}, rememberNavController())
-
-
-
 
 }
 

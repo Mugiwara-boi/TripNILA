@@ -26,6 +26,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -33,8 +36,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,6 +53,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,14 +80,15 @@ import com.example.tripnila.common.AppExpandingText
 import com.example.tripnila.common.AppLocationCard
 import com.example.tripnila.common.AppOutlinedButton
 import com.example.tripnila.common.AppReviewsCard
+import com.example.tripnila.common.EmptyPlaceholder
 import com.example.tripnila.common.LoadingScreen
-import com.example.tripnila.common.Orange
 import com.example.tripnila.common.Tag
 import com.example.tripnila.common.UnderlinedText
 import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.data.TourAvailableDates
 import com.example.tripnila.model.TourDetailsViewModel
 import com.example.tripnila.navigateToTourDates
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -108,12 +111,39 @@ fun TourDetailsScreen(
 
     LaunchedEffect(tourId) {
         tourDetailsViewModel.getSelectedTour(tourId)
+        tourDetailsViewModel.getAllReviewsByTourId(tourId)
         Log.d("Tourist ID", touristId)
         Log.d("Tour ID", tourId)
     }
 
     val tour by tourDetailsViewModel.tour.collectAsState()
     val personCount by tourDetailsViewModel.personCount.collectAsState()
+    val tourBookings by tourDetailsViewModel.tourBookings.collectAsState()
+
+    val filteredReviews = tourBookings
+        .mapNotNull { it.bookingReview }
+        .filter { it.bookingId != "" }
+        .sortedByDescending { it.reviewDate }
+
+    val averageRating = filteredReviews
+        .map { it.rating }
+        .average()
+
+    val validAverage = if (averageRating.isNaN()) 0.0 else averageRating
+
+    val totalReviews = filteredReviews
+        .size
+
+    val reviews = filteredReviews.map { review ->
+        ReviewUiState(
+            rating = review.rating.toDouble(),
+            comment = review.comment,
+            touristImage = review.reviewer.profilePicture,
+            touristName = "${review.reviewer.firstName} ${review.reviewer.lastName}",
+            reviewDate = review.reviewDate.toString()
+        )
+
+    }
 
    // val limit = tour.schedule.
     val count by tourDetailsViewModel.tempCount.collectAsState()
@@ -129,12 +159,34 @@ fun TourDetailsScreen(
 
     val bottomSheetState = rememberModalBottomSheetState( skipPartiallyExpanded = true)
     val hasNavigationBar = WindowInsets.areNavigationBarsVisible
+    val scope = rememberCoroutineScope()
 
     var openBottomSheet by remember { mutableStateOf(false) }
 
     val tourAvailableDates = tour.schedule
 
     val currentDate = LocalDate.now()
+
+    val availableDatesBeforeGuestCount = tourAvailableDates
+        .filter { tourSchedule ->
+            val remainingSlot = tourSchedule.slot - tourSchedule.bookedSlot
+            tourSchedule.date > currentDate && remainingSlot >= 1 // Keep only schedules with remaining slots
+        }
+        .map { tourSchedule ->
+            val remainingSlot = tourSchedule.slot - tourSchedule.bookedSlot
+            TourAvailableDates(
+                availabilityId = tourSchedule.tourScheduleId,
+                day = tourSchedule.date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH),
+                date = tourSchedule.date.format(DateTimeFormatter.ofPattern("MMM d")),
+                startingTime = tourSchedule.startTime,
+                endingTime = tourSchedule.endTime,
+                description = if (remainingSlot == 1) "$remainingSlot slot left" else "$remainingSlot slots left",
+                price = tour.tourPrice,
+                localDate = tourSchedule.date,
+                remainingSlot = remainingSlot
+            )
+        }.sortedBy { it.localDate }
+
     val availableDates = tourAvailableDates
         .filter { tourSchedule ->
             val remainingSlot = tourSchedule.slot - tourSchedule.bookedSlot
@@ -155,6 +207,15 @@ fun TourDetailsScreen(
             )
         }.sortedBy { it.localDate }
 
+    var isFavorite by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(touristId) {
+        isFavorite = tourDetailsViewModel.isFavorite(tourId, touristId)
+        tourDetailsViewModel.incrementViewCount(tourId)
+    }
+
 //    val availableDates = tourAvailableDates.map {  tourSchedule ->
 //        val remainingSlot = tourSchedule.slot - tourSchedule.bookedSlot
 //        TourAvailableDates(
@@ -169,50 +230,6 @@ fun TourDetailsScreen(
 //        )
 //    }.sortedBy { it.localDate }
 
-    val reviews = listOf(
-        ReviewUiState(
-            rating = 4.5,
-            comment = "A wonderful staycation experience!",
-         //   touristImage = R.drawable.joshua,
-            touristName = "John Doe",
-            reviewDate = "2023-05-15"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-        //    touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-        //    touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-        //    touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-         //   touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-        //    touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-    )
 
     Surface(
         modifier = Modifier
@@ -276,7 +293,20 @@ fun TourDetailsScreen(
                                 DetailsTopAppBar(
                                     onBack = {
                                         onBack()
-                                    }
+                                    },
+                                    isFavorite = isFavorite,
+                                    onCheckedChange = { isChecked ->
+
+                                        scope.launch {
+                                            tourDetailsViewModel.toggleFavorite(
+                                                tourId,
+                                                touristId,
+                                                "Tour"
+                                            )
+                                            isFavorite = isChecked
+                                        }
+
+                                    },
                                 )
                                 Card(
                                     colors = CardDefaults.cardColors(
@@ -335,23 +365,20 @@ fun TourDetailsScreen(
                         )
                     }
                     item {
-                        TourDescriptionCard3(
-                            image1 = tour.tourImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
-                            image2 = tour.tourImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
-                            image3 = tour.tourImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
-                            description = tour.tourDescription,
-                            withEditButton = false,
-                            modifier = Modifier
-                                .offset(y = (-5).dp)
-                                .padding(bottom = 12.dp)
-                        )
+                        tour.tourImages.map { it.photoUrl }.let { it1 ->
+                            TourDescriptionCard3(
+                                images = it1,
+                                description = tour.tourDescription,
+                                withEditButton = false,
+                                modifier = Modifier
+                                    .offset(y = (-5).dp)
+                                    .padding(bottom = 12.dp)
+                            )
+                        }
                     }
                     item {
                         TourAvailabilityCard(
-                            availableDates = availableDates,
-                            onSeeAllDates = {
-                                onNavToChooseDate(touristId)
-                            },
+                            availableDates = availableDatesBeforeGuestCount,
                             modifier = Modifier
                                 .offset(y = (-5).dp)
                                 .padding(bottom = 12.dp)
@@ -371,6 +398,11 @@ fun TourDetailsScreen(
                     item {
                         AppReviewsCard(
                             reviews = reviews,
+                            totalReviews = totalReviews,
+                            averageRating = validAverage,
+                            onSeeAllReviews = {
+
+                            },
                             modifier = Modifier
                                 .offset(y = (-5).dp)
                                 .padding(bottom = 12.dp)
@@ -388,6 +420,7 @@ fun TourDetailsScreen(
                 }
             }
         }
+
 
         if (openBottomSheet) {
             ModalBottomSheet(
@@ -790,15 +823,18 @@ fun TourDescriptionCard2(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TourDescriptionCard3(
     modifier: Modifier = Modifier,
     description: String,
-    image1: String,
-    image2: String,
-    image3: String,
+    images: List<String?>,
     withEditButton: Boolean = false,
 ){
+
+
+    val seeAllImages = remember { mutableStateOf(false) }
+    val imagesBottomSheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -844,98 +880,122 @@ fun TourDescriptionCard3(
                 longText = description,
                 modifier = Modifier.padding(vertical = 10.dp)
             )
-            Row(
-                modifier = Modifier
-                    .padding(top = 8.dp, bottom = 18.dp)
-                    .height(160.dp)
+
+            LazyVerticalGrid(
+                modifier = Modifier.padding(vertical = 8.dp).height(120.dp),
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .fillMaxWidth(0.48f)
-                        .clip(RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp))
-                        .background(Color.LightGray)
-
-                ) {
-
-                    AsyncImage(
-                        model = if (image1 == "") "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png"
-                                    else image1,
-                        contentDescription = "",
-                        contentScale = ContentScale.Crop
-
-                    )
-
-//                    Image(
-//                        painter = painterResource(id = image1),
-//                        contentDescription = "",
-//                        contentScale = ContentScale.FillHeight
-//                    )
-                }
-                Spacer(modifier = Modifier.fillMaxWidth(0.04f))
-                Column(
-                    Modifier
-                        .fillMaxHeight()
-                        .fillMaxWidth()
-                ) {
+                items(images.take(2)) { imageUrl ->
                     Box(
                         modifier = Modifier
-                            .height(76.dp)
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(topEnd = 10.dp))
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .background(Color.LightGray)
                     ) {
-                        AsyncImage(
-                            model = if (image2 == "") "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png" else image2,
-                            contentDescription = "",
-                            contentScale = ContentScale.FillWidth
-
-                        )
-//                        Image(
-//                            painter = painterResource(id = image2),
-//                            contentDescription = "",
-//                            contentScale = ContentScale.FillWidth
-//                        )
-                    }               
-                    Spacer(modifier = Modifier.weight(1f))
-                    Box(
-                        modifier = Modifier
-                            .height(76.dp)
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(bottomEnd = 10.dp))
-                            .background(Color.LightGray)
-                    ){
-                        AsyncImage(
-                            model = if (image3 == "") "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png" else image3,
-                            contentDescription = "",
-                            contentScale = ContentScale.FillWidth
-
-                        )
-//                        Image(
-//                            painter = painterResource(id = image3),
-//                            contentDescription = "",
-//                            contentScale = ContentScale.FillWidth
-//                        )
+                        if (imageUrl != null) {
+                            AsyncImage(
+                                model = imageUrl.ifBlank {
+                                    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png"
+                                },
+                                contentDescription = "",
+                                contentScale = ContentScale.Crop
+                            )
+                        }
                     }
                 }
             }
+
             AppOutlinedButton(
                 buttonText = "See all photos",
                 onClick = {
-
+                    seeAllImages.value = true
                 }
             )
+        }
+    }
+
+    if (seeAllImages.value) {
+        ModalBottomSheet(
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White,
+            dragHandle = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = { seeAllImages.value = false },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Close"
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+
+                }
+            },
+            onDismissRequest = { seeAllImages.value = false },
+            sheetState = imagesBottomSheet,
+            modifier = Modifier
+                .fillMaxHeight(0.8f) //0.693
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    // .padding(horizontal = 25.dp,)
+                    .background(Color.White)
+            ) {
+                Text(
+                    text = "Tour images",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
+                        .fillMaxWidth()
+                )
+
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(15.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    items(images) {  imageUrl ->
+                        if (imageUrl != null) {
+                            AsyncImage(
+                                model = imageUrl.ifBlank {
+                                    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png"
+                                },
+                                contentDescription = "",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            }
+
         }
     }
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TourAvailabilityCard(
     modifier: Modifier = Modifier,
     availableDates: List<TourAvailableDates>,
-    onSeeAllDates: () -> Unit
 ){
+
+
+    val seeAll = remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -972,28 +1032,104 @@ fun TourAvailabilityCard(
                 modifier = Modifier
                     .align(Alignment.Start)
             )
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 7.dp, bottom = 18.dp),
-                //contentPadding = PaddingValues(start = 12.dp, end = 12.dp),
-            ) {
-                items(availableDates) { availableDate ->
-                    TourDateCard(
-                        availableDate = availableDate,
-                        modifier = Modifier
-                            .padding(top = 7.dp , end = 12.dp)
-                    )
+
+            if (availableDates.isEmpty()) {
+                EmptyPlaceholder(
+                    modifier = Modifier.padding(bottom = 18.dp, top = 7.dp)
+                )
+            } else {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 7.dp, bottom = 18.dp),
+                    //contentPadding = PaddingValues(start = 12.dp, end = 12.dp),
+                ) {
+                    items(availableDates) { availableDate ->
+                        TourDateCard(
+                            availableDate = availableDate,
+                            modifier = Modifier
+                                .padding(top = 7.dp , end = 12.dp)
+                        )
+                    }
                 }
             }
+
             AppOutlinedButton(
                 buttonText = "See all schedules",
                 onClick = {
-                    onSeeAllDates()
+                    seeAll.value = true
                 }
             )
         }
     }
+
+    if (seeAll.value) {
+        ModalBottomSheet(
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White,
+            dragHandle = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = { seeAll.value = false },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Close"
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+
+                }
+            },
+            onDismissRequest = { seeAll.value = false },
+            sheetState = sheetState,
+            modifier = Modifier
+                .fillMaxHeight(0.8f) //0.693
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    // .padding(horizontal = 25.dp,)
+                    .background(Color.White)
+            ) {
+                Text(
+                    text = "All available dates",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
+                        .fillMaxWidth()
+                )
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp), //Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    items(availableDates) { availableDate ->
+                        TourDateCardWithoutButton(
+                            availableDate = availableDate,
+                            isClicked = false,
+                            onClick = {
+                            }
+                        )
+                    }
+                }
+            }
+
+        }
+    }
+
 }
 
 @Composable

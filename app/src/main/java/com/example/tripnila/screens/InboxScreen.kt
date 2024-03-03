@@ -46,11 +46,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.AppBottomNavigationBar
+import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.Inbox
 import com.example.tripnila.model.ChatViewModel
@@ -73,6 +75,7 @@ fun InboxScreen(
     LaunchedEffect(touristId) {
         inboxViewModel?.setCurrentUser(touristId)
     }
+
     var selectedItemIndex by rememberSaveable {
         mutableIntStateOf(1)
     }
@@ -101,26 +104,31 @@ fun InboxScreen(
             }
         ) {
             Divider()
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(it)
-            ) {
-                lazyPagingItems?.let { items ->
-                    items(items) { inboxItem ->
-                        if (inboxItem != null) {
-                            InboxItem(
-                                inbox = inboxItem,
-                                currentUser = touristId,
-                                onClick = { receiverId ->
-                                    onNavToChat(touristId, receiverId)
-                                }
-                            )
+
+
+            if (lazyPagingItems?.loadState?.refresh == LoadState.Loading) {
+                LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(it)
+                ) {
+                    lazyPagingItems?.let { items ->
+                        items(items) { inboxItem ->
+                            if (inboxItem != null) {
+                                InboxItem(
+                                    inbox = inboxItem,
+                                    currentUser = touristId,
+                                    onClick = { receiverId ->
+                                        onNavToChat(touristId, receiverId)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
-
         }
     }
 }

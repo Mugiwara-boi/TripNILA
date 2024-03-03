@@ -246,14 +246,17 @@ fun BusinessManagerScreen(
                     )
 
                 }
-                item {
-                    AppReviewsCard(
-                        reviews = reviews,
-                        modifier = Modifier
-                            .offset(y = (-5).dp)
-                            .padding(bottom = 7.dp)
-                    )
-                }
+//                item {
+//                    AppReviewsCard(
+//                        reviews = reviews,
+//                        onSeeAllReviews = {
+//
+//                        },
+//                        modifier = Modifier
+//                            .offset(y = (-5).dp)
+//                            .padding(bottom = 7.dp)
+//                    )
+//                }
 //                item {
 //                    BusinessBottomBookingBar()
 //                }

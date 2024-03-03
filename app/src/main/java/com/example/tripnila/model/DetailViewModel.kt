@@ -247,6 +247,44 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
         }
     }
 
+    fun likeAReview(reviewId: String, touristId: String) {
+        viewModelScope.launch {
+            repository.likeReview(reviewId, touristId)
+        }
+    }
+
+    fun addCommentToAReview(reviewId: String, touristId: String, comment: String) {
+        viewModelScope.launch {
+            repository.addComment(reviewId, touristId, comment)
+        }
+    }
+
+    suspend fun incrementViewCount(serviceId: String) {
+        try {
+            repository.incrementViewCount(serviceId, "Staycation")
+        } catch (e: Exception) {
+            Log.e("HomeViewModel", "Error checking favorite", e)
+        }
+    }
+
+
+    suspend fun isFavorite(serviceId: String, userId: String): Boolean {
+        return try {
+            repository.isFavorite(serviceId, userId)
+        } catch (e: Exception) {
+            Log.e("FavoriteViewModel", "Error checking favorite", e)
+            false
+        }
+    }
+
+    // Function to toggle favorite status
+    suspend fun toggleFavorite(serviceId: String, userId: String, serviceType: String) {
+        viewModelScope.launch {
+            repository.toggleFavorite(serviceId, userId, serviceType)
+        }
+    }
+
+
     fun getStaycationBookingByBookingId(bookingId: String) {
         viewModelScope.launch {
 

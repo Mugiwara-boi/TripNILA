@@ -27,12 +27,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Share
@@ -65,12 +70,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -102,7 +109,9 @@ import com.example.tripnila.data.AmenityBrief
 import com.example.tripnila.data.AttractionUiState
 import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.data.Staycation
+import com.example.tripnila.data.setImageForAmenity
 import com.example.tripnila.model.DetailViewModel
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -121,17 +130,20 @@ fun StaycationDetailsScreen(
     detailViewModel: DetailViewModel,
     onNavToBooking: (String, String) -> Unit,
     onBack: () -> Unit,
-    onNavToChat: (String, String) -> Unit
+    onNavToChat: (String, String) -> Unit,
+    onNavToReviewScreen: (String, String, String) -> Unit
 ) {
 
     val staycation = detailViewModel.staycation.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     val dateRangePickerState = rememberDateRangePickerState()
     val bottomSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
     val openBottomSheet = remember { mutableStateOf(false) }
+
     val isSaveButtonClicked = remember { mutableStateOf(false) }
     val titleText: MutableState<String?> = remember { mutableStateOf(null) }
     val bottomBookingText: MutableState<String?> = remember { mutableStateOf(null) }
@@ -179,6 +191,16 @@ fun StaycationDetailsScreen(
             openingTime = "9:00"
         ),
     )
+
+    var isFavorite by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(touristId) {
+        isFavorite = detailViewModel.isFavorite(staycationId, touristId)
+        detailViewModel.incrementViewCount(staycationId)
+    }
+
 
 
     LaunchedEffect(staycationId) {
@@ -325,7 +347,21 @@ fun StaycationDetailsScreen(
                                 DetailsTopAppBar(
                                     onBack = {
                                         onBack()
-                                    }
+                                    },
+                                    isFavorite = isFavorite,
+                                    onCheckedChange = { isChecked ->
+
+                                        scope.launch {
+                                            detailViewModel.toggleFavorite(
+                                                staycationId,
+                                                touristId,
+                                                "Staycation"
+                                            )
+                                            isFavorite = isChecked
+                                        }
+
+                                    },
+
                                 )
 
                                 Card(
@@ -410,6 +446,9 @@ fun StaycationDetailsScreen(
                                     totalReviews = totalReviews,
                                     averageRating = averageRating,
                                     reviews = reviews,
+                                    onSeeAllReviews = {
+                                        onNavToReviewScreen(touristId, staycationId, "Staycation")
+                                    },
                                     modifier = Modifier
                                         .offset(y = (-5).dp)
                                         .padding(bottom = 12.dp)
@@ -421,7 +460,6 @@ fun StaycationDetailsScreen(
                         staycation.value?.let { staycation ->
                             StaycationAmenitiesCard(
                                 staycation = staycation,
-                                // amenities = amenities,
                                 modifier = Modifier
                                     .offset(y = (-5).dp)
                                     .padding(bottom = 12.dp)
@@ -438,6 +476,7 @@ fun StaycationDetailsScreen(
                     }
                 }
             }
+
 
             if (openBottomSheet.value) {
                 ModalBottomSheet(
@@ -971,13 +1010,21 @@ fun AttractionsNearbyCard(modifier: Modifier = Modifier, attractionUiStates: Lis
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StaycationAmenitiesCard(
     modifier: Modifier = Modifier,
     staycation: Staycation? = null,
     withEditButton: Boolean = false,
 ) {
+
     val amenities = staycation?.amenities?.take(6) ?: emptyList()
+
+    val allAmenities = staycation?.amenities
+
+    val seeAllAmenities = remember { mutableStateOf(false) }
+    val amenitiesSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
 
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -998,56 +1045,130 @@ fun StaycationAmenitiesCard(
                 ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
+            Text(
+                text = "Amenities and offers",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .padding(bottom = 4.dp)
+                    .align(Alignment.Start)
+            )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                userScrollEnabled = false,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+                modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .fillMaxWidth()
+                    .height(100.dp)
+                   // .weight(1f)
             ) {
-                Text(
-                    text = "Amenities and offers",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier
-                        .padding(bottom = 4.dp)
-                )
-                if (withEditButton) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    AppOutlinedButtonWithBadge(
-                        buttonLabel = "Edit",
-                        modifier = Modifier
-                            .width(40.dp)
-                    )
-                }
-            }
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                val numRows = (amenities.size + 1) / 2
-
-                for (row in 0 until numRows) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start,
-                    ) {
-                        val startIndex = row * 2
-                        val endIndex = minOf(startIndex + 2, amenities.size)
-
-                        for (i in startIndex until endIndex) {
-                            StaycationAmenityDetailWithoutCount(amenity = amenities[i])
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
+                items(amenities) {  amenity ->
+                    StaycationAmenityDetailWithoutCount(amenity = amenity)
                 }
             }
             AppOutlinedButton(
                 buttonText = "See all amenities",
                 onClick = {
-
+                    seeAllAmenities.value = true
                 },
-                modifier = Modifier
-                    .padding(top = 12.dp)
+//                modifier = Modifier
+//                    .padding(top = 12.dp)
             )
         }
     }
+
+
+    //            Column(
+//                modifier = Modifier.fillMaxWidth()
+//            ) {
+//                val numRows = (amenities.size + 1) / 2
+//
+//                for (row in 0 until numRows) {
+//                    Row(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        horizontalArrangement = Arrangement.Start,
+//                    ) {
+//                        val startIndex = row * 2
+//                        val endIndex = minOf(startIndex + 2, amenities.size)
+//
+//                        for (i in startIndex until endIndex) {
+//                            StaycationAmenityDetailWithoutCount(amenity = amenities[i])
+//                            Spacer(modifier = Modifier.weight(1f))
+//                        }
+//                    }
+//                }
+//            }
+
+
+    if (seeAllAmenities.value) {
+        ModalBottomSheet(
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White,
+            dragHandle = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = { seeAllAmenities.value = false },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Close"
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+
+                }
+            },
+            onDismissRequest = { seeAllAmenities.value = false },
+            sheetState = amenitiesSheetState,
+            modifier = Modifier
+                .fillMaxHeight(0.8f) //0.693
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    // .padding(horizontal = 25.dp,)
+                    .background(Color.White)
+            ) {
+                Text(
+                    text = "Amenities and offers",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
+                        .fillMaxWidth()
+                )
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    items(allAmenities!!) {  amenity ->
+                        StaycationAmenityDetailWithoutCount(
+                            amenity = amenity,
+                            modifier = Modifier
+                                .padding(vertical = 3.dp)
+                        )
+                    }
+                }
+            }
+
+        }
+    }
+
+
 }
 
 
@@ -2103,6 +2224,8 @@ fun BookingFilledButton(
 @Composable
 fun DetailsTopAppBar(
     onBack: () -> Unit,
+    isFavorite: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ){
   //  var isFavorite by remember { mutableStateOf(false) }
@@ -2126,32 +2249,20 @@ fun DetailsTopAppBar(
             navigationIconContentColor = Color.White,
             actionIconContentColor = Color.White
         ),
-//        actions = {
-//            IconButton(onClick = { /*TODO*/ }) {
-//                Icon(
-//                    imageVector = Icons.Outlined.Share,
-//                    contentDescription = "Share",
-//                )
-//            }
-//            Spacer(
-//                modifier = Modifier
-//                    .width(15.dp)
-//            )
-//
-//            IconToggleButton(
-//                checked = isFavorite,
-//                onCheckedChange = {
-//                    isFavorite = !isFavorite
-//                }
-//            ) {
-//                Icon(
-//                    imageVector = if(isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-//                    contentDescription = "",
-//                    tint = if(isFavorite) Color.Red else Color.White
-//
-//                )
-//            }
-//        }
+        actions = {
+            IconToggleButton(
+                checked = isFavorite,
+                onCheckedChange = {
+                    onCheckedChange(it)
+                }
+            ) {
+                Image(
+                    imageVector = ImageVector.vectorResource(id = R.drawable.favorite_off),
+                    contentDescription = "",
+                    colorFilter = if(isFavorite) ColorFilter.tint(Color(220, 20, 60)) else null
+                )
+            }
+        }
 
     )
 }
@@ -2236,15 +2347,20 @@ fun StaycationAmenityDetailWithoutCount(amenity: Amenity, modifier: Modifier = M
     Box(
         modifier = modifier
             .width(148.dp)
-            .padding(
-                //horizontal = 5.dp,
-                vertical = 3.dp
-            )
+
     ) {
-        Row {
-            Image(
-                imageVector = if (amenity.amenityIcon == 0) ImageVector.vectorResource(id = R.drawable.wifi) else ImageVector.vectorResource(id = amenity.amenityIcon),
-                contentDescription = amenity.amenityName
+        Row (
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(30.dp),
+            verticalAlignment = Alignment.CenterVertically
+
+        ) {
+            Icon(
+                imageVector = ImageVector.vectorResource(setImageForAmenity(amenity.amenityName)),
+                contentDescription = amenity.amenityName,
+                tint = Color(0xFF333333),
+                modifier = Modifier.size(24.dp)
             )
             Text(
                 text = " ${amenity.amenityName}",
@@ -2377,6 +2493,9 @@ private fun StaycationDetailsPreview() {
 
         },
         onNavToChat = { _, _ ->
+
+        },
+        onNavToReviewScreen = { _, _, _ ->
 
         }
     )

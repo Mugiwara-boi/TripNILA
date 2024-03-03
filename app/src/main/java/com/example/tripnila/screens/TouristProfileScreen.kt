@@ -7,10 +7,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +30,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +38,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -50,16 +55,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.tripnila.R
+import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.common.Orange
 import com.example.tripnila.common.TouristBottomNavigationBar
 import com.example.tripnila.data.ProfileData
 import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.ProfileViewModel
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -74,6 +82,7 @@ fun TouristProfileScreen(
    // onNavToEditProfile: (String) -> Unit,
     onNavToVerifyAccount: (String) -> Unit,
     onNavToHostDashboard: (String) -> Unit,
+    onNavToFavorite: (String) -> Unit,
     onLogout: () -> Unit,
 ){
     Log.d("ID", "$touristId")
@@ -83,7 +92,11 @@ fun TouristProfileScreen(
         Log.d("Fetching", "")
     }
 
+    val isLoading = profileViewModel?.isLoading?.collectAsState()
+    val isUserVerified = profileViewModel?.isUserVerified?.collectAsState( initial = null)
+
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     val currentUser = profileViewModel?.currentUser?.collectAsState()?.value
 
@@ -99,209 +112,329 @@ fun TouristProfileScreen(
         mutableIntStateOf(2)
     }
 
+    var openDialog = remember { mutableStateOf(false) }
+
+    if (isUserVerified?.value == true) {
+        onNavToHostDashboard(touristId)
+    } else if (isUserVerified?.value == false) {
+        openDialog.value = true
+    }
 
     Surface(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Scaffold(
-            bottomBar = {
-                navController?.let {
-                    TouristBottomNavigationBar(
-                        touristId = touristId,
-                        navController = it,
-                        selectedItemIndex = selectedItemIndex,
-                        onItemSelected = { newIndex ->
-                            selectedItemIndex = newIndex
-                        }
-                    )
-                }
-            }
-        ) {
-            LazyColumn(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(it)
-            ) {
-                item {
-                    AppTopBarWithIcon(
-                        headerText = "Profile",
-                        headerIcon = ImageVector.vectorResource(id = R.drawable.logout),
-                        onLogout = {
-                            loginViewModel?.updateIsSuccessLogin(false)
-                            onLogout()
-                        }
-
-                    )
-                }
-                item{
-                    UserProfileComposable(
-                        profileData = currentProfileData,
-                        modifier = Modifier.padding(horizontal = horizontalPaddingValue)
-                    )
-                }
-                item{
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 20.dp, bottom = 10.dp)
-                            .padding(horizontal = horizontalPaddingValue),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        AppFilledCard(
-                            cardText = "Bookings",
-                            onClick = {
-                                onNavToBookingHistory(touristId)
-                            }
-                        )
-                        AppOutlinedCard(
-                            cardText = "Preferences",
-                            onClick = {
-                                onNavToPreference(touristId)
-                            }
-                        )
-                        AppFilledCard(
-                            cardText = "Itinerary",
-                            onClick = {
-                                // sa touristId na variable nakastore yung Id ng Current User
-                                // Profile Screen -> Itinerary Planner
-                                Toast.makeText(
-                                    context,
-                                    "TouristId: $touristId",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+        if (isLoading!!.value){
+            LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
+        } else {
+            Scaffold(
+                bottomBar = {
+                    navController?.let {
+                        TouristBottomNavigationBar(
+                            touristId = touristId,
+                            navController = it,
+                            selectedItemIndex = selectedItemIndex,
+                            onItemSelected = { newIndex ->
+                                selectedItemIndex = newIndex
                             }
                         )
                     }
                 }
-                item{
-                    AppOutlinedCard(
-                        cardText = "Verify your account",
-                        onClick = {
-                              onNavToVerifyAccount(touristId)
-                        },
-                        modifier = Modifier
-                            .padding(horizontal = horizontalPaddingValue)
-                    )
-                }
-                item {
-                    Text(
-                        text = "Settings",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier
-                            .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
-                            .fillMaxWidth()
-                            .wrapContentWidth(align = Alignment.Start)
+            ) {
+                LazyColumn(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(it)
+                ) {
+                    item {
+                        AppTopBarWithIcon(
+                            headerText = "Profile",
+                            headerIcon = ImageVector.vectorResource(id = R.drawable.logout),
+                            onLogout = {
+                                loginViewModel?.updateIsSuccessLogin(false)
+                                onLogout()
+                            }
 
-                    )
-                }
-                item {
-                    OptionsRow(
-                        icon = R.drawable.notification,
-                        rowText = "Notification",
-                        onClick = {
-                            /*TODO*/
-                        },
-                        modifier = Modifier
-                            .padding(horizontal = horizontalPaddingValue)
-                    )
-                }
-                item {
-                    OptionsRow(
-                        icon = R.drawable.payment,
-                        rowText = "Wallet",
-                        onClick = {
-                            onNavToTouristWallet(touristId)
-                        },
-                        modifier = Modifier
-                            .padding(horizontal = horizontalPaddingValue)
-                    )
-                }
-                item {
-                    OptionsRow(
-                        icon = R.drawable.privacy,
-                        rowText = "Privacy",
-                        onClick = {
-                            /*TODO*/
-                        },
-                        modifier = Modifier
-                            .padding(horizontal = horizontalPaddingValue)
-                    )
-                }
-                item {
-                    Text(
-                        text = "Hosting",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier
-                            .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
-                            .fillMaxWidth()
-                            .wrapContentWidth(align = Alignment.Start)
-                    )
-                }
-                item {
-                    OptionsRow(
-                        icon = R.drawable.resource_switch,
-                        rowText = "Switch to hosting",
-                        onClick = {
-                           onNavToHostDashboard(touristId)
-                        },
-                        modifier = Modifier
+                        )
+                    }
+                    item{
+                        UserProfileComposable(
+                            profileData = currentProfileData,
+                            modifier = Modifier.padding(horizontal = horizontalPaddingValue)
+                        )
+                    }
+                    item{
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 20.dp, bottom = 10.dp)
+                                .padding(horizontal = horizontalPaddingValue),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            AppFilledCard(
+                                cardText = "Bookings",
+                                onClick = {
+                                    onNavToBookingHistory(touristId)
+                                }
+                            )
+                            AppOutlinedCard(
+                                cardText = "Preferences",
+                                onClick = {
+                                    onNavToPreference(touristId)
+                                }
+                            )
+                            AppFilledCard(
+                                cardText = "Itinerary",
+                                onClick = {
+                                    // sa touristId na variable nakastore yung Id ng Current User
+                                    // Profile Screen -> Itinerary Planner
+                                    Toast.makeText(
+                                        context,
+                                        "TouristId: $touristId",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            )
+                        }
+                    }
+                    item{
+                        Row(
+                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                //.padding(top = 20.dp, bottom = 10.dp)
+//                                .padding(horizontal = horizontalPaddingValue)
+                            ,
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            AppOutlinedCard(
+                                cardText = "Favorites",
+                                onClick = {
+                                    onNavToFavorite(touristId)
+                                },
+                                modifier = Modifier
+                                   // .padding(horizontal = horizontalPaddingValue)
+                            )
+
+                            AppOutlinedCard(
+                                cardText = "Verify your account",
+                                onClick = {
+                                    onNavToVerifyAccount(touristId)
+                                },
+                                modifier = Modifier
+                                    .padding(horizontal = horizontalPaddingValue)
+                            )
+                        }
+                    }
+                    item {
+                        Text(
+                            text = "Settings",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
+                                .fillMaxWidth()
+                                .wrapContentWidth(align = Alignment.Start)
+
+                        )
+                    }
+                    item {
+                        OptionsRow(
+                            icon = R.drawable.notification,
+                            rowText = "Notification",
+                            onClick = {
+                                /*TODO*/
+                            },
+                            modifier = Modifier
                                 .padding(horizontal = horizontalPaddingValue)
-                    )
-                }
-                item {
-                    Text(
-                        text = "Legal",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier
-                            .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
-                            .fillMaxWidth()
-                            .wrapContentWidth(align = Alignment.Start)
-                    )
+                        )
+                    }
+                    item {
+                        OptionsRow(
+                            icon = R.drawable.payment,
+                            rowText = "Wallet",
+                            onClick = {
+                                onNavToTouristWallet(touristId)
+                            },
+                            modifier = Modifier
+                                .padding(horizontal = horizontalPaddingValue)
+                        )
+                    }
+                    item {
+                        OptionsRow(
+                            icon = R.drawable.privacy,
+                            rowText = "Privacy",
+                            onClick = {
+                                /*TODO*/
+                            },
+                            modifier = Modifier
+                                .padding(horizontal = horizontalPaddingValue)
+                        )
+                    }
+                    item {
+                        Text(
+                            text = "Hosting",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
+                                .fillMaxWidth()
+                                .wrapContentWidth(align = Alignment.Start)
+                        )
+                    }
 
-                }
-                item {
-                    OptionsRow(
-                        icon = R.drawable.document,
-                        rowText = "Terms of Service",
-                        onClick = {
-                            /*TODO*/
-                        },
-                        modifier = Modifier
-                            .padding(horizontal = horizontalPaddingValue)
-                    )
-                }
-                item {
-                    OptionsRow(
-                        icon = R.drawable.document,
-                        rowText = "Privacy Policy",
-                        onClick = {
-                            /*TODO*/
-                        },
-                        modifier = Modifier
-                            .padding(horizontal = horizontalPaddingValue)
-                    )
-                }
-                item {
-                    Text(
-                        text = "Version 1.0 (Beta)",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color(0xFF999999),
-                        modifier = Modifier
-                            .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
-                            .fillMaxWidth()
-                            .wrapContentWidth(align = Alignment.Start)
-                    )
+
+//    LaunchedEffect(isUserVerified?.value) {
+//        if (isUserVerified != null) {
+//            if (isUserVerified.value == true) {
+//                onNavToHostDashboard(touristId)
+//            } else if (isUserVerified.value == false) {
+//                openDialog.value = true
+//            }
+//        }
+//    }
+
+                    item {
+                        OptionsRow(
+                            icon = R.drawable.resource_switch,
+                            rowText = "Switch to hosting",
+                            onClick = {
+
+                                scope.launch {
+                                    profileViewModel.isUserVerified()
+                                }
+
+
+
+
+
+                              //  onNavToHostDashboard(touristId)
+                            },
+                            modifier = Modifier
+                                .padding(horizontal = horizontalPaddingValue)
+                        )
+                    }
+                    item {
+                        Text(
+                            text = "Legal",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
+                                .fillMaxWidth()
+                                .wrapContentWidth(align = Alignment.Start)
+                        )
+
+                    }
+                    item {
+                        OptionsRow(
+                            icon = R.drawable.document,
+                            rowText = "Terms of Service",
+                            onClick = {
+                                /*TODO*/
+                            },
+                            modifier = Modifier
+                                .padding(horizontal = horizontalPaddingValue)
+                        )
+                    }
+                    item {
+                        OptionsRow(
+                            icon = R.drawable.document,
+                            rowText = "Privacy Policy",
+                            onClick = {
+                                /*TODO*/
+                            },
+                            modifier = Modifier
+                                .padding(horizontal = horizontalPaddingValue)
+                        )
+                    }
+                    item {
+                        Text(
+                            text = "Version 1.0 (Beta)",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF999999),
+                            modifier = Modifier
+                                .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
+                                .fillMaxWidth()
+                                .wrapContentWidth(align = Alignment.Start)
+                        )
+                    }
+
                 }
 
             }
 
+            if (openDialog.value) {
+                Dialog(onDismissRequest = {
+                    profileViewModel.setToNull()
+                    openDialog.value = false
+
+                }) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 20.dp
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            //.height(200.dp)
+                            .padding(20.dp),
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+
+                            //   var text =
+
+                            Text(
+                                text = "Please verify your account first before proceeding.",
+                                color = Color.Black,
+                                fontSize = 18.sp,
+                                modifier = Modifier
+                                    .padding(horizontal = 20.dp)
+                                    .padding(top = 25.dp),
+                            )
+                            Spacer(modifier = Modifier.height(30.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                //   horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+
+                                TextButton(
+                                    onClick = {
+                                        profileViewModel.setToNull()
+                                        openDialog.value = false
+
+                                    },
+                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                ) {
+                                    Text("Dismiss", color = Color.Black)
+                                }
+
+                                Spacer(modifier = Modifier.weight(1f))
+                                TextButton(
+                                    onClick = {
+                                        profileViewModel.setToNull()
+                                        openDialog.value = false
+                                        onNavToVerifyAccount(touristId)
+                                    },
+                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                ) {
+                                    Text("Verify", color = Color.Black)
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
         }
+
     }
 
 }
@@ -503,6 +636,9 @@ fun ProfileScreenPreview(){
 
         },
         onLogout = {
+
+        },
+        onNavToFavorite = {
 
         },
     )

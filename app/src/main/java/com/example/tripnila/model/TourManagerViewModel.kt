@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.data.Tour
+import com.example.tripnila.data.TourBooking
 import com.example.tripnila.data.TourSchedule
 import com.example.tripnila.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,19 @@ class TourManagerViewModel(private val repository: UserRepository = UserReposito
 
     private val _isStateRetrieved = MutableStateFlow<Boolean?>(false)
     val isStateRetrieved: StateFlow<Boolean?> = _isStateRetrieved
+
+    private val _tourBookings = MutableStateFlow<List<TourBooking>>(emptyList())
+    val tourBookings = _tourBookings.asStateFlow()
+
+
+    fun getAllReviewsByTourId(tourId: String) {
+        viewModelScope.launch {
+
+            val tourBooking = repository.getAllTourReviewsThroughBookings(tourId)
+            _tourBookings.value = tourBooking
+
+        }
+    }
 
     fun setSchedule(tourSchedule: TourSchedule){
         viewModelScope.launch {

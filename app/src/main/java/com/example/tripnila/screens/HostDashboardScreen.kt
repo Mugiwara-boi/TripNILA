@@ -57,9 +57,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.AppBottomNavigationBar
+import com.example.tripnila.common.HostBottomNavigationBar
 import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.HostProperty
@@ -85,6 +87,7 @@ fun HostDashboardScreen(
     onNavToTourManager: (String, String) -> Unit,
     onNavToInsights: (String) -> Unit,
     onNavToHostWallet: (String) -> Unit,
+    navController: NavHostController,
 ){
 
     Log.d("TouristId", "$touristId")
@@ -141,7 +144,7 @@ fun HostDashboardScreen(
     Log.d("TourProperties", "$tourProperties")
 
 
-    var selectedItemIndex by rememberSaveable { mutableStateOf(3) }
+    var selectedItemIndex by rememberSaveable { mutableStateOf(0) }
 
     Surface(
         modifier = Modifier
@@ -149,12 +152,17 @@ fun HostDashboardScreen(
     ) {
         Scaffold(
             bottomBar = {
-                AppBottomNavigationBar(
-                    selectedItemIndex = selectedItemIndex,
-                    onItemSelected = { newIndex ->
-                        selectedItemIndex = newIndex
-                    }
-                )
+                if (host != null) {
+                    HostBottomNavigationBar(
+                        hostId = host.hostId,
+                        selectedItemIndex = selectedItemIndex,
+                        onItemSelected = { newIndex ->
+                            selectedItemIndex = newIndex
+                        },
+                        navController = navController
+                    )
+                }
+
             }
         ) {
 

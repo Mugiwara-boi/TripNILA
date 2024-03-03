@@ -2,11 +2,10 @@ package com.example.tripnila.model
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.example.tripnila.data.HomePagingItem
 import com.example.tripnila.data.Inbox
 import com.example.tripnila.repository.UserRepository
 
-class InboxPagingSource(
+class HostInboxPagingSource(
     private val touristId: String,
     private val repository: UserRepository,
 ) : PagingSource<Int, Inbox>() {

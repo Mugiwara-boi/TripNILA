@@ -15,8 +15,10 @@ import com.example.tripnila.model.BookingHistoryViewModel
 import com.example.tripnila.model.BusinessManagerViewModel
 import com.example.tripnila.model.ChatViewModel
 import com.example.tripnila.model.DetailViewModel
+import com.example.tripnila.model.FavoriteViewModel
 import com.example.tripnila.model.HomeViewModel
 import com.example.tripnila.model.HostDashboardViewModel
+import com.example.tripnila.model.HostInboxViewModel
 import com.example.tripnila.model.HostTourViewModel
 import com.example.tripnila.model.InboxViewModel
 import com.example.tripnila.model.InsightViewModel
@@ -25,11 +27,13 @@ import com.example.tripnila.model.LocationViewModelFactory
 import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.PreferenceViewModel
 import com.example.tripnila.model.ProfileViewModel
+import com.example.tripnila.model.ReviewViewModel
 import com.example.tripnila.model.SignupViewModel
 import com.example.tripnila.model.StaycationManagerViewModel
 import com.example.tripnila.model.TourDetailsViewModel
 import com.example.tripnila.model.TourManagerViewModel
 import com.example.tripnila.model.TouristWalletViewModel
+import com.example.tripnila.model.VerificationViewModel
 import com.example.tripnila.screens.AccountVerificationScreen
 import com.example.tripnila.screens.AddBusinessScreen10
 import com.example.tripnila.screens.AddBusinessScreen4
@@ -55,14 +59,19 @@ import com.example.tripnila.screens.BookingHistoryScreen
 import com.example.tripnila.screens.BusinessManagerScreen
 import com.example.tripnila.screens.CashInScreen
 import com.example.tripnila.screens.ChatScreen
+import com.example.tripnila.screens.FavoriteScreen
 import com.example.tripnila.screens.HomeScreen
+import com.example.tripnila.screens.HostChatScreen
 import com.example.tripnila.screens.HostDashboardScreen
+import com.example.tripnila.screens.HostInboxScreen
+import com.example.tripnila.screens.HostProfileScreen
 import com.example.tripnila.screens.HostWalletScreen
 import com.example.tripnila.screens.InboxScreen
 import com.example.tripnila.screens.InsightsScreen
 import com.example.tripnila.screens.ItineraryScreen
 import com.example.tripnila.screens.LoginScreen
 import com.example.tripnila.screens.PreferenceScreen
+import com.example.tripnila.screens.ReviewsScreen
 import com.example.tripnila.screens.SignupScreen
 import com.example.tripnila.screens.StaycationBookingRescheduleScreen
 import com.example.tripnila.screens.StaycationBookingScreen
@@ -94,8 +103,11 @@ enum class HomeRoutes {
     EditProfile,
     AccountVerification,
     Preference,
+    Favorite,
 
     StaycationReschedule,
+
+    Review,
 
     TourDetails,
     TourDates,
@@ -108,6 +120,10 @@ enum class HomeRoutes {
 
 enum class HostRoutes {
     Dashboard,
+    HostInbox,
+    HostProfile,
+    HostChat,
+
     AddListing,
     AddListing1,
     AddListing2,
@@ -170,7 +186,11 @@ fun Navigation(
     inboxViewModel: InboxViewModel,
     chatViewModel: ChatViewModel,
     insightViewModel: InsightViewModel,
-    tourDetailsViewModel: TourDetailsViewModel
+    tourDetailsViewModel: TourDetailsViewModel,
+    reviewViewModel: ReviewViewModel,
+    hostInboxViewModel: HostInboxViewModel,
+    verificationViewModel: VerificationViewModel,
+    favoriteViewModel: FavoriteViewModel
 ) {
 
     NavHost(
@@ -181,12 +201,14 @@ fun Navigation(
         homeGraph(
             navController = navController, homeViewModel = homeViewModel, detailViewModel = detailViewModel,
             profileViewModel = profileViewModel, loginViewModel = loginViewModel, bookingHistoryViewModel = bookingHistoryViewModel,
-            itineraryViewModel = itineraryViewModel, inboxViewModel = inboxViewModel, chatViewModel = chatViewModel, tourDetailsViewModel = tourDetailsViewModel
+            itineraryViewModel = itineraryViewModel, inboxViewModel = inboxViewModel, chatViewModel = chatViewModel, tourDetailsViewModel = tourDetailsViewModel,
+            reviewViewModel = reviewViewModel, verificationViewModel = verificationViewModel, favoriteViewModel = favoriteViewModel
         )
         hostGraph(
             navController = navController, hostDashboardViewModel = hostDashboardViewModel, addListingViewModel = addListingViewModel, locationViewModelFactory = locationViewModelFactory,
             hostTourViewModel = hostTourViewModel, addBusinessViewModel = addBusinessViewModel, staycationManagerViewModel = staycationManagerViewModel,
-            tourManagerViewModel = tourManagerViewModel, businessManagerViewModel = businessManagerViewModel, insightViewModel = insightViewModel
+            tourManagerViewModel = tourManagerViewModel, businessManagerViewModel = businessManagerViewModel, insightViewModel = insightViewModel, hostInboxViewModel = hostInboxViewModel,
+            chatViewModel = chatViewModel, profileViewModel = profileViewModel, loginViewModel = loginViewModel
         )
     }
 }
@@ -244,6 +266,9 @@ fun NavGraphBuilder.homeGraph(
     inboxViewModel: InboxViewModel,
     chatViewModel: ChatViewModel,
     tourDetailsViewModel: TourDetailsViewModel,
+    reviewViewModel: ReviewViewModel,
+    verificationViewModel: VerificationViewModel,
+    favoriteViewModel: FavoriteViewModel
 ) {
     navigation(startDestination = HomeRoutes.Home.name, route = NestedRoutes.Main.name) {
         composable(
@@ -285,9 +310,33 @@ fun NavGraphBuilder.homeGraph(
                 },
                 onNavToChat = { senderTouristId, receiverTouristId ->
                     navigateToChat(navController, senderTouristId, receiverTouristId)
+                },
+                onNavToReviewScreen = { touristId, serviceId, serviceType ->
+                    navigateToReview(navController, touristId, serviceId, serviceType)
                 }
             )
         }
+
+        composable(
+            route = HomeRoutes.Review.name + "/{touristId}/{serviceId}/{serviceType}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType },
+                navArgument("serviceId") { type = NavType.StringType },
+                navArgument("serviceType") { type = NavType.StringType }
+            )
+        ) {entry ->
+            ReviewsScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                serviceId = entry.arguments?.getString("serviceId") ?: "",
+                serviceType = entry.arguments?.getString("serviceType") ?: "",
+                reviewViewModel = reviewViewModel,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+
 
         composable(
             route = HomeRoutes.Booking.name + "/{touristId}/{staycationId}",
@@ -344,14 +393,14 @@ fun NavGraphBuilder.homeGraph(
         }
 
         composable(
-            route = HomeRoutes.Chat.name + "/{senderTouristId}/{receiverTouristId}",
+            route = HostRoutes.HostChat.name + "/{senderTouristId}/{receiverTouristId}",
             arguments = listOf(
                 navArgument("senderTouristId") { type = NavType.StringType},
                 navArgument("receiverTouristId") { type = NavType.StringType},
               //  navArgument("chatId") { type = NavType.StringType},
             )
         ) {entry ->
-            ChatScreen(
+            HostChatScreen(
                 chatViewModel = chatViewModel,
                 senderTouristId = entry.arguments?.getString("senderTouristId") ?: "",
                //chatId = entry.arguments?.getString("chatId") ?: "",
@@ -404,7 +453,13 @@ fun NavGraphBuilder.homeGraph(
         ) {entry ->
             AccountVerificationScreen(
                 touristId = entry.arguments?.getString("touristId") ?: "",
-                //  navController = navController
+                verificationViewModel = verificationViewModel,
+                onBack = {
+                    navController.popBackStack()
+                },
+                onNavToProfile = { touristId ->
+                    navigateToProfileAndPop(navController, touristId)
+                }
             )
         }
 
@@ -425,7 +480,8 @@ fun NavGraphBuilder.homeGraph(
                 onNavToPreference = { touristId -> navigateToEditPreference(navController, touristId) },
                 onNavToVerifyAccount = { touristId -> navigateToVerifyAccount(navController, touristId) },
                 onNavToHostDashboard = { touristId -> navigateToHost(navController, touristId)},
-                onNavToTouristWallet = { touristId -> navigateToTouristWallet(navController, touristId) }
+                onNavToTouristWallet = { touristId -> navigateToTouristWallet(navController, touristId) },
+                onNavToFavorite = { touristId -> navigateToFavorite(navController, touristId)}
             )
         }
 
@@ -505,6 +561,27 @@ fun NavGraphBuilder.homeGraph(
         }
 
         composable(
+            route = HomeRoutes.Favorite.name + "/{touristId}",
+            arguments = listOf(
+                navArgument("touristId") { type = NavType.StringType },
+            )
+        ) {entry ->
+            FavoriteScreen(
+                touristId = entry.arguments?.getString("touristId") ?: "",
+                favoriteViewModel = favoriteViewModel,
+                onBack = {
+                    navController.popBackStack()
+                },
+                onNavToDetailScreen = { touristId, staycationId ->
+                    navigateToDetail(navController, touristId, staycationId)
+                },
+                onNavToTourDetails = { touristId, tourId ->
+                    navigateToTourDetails(navController, touristId, tourId)
+                },
+            )
+        }
+
+        composable(
             route = HomeRoutes.TourBooking.name + "/{touristId}",
             arguments = listOf(
                 navArgument("touristId") { type = NavType.StringType },
@@ -534,6 +611,10 @@ fun NavGraphBuilder.hostGraph(
     tourManagerViewModel: TourManagerViewModel,
     businessManagerViewModel: BusinessManagerViewModel,
     insightViewModel: InsightViewModel,
+    hostInboxViewModel: HostInboxViewModel,
+    chatViewModel: ChatViewModel,
+    profileViewModel: ProfileViewModel,
+    loginViewModel: LoginViewModel
 ) {
     navigation(startDestination = HostRoutes.Dashboard.name, route = NestedRoutes.Host.name) {
         composable(
@@ -570,7 +651,8 @@ fun NavGraphBuilder.hostGraph(
                 },
                 onNavToHostWallet = { hostId ->
                     navigateToHostWallet(navController, hostId)
-                }
+                },
+                navController = navController
             )
         }
         composable(
@@ -976,6 +1058,65 @@ fun NavGraphBuilder.hostGraph(
             )
         }
 
+        composable(
+            route = HostRoutes.HostInbox.name + "/{hostId}",
+            arguments = listOf(
+                navArgument("hostId") { type = NavType.StringType},
+            )
+        ) {entry ->
+            HostInboxScreen(
+                hostId = entry.arguments?.getString("hostId") ?: "",
+                hostInboxViewModel = hostInboxViewModel,
+                onNavToChat = { senderTouristId, receiverTouristId ->
+                    navigateToChat(navController, senderTouristId, receiverTouristId)
+                },
+                navController = navController
+
+            )
+        }
+
+
+
+        composable(
+            route = HostRoutes.HostProfile.name + "/{hostId}",
+            arguments = listOf(
+                navArgument("hostId") { type = NavType.StringType},
+            )
+        ) {entry ->
+            HostProfileScreen(
+                hostId = entry.arguments?.getString("hostId") ?: "",
+                loginViewModel = loginViewModel,
+                profileViewModel = profileViewModel,
+                onLogout = {
+                    navigateToLogin(navController)
+                },
+                onNavToHome = { touristId ->
+                    navigateToHome(navController, touristId)
+                },
+                navController = navController
+
+            )
+        }
+
+        composable(
+            route = HomeRoutes.Chat.name + "/{senderTouristId}/{receiverTouristId}",
+            arguments = listOf(
+                navArgument("senderTouristId") { type = NavType.StringType},
+                navArgument("receiverTouristId") { type = NavType.StringType},
+                //  navArgument("chatId") { type = NavType.StringType},
+            )
+        ) {entry ->
+            ChatScreen(
+                chatViewModel = chatViewModel,
+                senderTouristId = entry.arguments?.getString("senderTouristId") ?: "",
+                //chatId = entry.arguments?.getString("chatId") ?: "",
+                receiverTouristId = entry.arguments?.getString("receiverTouristId") ?: "",
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
 
         composable(
             route = HostRoutes.Insights.name + "/{hostId}",
@@ -1020,6 +1161,25 @@ fun NavGraphBuilder.hostGraph(
 
 
 // Navigation functions
+
+private fun navigateToProfileAndPop(navController: NavHostController, touristId: String) {
+    navController.navigate("${HomeRoutes.Profile.name}/$touristId") {
+        launchSingleTop = true
+        popUpTo(0) { inclusive = true }
+    }
+}
+
+private fun navigateToFavorite(navController: NavHostController, touristId: String) {
+    navController.navigate("${HomeRoutes.Favorite.name}/$touristId") {
+        launchSingleTop = true
+    }
+}
+
+private fun navigateToReview(navController: NavHostController, touristId: String, serviceId: String, serviceType: String) {
+    navController.navigate("${HomeRoutes.Review.name}/$touristId/$serviceId/$serviceType") {
+        launchSingleTop = true
+    }
+}
 
 private fun navigateToReschedule(navController: NavHostController, touristId: String, staycationBookingId: String ) {
     navController.navigate("${HomeRoutes.StaycationReschedule.name}/$touristId/$staycationBookingId") {

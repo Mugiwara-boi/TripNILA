@@ -162,11 +162,30 @@ data class Review(
     val serviceType: String = "",
     val bookingId: String = "",
     val reviewer: Tourist = Tourist(),
+    val reviewerId: String = "",
     //val bookingId: StaycationBooking? = null,
     val rating: Int = 0,
     val comment: String = "",
     val reviewDate: Date? = null,
-    val reviewPhotos: List<ReviewPhoto> = emptyList()
+    val reviewPhotos: List<ReviewPhoto> = emptyList(),
+    val comments: List<Comment> = emptyList(),
+    val likes: List<Like> = emptyList(),
+)
+
+data class Comment(
+    val commentId: String,
+    val comment: String,
+    val commentDate: String,
+    val reviewId: String,
+    val commenterId: String,
+    val commenter: Tourist
+)
+
+
+data class Like(
+    val likeId: String,
+    val reviewId: String,
+    val touristId: String
 )
 
 
@@ -203,7 +222,8 @@ data class ReviewPhoto(
     val reviewPhotoId: String = "",
     val reviewId: String = "",
     val reviewPhoto: String? = null,
-    val reviewUri: Uri? = null
+    val reviewUri: Uri? = null,
+    val reviewUrl: String = ""
 )
 
 

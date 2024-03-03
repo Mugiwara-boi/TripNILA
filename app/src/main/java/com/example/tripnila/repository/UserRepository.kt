@@ -11,16 +11,19 @@ import com.example.tripnila.data.Amenity
 import com.example.tripnila.data.BookingInfo
 import com.example.tripnila.data.Business
 import com.example.tripnila.data.Chat
+import com.example.tripnila.data.Comment
 import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.HomePagingItem
 import com.example.tripnila.data.Host
 import com.example.tripnila.data.Inbox
+import com.example.tripnila.data.Like
 import com.example.tripnila.data.Message
 import com.example.tripnila.data.Offer
 import com.example.tripnila.data.Photo
 import com.example.tripnila.data.Preference
 import com.example.tripnila.data.Promotion
 import com.example.tripnila.data.Review
+import com.example.tripnila.data.ReviewPhoto
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.data.StaycationAvailability
 import com.example.tripnila.data.StaycationBooking
@@ -30,8 +33,10 @@ import com.example.tripnila.data.TourBooking
 import com.example.tripnila.data.TourSchedule
 import com.example.tripnila.data.Tourist
 import com.example.tripnila.data.TouristWallet
+import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -60,17 +65,23 @@ import kotlin.experimental.and
 class UserRepository {
     private val db = FirebaseFirestore.getInstance()
     private val touristCollection = db.collection("tourist")
+    private val touristVerificationCollection = db.collection("tourist_verification")
     private val hostCollection = db.collection("host")
     private val touristPreferencesCollection = db.collection("tourist_preference")
+    private val touristFavoriteCollection = db.collection("tourist_favorite")
+
     private val staycationCollection = db.collection("staycation")
     private val staycationAvailabilityCollection = db.collection("staycation_availability")
     private val staycationBookingCollection = db.collection("staycation_booking")
     private val amenityCollection = db.collection("amenity")
+
     private val serviceAmenityCollection = db.collection("service_amenity")
     private val promotionCollection = db.collection("promotion")
     private val servicePromotionCollection = db.collection("service_promotion")
     private val serviceTagCollection = db.collection("service_tag")
     private val servicePhotoCollection = db.collection("service_photo")
+    private val serviceViewCollection = db.collection("service_view")
+
     private val staycationNearbyAttractionCollection = db.collection("staycation_nearby_attraction")
     private val reviewCollection = db.collection("review")
     private val likeCollection = db.collection("like")
@@ -111,6 +122,166 @@ class UserRepository {
     private val processedServiceIds = mutableSetOf<String>()
 
 
+    suspend fun uploadVerificationData(
+        firstValidIdType: String,
+        firstValidIdUri: Uri?,
+        secondValidIdType: String,
+        secondValidIdUri: Uri?,
+        touristId: String,
+        verificationStatus: String
+    ): Boolean {
+        return try {
+            // Upload first valid ID image to Firebase Storage
+            val firstValidIdUrl = firstValidIdUri?.let { uploadImageToStorage(it) }
+
+            // Upload second valid ID image to Firebase Storage
+            val secondValidIdUrl = secondValidIdUri?.let { uploadImageToStorage(it) }
+
+            // Add verification data to Firestore
+            val verificationData = hashMapOf(
+                "firstValidIdType" to firstValidIdType,
+                "firstValidIdUrl" to firstValidIdUrl,
+                "secondValidIdType" to secondValidIdType,
+                "secondValidIdUrl" to secondValidIdUrl,
+                "touristId" to touristId,
+                "verificationStatus" to verificationStatus
+            )
+
+            touristVerificationCollection.add(verificationData).await()
+            true // Upload successful
+        } catch (e: Exception) {
+            // Handle exception
+            false // Upload failed
+        }
+    }
+
+    private suspend fun uploadImageToStorage(uri: Uri): String {
+
+        val imageRef = storageReference.child("${System.currentTimeMillis()}_${uri.lastPathSegment}")
+        val uploadTask = imageRef.putFile(uri)
+        val taskSnapshot = uploadTask.await()
+        return taskSnapshot.storage.downloadUrl.await().toString()
+    }
+
+    suspend fun incrementViewCount(serviceId: String, serviceType: String) {
+        try {
+            // Get a reference to the document in the service_view collection
+            val documentReference = serviceViewCollection
+                .whereEqualTo("serviceId", serviceId)
+                .whereEqualTo("serviceType", serviceType)
+                .get()
+                .await()
+                .documents
+                .firstOrNull()
+
+            if (documentReference != null) {
+                // If the document exists, update the viewCount field by incrementing it by 1
+                documentReference.reference.update("viewCount", FieldValue.increment(1)).await()
+            } else {
+                // If the document does not exist, create a new document with the provided serviceId and initialize viewCount to 1
+                val data = hashMapOf(
+                    "serviceId" to serviceId,
+                    "serviceType" to serviceType,
+                    "viewCount" to 1
+                )
+                serviceViewCollection.add(data).await()
+            }
+        } catch (e: Exception) {
+            // Handle any errors
+            e.printStackTrace()
+        }
+    }
+
+
+    suspend fun toggleLike(reviewId: String, touristId: String): String {
+        val querySnapshot = likeCollection
+            .whereEqualTo("reviewId", reviewId)
+            .whereEqualTo("touristId", touristId)
+            .get()
+            .await()
+
+        return if (querySnapshot.isEmpty) {
+            // Add like if it doesn't exist
+            val likeData = hashMapOf(
+                "reviewId" to reviewId,
+                "touristId" to touristId
+            )
+            likeCollection.add(likeData).await()
+            touristId // Return the added touristId
+        } else {
+            // Remove like if it exists
+            for (document in querySnapshot.documents) {
+                likeCollection.document(document.id).delete().await()
+            }
+            touristId
+        }
+    }
+
+
+
+    suspend fun likeReview(reviewId: String, userId: String) {
+        val like = hashMapOf(
+            "reviewId" to reviewId,
+            "touristId" to userId
+        )
+        likeCollection
+            .add(like)
+            .await()
+    }
+
+    suspend fun addComment(reviewId: String, userId: String, comment: String) {
+        val commentData = hashMapOf(
+            "reviewId" to reviewId,
+            "touristId" to userId,
+            "comment" to comment,
+            "commentDate" to Timestamp.now() // Assuming you're using Firestore's Timestamp type
+        )
+        commentCollection
+            .add(commentData)
+            .await()
+    }
+
+
+    suspend fun isFavorite(serviceId: String, userId: String): Boolean {
+        return try {
+            val favoriteRef = touristFavoriteCollection
+                .whereEqualTo("serviceId", serviceId)
+                .whereEqualTo("touristId", userId)
+                .get()
+                .await()
+
+            !favoriteRef.isEmpty
+        } catch (e: Exception) {
+            Log.e("HomeViewModel", "Error checking favorite", e)
+            false
+        }
+    }
+
+    // Function to toggle favorite status
+    suspend fun toggleFavorite(serviceId: String, userId: String, serviceType: String) {
+        if (isFavorite(serviceId, userId)) {
+            // Service is already a favorite, remove it
+            touristFavoriteCollection
+                .whereEqualTo("serviceId", serviceId)
+                .whereEqualTo("touristId", userId)
+                .get()
+                .await()
+                .documents
+                .forEach { doc ->
+                    doc.reference.delete()
+                }
+        } else {
+            // Service is not a favorite, add it
+            val favorite = hashMapOf(
+                "serviceId" to serviceId,
+                "touristId" to userId,
+                "serviceType" to serviceType
+            )
+            touristFavoriteCollection
+                .add(favorite)
+                .await()
+        }
+    }
 
     suspend fun getAllChatsByUserId(
         userId: String,
@@ -351,6 +522,8 @@ class UserRepository {
 
 
 
+
+
     suspend fun getMessages(chatId: String): List<Message> {
         try {
             val messagesSnapshot = messageCollection
@@ -536,12 +709,12 @@ class UserRepository {
                     staycationImages = staycationImages,
                     staycationBookings = staycationBookings,
                     host = Host(
-                        profilePicture = host?.profilePicture ?: "",
-                        firstName = host?.firstName ?: "",
-                        middleName = host?.middleName ?: "",
-                        lastName = host?.lastName ?: "",
-                        hostId = host?.hostId ?: "",
-                        username = host?.username ?: "",
+                        profilePicture = host.profilePicture,
+                        firstName = host.firstName,
+                        middleName = host.middleName,
+                        lastName = host.lastName,
+                        hostId = host.hostId,
+                        username = host.username,
                     )
                 )
                 staycations.add(staycation)
@@ -3244,6 +3417,25 @@ class UserRepository {
         }
     }
 
+    suspend fun getTouristVerificationDocument(touristId: String): String? {
+        return try {
+            val querySnapshot  = touristVerificationCollection
+                .whereEqualTo("touristId", touristId)
+                .get()
+                .await()
+
+            if (!querySnapshot.isEmpty) {
+                querySnapshot.documents.firstOrNull()?.getString("verificationStatus")
+            } else {
+                null // Return null if no document found
+            }
+        } catch (e: Exception) {
+            // Handle exception
+            null // Return null in case of exception
+        }
+    }
+
+
 
     suspend fun getTouristProfile(touristId: String): Tourist? {
         try {
@@ -4706,6 +4898,131 @@ class UserRepository {
         return uniqueServiceIds
     }
 
+    suspend fun getAllFavoriteServicesByTouristId(
+        touristId: String,
+        pageNumber: Int,
+        pageSize: Int,
+        initialLoadSize: Int,
+    ) : List<HomePagingItem> {
+
+        return try {
+
+            val startIndex = if (pageNumber == 0) {
+                0
+            } else {
+                ((pageNumber - 1) * pageSize) + initialLoadSize
+            }
+
+            val result = mutableListOf<HomePagingItem>()
+
+            var query = touristFavoriteCollection
+                .whereEqualTo("touristId", touristId)
+                .orderBy("serviceId", Query.Direction.DESCENDING)
+
+            if (pageNumber > 0) {
+                val lastDocumentSnapshot = touristFavoriteCollection
+                    .whereEqualTo("touristId", touristId)
+                    .orderBy("serviceId", Query.Direction.DESCENDING)
+                    .limit(startIndex.toLong())
+                    .get()
+                    .await()
+                    .documents
+                    .lastOrNull()
+
+                if (lastDocumentSnapshot != null) {
+                    query = query.startAfter(lastDocumentSnapshot)
+                }
+            }
+
+            val querySnapshot = query
+                .limit(pageSize.toLong() + 1) // Fetch one extra to check if there's a next page
+                .get()
+                .await()
+
+            querySnapshot.documents.forEach { document ->
+
+                val serviceId = document.getString("serviceId") ?: ""
+
+                val staycationDoc = staycationCollection.document(serviceId).get().await()
+                val staycationImage = getServiceImages(serviceId, "Staycation")
+
+                if (staycationDoc.exists()) {
+                    val staycationTitle = staycationDoc.getString("staycationTitle") ?: ""
+                    val staycationLocation = staycationDoc.getString("staycationLocation") ?: ""
+                    val hostId = staycationDoc.getString("hostId") ?: ""
+                    val staycationPrice = staycationDoc.getLong("staycationPrice")?.toInt() ?: 0
+                    val bookings = getStaycationBookings(serviceId)
+
+                    val validReviews = bookings
+                        .mapNotNull { it.bookingReview }
+                        .filter { it.bookingId != "" }
+
+                    val average = validReviews.map { it.rating }.average()
+                    val averageReviewRating = if (average.isNaN()) 0.0 else average
+
+                    val staycation = HomePagingItem(
+                        serviceId = serviceId,
+                        serviceCoverPhoto = staycationImage.find { it.photoType == "Cover" }?.photoUrl
+                            ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                        serviceTitle = staycationTitle,
+                        averageReviewRating = averageReviewRating,
+                        location = staycationLocation,
+                        price = staycationPrice.toDouble(),
+                        hostId = hostId,
+                        serviceType = "Staycation"
+                    )
+                    result.add(staycation)
+                }
+
+                val tourDoc = tourCollection.document(serviceId).get().await()
+                val tourImage = getServiceImages(serviceId, "Tour")
+
+                if (tourDoc.exists()) {
+
+                    val tourTitle = tourDoc.getString("tourTitle") ?: ""
+                    val tourLocation = tourDoc.getString("tourLocation") ?: ""
+                    val tourPrice = tourDoc.getLong("tourPrice")?.toInt() ?: 0
+                    val hostId = staycationDoc.getString("hostId") ?: ""
+
+                    val bookings = getTourBookings(serviceId)
+
+                    val validReviews = bookings
+                        .mapNotNull { it.bookingReview }
+                        .filter { it.bookingId != "" }
+
+                    val average = validReviews.map { it.rating }.average()
+                    val averageReviewRating = if (average.isNaN()) 0.0 else average
+
+                    val tour = HomePagingItem(
+                        serviceId = serviceId,
+                        serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
+                            ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                        serviceTitle = tourTitle,
+                        averageReviewRating = averageReviewRating,
+                        location = tourLocation,
+                        price = tourPrice.toDouble(),
+                        hostId = hostId,
+                        serviceType = "Tour"
+                    )
+                    result.add(tour)
+                }
+
+
+            }
+
+            if (result.size > pageSize) {
+                result.removeAt(result.size - 1)
+            }
+
+
+            result
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+
+    }
+
     suspend fun getAllServicesByTagWithPaging(
         hostId: String,
         tag: String,
@@ -4849,6 +5166,15 @@ class UserRepository {
                     val tourPrice = tourDoc.getLong("tourPrice")?.toInt() ?: 0
                     val offers = getTourOffers(serviceId)
                     val tourAvailability = getTourAvailabilities(serviceId)
+                    val bookings = getTourBookings(serviceId)
+
+                    val validReviews = bookings
+                        .mapNotNull { it.bookingReview }
+                        .filter { it.bookingId != "" }
+
+                    val average = validReviews.map { it.rating }.average()
+                    val averageReviewRating = if (average.isNaN()) 0.0 else average
+
 
                     val tourOffers = offers.filter { checkedOfferNames.contains(it.typeOfOffer) }
 
@@ -4881,7 +5207,7 @@ class UserRepository {
                             serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
                                 ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
                             serviceTitle = tourTitle,
-                            averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
+                            averageReviewRating = averageReviewRating,
                             location = tourDoc.getString("tourLocation") ?: "",
                             price = tourDoc.getDouble("tourPrice") ?: 0.0,
                             tourDuration = tourDoc.getString("tourDuration")?.toInt(),
@@ -5107,6 +5433,15 @@ class UserRepository {
 
                     val tourOffers = offers.filter { checkedOfferNames.contains(it.typeOfOffer) }
 
+                    val bookings = getTourBookings(serviceId)
+
+                    val validReviews = bookings
+                        .mapNotNull { it.bookingReview }
+                        .filter { it.bookingId != "" }
+
+                    val average = validReviews.map { it.rating }.average()
+                    val averageReviewRating = if (average.isNaN()) 0.0 else average
+
 
                     val tourAvailabilityDates = tourAvailability.map { localDate ->
                         Date.from(localDate.date.atStartOfDay(ZoneId.systemDefault()).toInstant())
@@ -5137,7 +5472,7 @@ class UserRepository {
                             serviceCoverPhoto = tourImage.find { it.photoType == "Cover" }?.photoUrl
                                 ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
                             serviceTitle = tourTitle,
-                            averageReviewRating = tourDoc.getDouble("averageReviewRating") ?: 0.0,
+                            averageReviewRating = averageReviewRating,
                             location = tourDoc.getString("tourLocation") ?: "",
                             price = tourDoc.getDouble("tourPrice") ?: 0.0,
                             tourDuration = tourDoc.getString("tourDuration")?.toInt(),
@@ -5912,6 +6247,60 @@ class UserRepository {
         }
     }
 
+    private suspend fun getTourBookings(tourId: String): List<TourBooking> {
+        return try {
+            val result = tourBookingCollection
+                .whereEqualTo("tourId", tourId)
+                .get()
+                .await()
+
+            val bookings = mutableListOf<TourBooking>()
+
+            for (document in result.documents) {
+                val tourBookingId = document.id
+                val bookingDate = document.getTimestamp("bookingDate")?.toDate() ?: Date()
+                val bookingStatus = document.getString("bookingStatus") ?: ""
+                val tourDate = document.getString("tourDate") ?: ""
+                val startTime = document.getString("startTime") ?: ""
+                val endTime = document.getString("endTime") ?: ""
+                val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
+                val totalAmount = document.getDouble("totalAmount") ?: 0.0
+                val touristId = document.getString("touristId") ?: ""
+                val tourAvailabilityId = document.getString("tourAvailabilityId") ?: ""
+
+                // Fetch booking review using bookingId
+                val bookingReview = getBookingReview(
+                    bookingId = tourBookingId,
+                    reviewerId = touristId
+                ) ?: Review()
+
+
+                // Construct a TourBooking object and add it to the list
+                val booking = TourBooking(
+                    tourBookingId = tourBookingId,
+                    bookingDate = bookingDate,
+                    bookingStatus = bookingStatus,
+                    startTime = startTime,
+                    endTime = endTime,
+                    noOfGuests = noOfGuests,
+                    totalAmount = totalAmount,
+                    tourist = Tourist(touristId = touristId),
+                    bookingReview = bookingReview,
+                    tourDate = tourDate,
+                    tourAvailabilityId = tourAvailabilityId,
+                    tour = Tour()
+                )
+
+                bookings.add(booking)
+            }
+
+            bookings
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList() // Handle the error case as needed
+        }
+    }
 
 
     private suspend fun getStaycationBookings(staycationId: String): List<StaycationBooking> {
@@ -5966,8 +6355,279 @@ class UserRepository {
         }
     }
 
+    private suspend fun fetchLikesByReviewId(reviewId: String): List<Like> {
+        val likes = mutableListOf<Like>() // Define the list outside the try block
 
-    suspend fun getBookingReview(bookingId: String, reviewerId: String): Review? {
+        try {
+            val querySnapshot = likeCollection
+                .whereEqualTo("reviewId", reviewId)
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                val likeId = document.id
+                val touristId = document.getString("touristId") ?: ""
+
+                val like = Like(
+                    likeId = likeId,
+                    touristId = touristId,
+                    reviewId = reviewId
+                )
+
+                likes.add(like) // Add the created like object to the list
+            }
+        } catch (e: Exception) {
+            e.printStackTrace() // Handle the exception appropriately
+        }
+
+        return likes
+    }
+
+    private suspend fun fetchReviewPhotosByReviewId(reviewId: String): List<ReviewPhoto> {
+        val reviewPhotos = mutableListOf<ReviewPhoto>()
+
+
+
+        try {
+            val querySnapshot = reviewPhotoCollection
+                .whereEqualTo("reviewId", reviewId)
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                val reviewPhotoId = document.id
+                val reviewPhotoUrl = document.getString("reviewPhotoUrl") ?: ""
+
+                val reviewPhoto = ReviewPhoto(
+                    reviewPhotoId = reviewPhotoId,
+                    reviewId = reviewId,
+                    reviewUrl = reviewPhotoUrl
+                )
+
+                reviewPhotos.add(reviewPhoto)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        return reviewPhotos
+    }
+
+    suspend fun replyToReview(reviewId: String, touristId: String, comment: String): Comment {
+
+        val commentDate = Timestamp.now()
+
+        val newComment = hashMapOf(
+            "reviewId" to reviewId,
+            "touristId" to touristId,
+            "comment" to comment,
+            "commentDate" to commentDate
+        )
+
+      //  println(Timestamp.now().toDate())
+
+        val documentReference = commentCollection.add(newComment).await()
+        val commentId = documentReference.id
+
+        return Comment(
+            commentId = commentId,
+            reviewId = reviewId,
+            commenterId = touristId,
+            comment = comment,
+            commenter = Tourist(touristId = touristId),
+            commentDate = commentDate.toDate().toString()
+        )
+    }
+
+
+
+    private suspend fun fetchCommentsByReviewId(reviewId: String): List<Comment> {
+        val comments = mutableListOf<Comment>()
+
+        try {
+            val querySnapshot = commentCollection
+                .whereEqualTo("reviewId", reviewId)
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                val commentId = document.id
+                val commentText = document.getString("comment") ?: ""
+                val commentDate = document.getTimestamp("commentDate")?.toDate()?.toString() ?: ""
+                val touristId = document.getString("touristId") ?: ""
+
+                val commenter = getTouristProfile(touristId) ?: Tourist()
+
+                val comment = Comment(
+                    commentId = commentId,
+                    comment = commentText,
+                    commentDate = commentDate,
+                    commenterId = touristId,
+                    commenter = commenter,
+                    reviewId = reviewId
+                )
+
+                comments.add(comment)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        return comments
+    }
+    suspend fun getAllStaycationReviewsThroughBookings(staycationId: String): List<StaycationBooking> {
+        return try {
+            val result = staycationBookingCollection
+                .whereEqualTo("staycationId", staycationId)
+                .get()
+                .await()
+
+            val bookings = mutableListOf<StaycationBooking>()
+
+            for (document in result.documents) {
+                val staycationBookingId = document.id
+                val bookingDate = document.getTimestamp("bookingDate")?.toDate() ?: Date()
+                val bookingStatus = document.getString("bookingStatus") ?: ""
+                val checkInDate = document.getTimestamp("checkInDate")?.toDate() ?: Date()
+                val checkOutDate = document.getTimestamp("checkOutDate")?.toDate() ?: Date()
+                val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
+                val totalAmount = document.getDouble("totalAmount") ?: 0.0
+                val touristId = document.getString("touristId") ?: ""
+            //    val staycationId = document.getString("staycationId") ?: ""
+
+                // Fetch booking review using bookingId
+                val bookingReview = getBookingReviewWithLikesAndComments(
+                    bookingId = staycationBookingId,
+                    reviewerId = touristId
+                ) ?: Review()
+
+                val booking = StaycationBooking(
+                    staycationBookingId = staycationBookingId,
+                    bookingDate = bookingDate,
+                    bookingStatus = bookingStatus,
+                    checkInDate = checkInDate,
+                    checkOutDate = checkOutDate,
+                    noOfGuests = noOfGuests,
+                    totalAmount = totalAmount,
+                    tourist = Tourist(touristId = touristId),
+                    bookingReview = bookingReview,
+                    staycation = Staycation(staycationId = staycationId)
+                )
+
+                bookings.add(booking)
+            }
+
+            bookings
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList() // Handle the error case as needed
+        }
+    }
+
+    suspend fun getAllTourReviewsThroughBookings(tourId: String): List<TourBooking> {
+        return try {
+            val result = tourBookingCollection
+                .whereEqualTo("tourId", tourId)
+                .get()
+                .await()
+
+            val bookings = mutableListOf<TourBooking>()
+
+            for (document in result.documents) {
+                val tourBookingId = document.id
+                val bookingDate = document.getTimestamp("bookingDate")?.toDate() ?: Date()
+                val bookingStatus = document.getString("bookingStatus") ?: ""
+                val tourDate = document.getString("tourDate") ?: ""
+                val startTime = document.getString("startTime") ?: ""
+                val endTime = document.getString("endTime") ?: ""
+                val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
+                val totalAmount = document.getDouble("totalAmount") ?: 0.0
+                val touristId = document.getString("touristId") ?: ""
+                val tourAvailabilityId = document.getString("tourAvailabilityId") ?: ""
+                val tourId = document.getString("tourId") ?: ""
+
+                // Fetch booking review using bookingId
+                val bookingReview = getBookingReviewWithLikesAndComments(
+                    bookingId = tourBookingId,
+                    reviewerId = touristId
+                ) ?: Review()
+
+                val booking = TourBooking(
+                    tourBookingId = tourBookingId,
+                    tourist = Tourist(touristId),
+                    bookingDate = bookingDate,
+                    startTime = startTime,
+                    endTime = endTime,
+                    noOfGuests = noOfGuests,
+                    totalAmount = totalAmount,
+                    bookingStatus = bookingStatus,
+                    bookingReview = bookingReview,
+                    tour = Tour(tourId = tourId),
+                    tourAvailabilityId = tourAvailabilityId,
+                    tourDate = tourDate
+                )
+
+                bookings.add(booking)
+            }
+
+            bookings
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList() // Handle the error case as needed
+        }
+    }
+
+
+    private suspend fun getBookingReviewWithLikesAndComments(bookingId: String, reviewerId: String): Review? {
+        return try {
+            val result = reviewCollection
+                .whereEqualTo("bookingId", bookingId)
+                .get()
+                .await()
+
+            if (result.documents.isNotEmpty()) {
+                val document = result.documents[0]
+                val reviewId = document.id
+                val reviewComment = document.getString("reviewComment") ?: ""
+                val reviewDate = document.getTimestamp("reviewDate")?.toDate() ?: Date()
+                val reviewRating = document.getLong("reviewRating")?.toInt() ?: 0
+                val serviceType = document.getString("serviceType") ?: ""
+
+                val reviewer = getTouristProfile(reviewerId) ?: Tourist()
+                val reviewPhotos = fetchReviewPhotosByReviewId(reviewId)
+                val comments = fetchCommentsByReviewId(reviewId)
+                val likes = fetchLikesByReviewId(reviewId)
+
+
+                Review(
+                    reviewId = reviewId,
+                    comment = reviewComment,
+                    reviewDate = reviewDate,
+                    rating = reviewRating,
+                    serviceType = serviceType,
+                    reviewer = reviewer,
+                    reviewerId = reviewerId,
+                    bookingId = bookingId,
+                    likes = likes,
+                    comments = comments,
+                    reviewPhotos = reviewPhotos
+                    // Add other fields as needed
+                )
+            } else {
+                // No review found, return null
+                null
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null // Handle the error case as needed
+        }
+    }
+
+
+    private suspend fun getBookingReview(bookingId: String, reviewerId: String): Review? {
         return try {
             val result = reviewCollection
                 .whereEqualTo("bookingId", bookingId)
@@ -5985,6 +6645,9 @@ class UserRepository {
                 val reviewer = getTouristProfile(reviewerId) ?: Tourist()
 
 
+
+          //      Log.d("Comments", comments.toString())
+
                 // Return the BookingReview object
                 Review(
                     reviewId = reviewId,
@@ -5993,8 +6656,12 @@ class UserRepository {
                     rating = reviewRating,
                     serviceType = serviceType,
                     reviewer = reviewer,
+                    reviewerId = reviewerId,
                   //  booking = StaycationBooking(staycationBookingId = bookingId, tourist = reviewer),
-                    bookingId = bookingId
+                    bookingId = bookingId,
+                    likes = emptyList(),
+                    comments = emptyList(),
+                    reviewPhotos = emptyList()
                     // Add other fields as needed
                 )
             } else {
@@ -6286,25 +6953,6 @@ class UserRepository {
 @Composable
 private fun QueryTests() {
 
-    val checkInDateMillis = 1709877600000
-    val checkOutDateMillis = 1710043200000
 
-    val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")) // Create a calendar with UTC time zone
-    calendar.timeInMillis = checkInDateMillis // Set the check-in date
-    calendar.add(Calendar.HOUR_OF_DAY, -14) // Subtract 14 hours
-
-    val startDate = calendar.time // Get the updated start date
-
-    calendar.timeInMillis = checkOutDateMillis // Set the check-out date
-    calendar.add(Calendar.HOUR_OF_DAY, -12) // Subtract 12 hours
-
-    val endDate = calendar.time // Get the updated end date
-
-    val dateRange = (startDate.time..endDate.time).step(TimeUnit.DAYS.toMillis(1))
-        .map { Date(it) }
-
-// Create availability records for each date in the range
-    for (date in dateRange) {
-        println(date)
-    }
+    println(Timestamp.now().toDate())
 }

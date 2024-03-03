@@ -3,14 +3,15 @@ package com.example.tripnila.data
 import com.example.tripnila.R
 
 data class FullReview(
-    val image: Int,
+    val image: String,
     val firstName: String,
     val reviewDate: String,
     val rating: Int,
     val reviewComment: String,
-    val reviewImage1: Int,
-    val reviewImage2: Int,
+    val reviewImages: List<String>,
     val isAlreadyLiked: Boolean,
     val initialLikesCount: Int,
     val initialCommentsCount: Int,
+    val comments: List<Comment>,
+    val reviewId: String
 )

@@ -70,8 +70,10 @@ import com.example.tripnila.model.BookingHistoryViewModel
 import com.example.tripnila.model.BusinessManagerViewModel
 import com.example.tripnila.model.ChatViewModel
 import com.example.tripnila.model.DetailViewModel
+import com.example.tripnila.model.FavoriteViewModel
 import com.example.tripnila.model.HomeViewModel
 import com.example.tripnila.model.HostDashboardViewModel
+import com.example.tripnila.model.HostInboxViewModel
 import com.example.tripnila.model.HostTourViewModel
 import com.example.tripnila.model.InboxViewModel
 import com.example.tripnila.model.ItineraryViewModel
@@ -83,11 +85,13 @@ import com.example.tripnila.model.Person
 import com.example.tripnila.model.PersonViewModel
 import com.example.tripnila.model.PreferenceViewModel
 import com.example.tripnila.model.ProfileViewModel
+import com.example.tripnila.model.ReviewViewModel
 import com.example.tripnila.model.SignupViewModel
 import com.example.tripnila.model.StaycationManagerViewModel
 import com.example.tripnila.model.StaycationViewModel
 import com.example.tripnila.model.TourDetailsViewModel
 import com.example.tripnila.model.TourManagerViewModel
+import com.example.tripnila.model.VerificationViewModel
 import com.example.tripnila.repository.UserRepository
 import com.example.tripnila.screens.BookingHistoryCard
 import com.example.tripnila.ui.theme.MyApplicationTheme
@@ -141,7 +145,10 @@ class MainActivity : ComponentActivity() {
 
                 val insightViewModel = viewModel(modelClass = InsightViewModel::class.java)
                 val tourDetailsViewModel = viewModel(modelClass = TourDetailsViewModel::class.java)
-
+                val reviewViewModel = viewModel(modelClass = ReviewViewModel::class.java)
+                val hostInboxViewModel = viewModel(modelClass = HostInboxViewModel::class.java)
+                val verificationViewModel = viewModel(modelClass = VerificationViewModel::class.java)
+                val favoriteViewModel = viewModel(modelClass = FavoriteViewModel::class.java)
 
                 Navigation(
                     loginViewModel = loginViewModel,
@@ -163,7 +170,11 @@ class MainActivity : ComponentActivity() {
                     inboxViewModel = inboxViewModel,
                     chatViewModel = chatViewModel,
                     insightViewModel = insightViewModel,
-                    tourDetailsViewModel = tourDetailsViewModel
+                    tourDetailsViewModel = tourDetailsViewModel,
+                    reviewViewModel = reviewViewModel,
+                    hostInboxViewModel = hostInboxViewModel,
+                    verificationViewModel = verificationViewModel,
+                    favoriteViewModel = favoriteViewModel
                 )
             }
 

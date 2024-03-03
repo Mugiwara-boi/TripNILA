@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Tour
 import com.example.tripnila.data.TourAvailableDates
+import com.example.tripnila.data.TourBooking
 import com.example.tripnila.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,9 @@ class TourDetailsViewModel(private val repository: UserRepository = UserReposito
 
     private val _selectedDate = MutableStateFlow<TourAvailableDates?>(null)
     val selectedDate = _selectedDate.asStateFlow()
+
+    private val _tourBookings = MutableStateFlow<List<TourBooking>>(emptyList())
+    val tourBookings = _tourBookings.asStateFlow()
 
     private val _personCount = MutableStateFlow(0)
     val personCount = _personCount.asStateFlow()
@@ -73,6 +77,41 @@ class TourDetailsViewModel(private val repository: UserRepository = UserReposito
 
         }
     }
+
+    fun getAllReviewsByTourId(tourId: String) {
+        viewModelScope.launch {
+
+            val tourBooking = repository.getAllTourReviewsThroughBookings(tourId)
+            _tourBookings.value = tourBooking
+
+        }
+    }
+
+    suspend fun incrementViewCount(serviceId: String) {
+        try {
+            repository.incrementViewCount(serviceId, "Tour")
+        } catch (e: Exception) {
+            Log.e("HomeViewModel", "Error checking favorite", e)
+        }
+    }
+
+    suspend fun isFavorite(serviceId: String, userId: String): Boolean {
+        return try {
+            repository.isFavorite(serviceId, userId)
+        } catch (e: Exception) {
+            Log.e("HomeViewModel", "Error checking favorite", e)
+            false
+        }
+    }
+
+    // Function to toggle favorite status
+    suspend fun toggleFavorite(serviceId: String, userId: String, serviceType: String) {
+        viewModelScope.launch {
+            repository.toggleFavorite(serviceId, userId, serviceType)
+        }
+    }
+
+
 
     suspend fun addBooking(touristId: String) {
         try {

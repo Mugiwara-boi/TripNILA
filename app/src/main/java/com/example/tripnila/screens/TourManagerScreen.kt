@@ -3,7 +3,6 @@ package com.example.tripnila.screens
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -63,7 +62,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -105,6 +103,7 @@ fun TourManagerScreen(
 
     LaunchedEffect(tourId) {
         tourManagerViewModel.getSelectedTour(tourId)
+        tourManagerViewModel.getAllReviewsByTourId(tourId)
     }
 
     val tour = tourManagerViewModel.tour.collectAsState().value
@@ -116,6 +115,33 @@ fun TourManagerScreen(
         initialPageOffsetFraction = 0f
     ) {
         tour.tourImages.size
+    }
+
+    val tourBookings by tourManagerViewModel.tourBookings.collectAsState()
+
+    val filteredReviews = tourBookings
+        .mapNotNull { it.bookingReview }
+        .filter { it.bookingId != "" }
+        .sortedByDescending { it.reviewDate }
+
+    val averageRating = filteredReviews
+        .map { it.rating }
+        .average()
+
+    val validAverage = if (averageRating.isNaN()) 0.0 else averageRating
+
+    val totalReviews = filteredReviews
+        .size
+
+    val reviews = filteredReviews.map { review ->
+        ReviewUiState(
+            rating = review.rating.toDouble(),
+            comment = review.comment,
+            touristImage = review.reviewer.profilePicture,
+            touristName = "${review.reviewer.firstName} ${review.reviewer.lastName}",
+            reviewDate = review.reviewDate.toString()
+        )
+
     }
 
 
@@ -132,73 +158,49 @@ fun TourManagerScreen(
 //    }
 
 
-    val reviews = listOf(
-        ReviewUiState(
-            rating = 4.5,
-            comment = "A wonderful staycation experience!",
-          //  touristImage = R.drawable.joshua,
-            touristName = "John Doe",
-            reviewDate = "2023-05-15"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-         //   touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-         //   touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-        //    touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-       //     touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-        ReviewUiState(
-            rating = 5.0,
-            comment = "Amazing place and great service!",
-          //  touristImage = R.drawable.joshua,
-            touristName = "Jane Smith",
-            reviewDate = "2023-04-20"
-        ),
-    )
+        val transactions = tourBookings.map { tourBooking ->
+            val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
 
-    val transactions = listOf(
-        Transaction(
-        //    customerImage = R.drawable.joshua,
-            customerName = "Juan Cruz",
-            customerUsername = "@jcruz",
-            guestsCount = 4,
-            price = 2500.00,
-            bookedDate = "Sep 3, 2023",
-            transactionDate = "Aug 24, 2023",
-            transactionStatus = "Completed"
-        ),
-        Transaction(
-     //       customerImage = R.drawable.joshua,
-            customerName = "Juan Cruz",
-            customerUsername = "@jcruz",
-            guestsCount = 4,
-            price = 2500.00,
-            bookedDate = "Sep 6, 2023",
-            transactionDate = "Aug 24, 2023",
-            transactionStatus = "Completed"
-        ),
-    )
+            val formatter = DateTimeFormatter.ofPattern("d MMM, EEEE", Locale.ENGLISH)
+            val parsedTourDate = LocalDate.parse(tourBooking.tourDate)
+            val formattedDate = parsedTourDate.format(formatter)
+
+
+            Transaction(
+                customerImage = tourBooking.tourist.profilePicture,
+                customerName = "${tourBooking.tourist.firstName} ${tourBooking.tourist.lastName}",
+                customerUsername = tourBooking.tourist.username,
+                guestsCount = tourBooking.noOfGuests,
+                price = tourBooking.totalAmount,
+                bookedDate = formattedDate,
+                transactionDate = SimpleDateFormat("MMM dd, yyyy").format(tourBooking.bookingDate) , //staycationBooking.bookingDate.toString(),
+                transactionStatus = tourBooking.bookingStatus
+            )
+        }.sortedByDescending { it.transactionDate } ?: emptyList()
+
+//
+//    val transactions = listOf(
+//        Transaction(
+//        //    customerImage = R.drawable.joshua,
+//            customerName = "Juan Cruz",
+//            customerUsername = "@jcruz",
+//            guestsCount = 4,
+//            price = 2500.00,
+//            bookedDate = "Sep 3, 2023",
+//            transactionDate = "Aug 24, 2023",
+//            transactionStatus = "Completed"
+//        ),
+//        Transaction(
+//     //       customerImage = R.drawable.joshua,
+//            customerName = "Juan Cruz",
+//            customerUsername = "@jcruz",
+//            guestsCount = 4,
+//            price = 2500.00,
+//            bookedDate = "Sep 6, 2023",
+//            transactionDate = "Aug 24, 2023",
+//            transactionStatus = "Completed"
+//        ),
+//    )
 
     Surface(
         modifier = Modifier
@@ -320,26 +322,18 @@ fun TourManagerScreen(
                     )
                 }
                 item {
-                    TourDescriptionCard3(
-                        image1 = tour.tourImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
-                        image2 = tour.tourImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
-                        image3 = tour.tourImages.find { it.photoType == "Cover" }?.photoUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
-                        description = tour.tourDescription,
-                        withEditButton = false,
-                        modifier = Modifier
-                            .offset(y = (-5).dp)
-                            .padding(bottom = 12.dp)
-                    )
+                    tour.tourImages.map { it.photoUrl }.let { it1 ->
+                        TourDescriptionCard3(
+                            images = it1,
+                            description = tour.tourDescription,
+                            withEditButton = false,
+                            modifier = Modifier
+                                .offset(y = (-5).dp)
+                                .padding(bottom = 12.dp)
+                        )
+                    }
                 }
-//                item {
-////                     AVAILABILITY DATES
-//                    TourAvailabilityCard(
-//                        availableDates = availableDates,
-//                        modifier = Modifier
-//                            .offset(y = (-5).dp)
-//                            .padding(bottom = 12.dp)
-//                    )
-//                }
+
                 item {
                     TourAvailableDatesCard(
                         tourManagerViewModel = tourManagerViewModel,
@@ -352,6 +346,7 @@ fun TourManagerScreen(
                 item{
                     AppTransactionsCard(
                         transactions = transactions,
+
                         modifier = Modifier
                             .offset(y = (-5).dp)
                             .padding(bottom = 12.dp)
@@ -372,6 +367,12 @@ fun TourManagerScreen(
                 item {
                     AppReviewsCard(
                         reviews = reviews,
+
+                        totalReviews = totalReviews,
+                        averageRating = validAverage,
+                        onSeeAllReviews = {
+
+                        },
                         modifier = Modifier
                             .offset(y = (-5).dp)
                             .padding(bottom = 12.dp)
@@ -386,9 +387,6 @@ fun TourManagerScreen(
                     )
 
                 }
-//                item {
-//                    TourBottomBookingBar()
-//                }
             }
         }
 
