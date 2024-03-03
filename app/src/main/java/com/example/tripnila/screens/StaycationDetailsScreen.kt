@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -137,6 +138,8 @@ fun StaycationDetailsScreen(
 ) {
 
     val staycation = detailViewModel.staycation.collectAsState()
+    val isUserVerified = detailViewModel.isUserVerified.collectAsState()
+    
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -201,6 +204,7 @@ fun StaycationDetailsScreen(
     LaunchedEffect(touristId) {
         isFavorite = detailViewModel.isFavorite(staycationId, touristId)
         detailViewModel.incrementViewCount(staycationId)
+        detailViewModel.verifyUser(touristId)
     }
 
 
@@ -294,24 +298,68 @@ fun StaycationDetailsScreen(
         ) {
             Scaffold(
                 bottomBar = {
-                    bottomBookingText.value?.let { nights ->
-                        StaycationBottomBookingBar(
-                            staycation = staycation.value,
-                            nights = nights,
-                            enableButton = enableBottomBookingButton.value,
-                            onClickUnderlinedText = {
-                                openBottomSheet.value = true
-                            },
-                            onClickChatHost = {
-                                Log.d("Other User", staycation.value!!.host.touristId)
-                                onNavToChat(touristId, staycation.value!!.host.touristId)
-                            },
-                            onClickBook = {
-                                onNavToBooking(touristId, staycationId)
-                            }
-                        )
+                    if (isUserVerified.value == true) {
+                        bottomBookingText.value?.let { nights ->
+                            StaycationBottomBookingBar(
+                                staycation = staycation.value,
+                                nights = nights,
+                                enableButton = enableBottomBookingButton.value,
+                                onClickUnderlinedText = {
+                                    openBottomSheet.value = true
+                                },
+                                onClickChatHost = {
+                                    Log.d("Other User", staycation.value!!.host.touristId)
+                                    onNavToChat(touristId, staycation.value!!.host.touristId)
+                                },
+                                onClickBook = {
+                                    onNavToBooking(touristId, staycationId)
+                                }
+                            )
 
+                        }
+                    } else {
+                        Surface(
+                            color = Color.White,
+                            tonalElevation = 10.dp,
+                            shadowElevation = 10.dp,
+                            modifier = Modifier
+                                .height(78.dp)
+                                .fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(
+                                        horizontal = 25.dp,
+                                        //vertical = 25.dp
+                                    ),
+                                verticalArrangement = Arrangement.Center
+                                //horizontalAlignment = Alignment.CenterHorizontally
+                            ){
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+
+                                    Text(
+                                        text = "Account needs verification",
+                                        //  fontColor = if (isUserVerified?.value == true) Color.Black else Color(0xffCC0033),
+                                        color =  Color(0xFFCC0033),
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier
+                                         //   .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
+                                            .fillMaxWidth()
+                                          //  .wrapContentWidth(align = Alignment.Start)
+                                    )
+                                }
+
+                            }
+
+                        }
                     }
+                    
                 }
             ) {
 

@@ -24,6 +24,9 @@ class TourDetailsViewModel(private val repository: UserRepository = UserReposito
     private val _tourBookings = MutableStateFlow<List<TourBooking>>(emptyList())
     val tourBookings = _tourBookings.asStateFlow()
 
+    private val _isUserVerified = MutableStateFlow<Boolean?>(null)
+    val isUserVerified = _isUserVerified.asStateFlow()
+
     private val _personCount = MutableStateFlow(0)
     val personCount = _personCount.asStateFlow()
 
@@ -74,6 +77,21 @@ class TourDetailsViewModel(private val repository: UserRepository = UserReposito
             Log.d("Tour", "${_tour.value}")
 
             _isStateRetrieved.value = true
+
+        }
+    }
+
+    fun verifyUser(touristId: String) {
+        viewModelScope.launch {
+            try {
+                val verificationStatus = repository.getTouristVerificationDocument(touristId)
+
+                _isUserVerified.value = verificationStatus
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
 
         }
     }

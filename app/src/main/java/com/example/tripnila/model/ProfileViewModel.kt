@@ -22,17 +22,17 @@ class ProfileViewModel(private val repository: UserRepository = UserRepository()
     private val _isUserVerified = MutableStateFlow<Boolean?>(null)
     val isUserVerified = _isUserVerified.asStateFlow()
 
-    private val _userStatus = MutableStateFlow("")
-    val
 
 
-    suspend fun isUserVerified() {
-        viewModelScope.launch {
-            val result = repository.getTouristVerificationDocument(_currentUser.value!!.touristId)
-
-            Log.d("CALLED", "CALLED")
-        }
-    }
+//    suspend fun isUserVerified() {
+//        viewModelScope.launch {
+//            val verificationStatus = repository.getTouristVerificationDocument(_currentUser.value!!.touristId)
+//
+//            _isUserVerified.value = verificationStatus
+//
+//            Log.d("CALLED", "CALLED")
+//        }
+//    }
 
     fun setToNull() {
         _isUserVerified.value = null
@@ -44,8 +44,14 @@ class ProfileViewModel(private val repository: UserRepository = UserRepository()
             _isLoading.value = true
 
             try {
+
                 val user = repository.getTouristProfile(touristId)
                 _currentUser.value = user
+
+                val verificationStatus = repository.getTouristVerificationDocument(_currentUser.value!!.touristId)
+
+                _isUserVerified.value = verificationStatus
+
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {

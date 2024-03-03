@@ -51,7 +51,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -95,7 +97,7 @@ fun TouristProfileScreen(
     }
 
     val isLoading = profileViewModel?.isLoading?.collectAsState()
-    val isUserVerified = profileViewModel?.isUserVerified?.collectAsState( initial = null)
+    val isUserVerified = profileViewModel?.isUserVerified?.collectAsState()
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -114,13 +116,13 @@ fun TouristProfileScreen(
         mutableIntStateOf(2)
     }
 
-    var openDialog = remember { mutableStateOf(false) }
-
-    if (isUserVerified?.value == true) {
-        onNavToHostDashboard(touristId)
-    } else if (isUserVerified?.value == false) {
-        openDialog.value = true
-    }
+//    var openDialog = remember { mutableStateOf(false) }
+//
+//    if (isUserVerified?.value == true) {
+//        onNavToHostDashboard(touristId)
+//    } else if (isUserVerified?.value == false) {
+//        openDialog.value = true
+//    }
 
     Surface(
         modifier = Modifier
@@ -266,13 +268,11 @@ fun TouristProfileScreen(
                             AppFilledCard(
                                 cardText = "Itinerary",
                                 onClick = {
-                                    // sa touristId na variable nakastore yung Id ng Current User
-                                    // Profile Screen -> Itinerary Planner
-                                    Toast.makeText(
-                                        context,
-                                        "TouristId: $touristId",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    val intent = Intent(context, IteniraryActivity::class.java)
+                                    intent.putExtra("cameFromProfile", true)
+                                    intent.putExtra("touristId", touristId)
+                                    intent.putExtra("staycationId", "-")
+                                    context.startActivity(intent)
                                 }
                             )
                         }
@@ -351,8 +351,21 @@ fun TouristProfileScreen(
                         )
                     }
                     item {
+                  /*      Text(
+                            text = if (isUserVerified?.value == true) "Hosting" else "Account needs verification",
+                          //  fontColor = if (isUserVerified?.value == true) Color.Black else Color(0xffCC0033),
+                            color = if (isUserVerified?.value == true) Color.Black else Color(0xFFCC0033),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
+                                .fillMaxWidth()
+                                .wrapContentWidth(align = Alignment.Start)
+                        )*/
+
                         Text(
                             text = "Hosting",
+                            //  fontColor = if (isUserVerified?.value == true) Color.Black else Color(0xffCC0033),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier
@@ -374,24 +387,62 @@ fun TouristProfileScreen(
 //    }
 
                     item {
-                        OptionsRow(
-                            icon = R.drawable.resource_switch,
-                            rowText = "Switch to hosting",
-                            onClick = {
 
-                                scope.launch {
-                                    profileViewModel.isUserVerified()
+                        if (isUserVerified?.value == true) {
+                            OptionsRow(
+                                icon = R.drawable.resource_switch,
+                                rowText = "Switch to hosting",
+                                onClick = {
+                                  onNavToHostDashboard(touristId)
+                                },
+                                modifier = Modifier
+                                    .padding(horizontal = horizontalPaddingValue)
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                    }
+                                    .padding(horizontal = horizontalPaddingValue)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.resource_switch),
+                                        contentDescription = ""
+                                    )
+                                    Spacer(modifier = Modifier.width(20.dp))
+                                    Text(
+                                        text = "Hosting",
+                                        fontSize = 16.sp,
+                                        textDecoration = TextDecoration.LineThrough,
+                                        color = Color.LightGray,
+                                      //  textDecor = TextDecoration.LineThrough,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.padding(top = 3.dp)
+                                    )
+                                    Text(
+                                        text = "   Verification required",
+                                        color = Color(0xFFCC0033),
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.padding(top = 3.dp)
+                                    )
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Icon(
+                                        imageVector = Icons.Filled.KeyboardArrowRight,
+                                        contentDescription = "",
+                                        modifier = Modifier.size(34.dp)
+                                    )
                                 }
+                            }
+                            Divider(modifier = Modifier.padding(vertical = 5.dp))
+                        }
 
 
-
-
-
-                              //  onNavToHostDashboard(touristId)
-                            },
-                            modifier = Modifier
-                                .padding(horizontal = horizontalPaddingValue)
-                        )
                     }
                     item {
                         Text(
@@ -444,7 +495,7 @@ fun TouristProfileScreen(
 
             }
 
-            if (openDialog.value) {
+            /*if (openDialog.value) {
                 Dialog(onDismissRequest = {
                     profileViewModel.setToNull()
                     openDialog.value = false
@@ -511,7 +562,7 @@ fun TouristProfileScreen(
                         }
                     }
                 }
-            }
+            }*/
         }
 
     }
