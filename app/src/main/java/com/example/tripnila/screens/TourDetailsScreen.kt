@@ -118,6 +118,7 @@ fun TourDetailsScreen(
     val tour by tourDetailsViewModel.tour.collectAsState()
     val personCount by tourDetailsViewModel.personCount.collectAsState()
     val tourBookings by tourDetailsViewModel.tourBookings.collectAsState()
+    val isUserVerified by tourDetailsViewModel.isUserVerified.collectAsState()
 
     val filteredReviews = tourBookings
         .mapNotNull { it.bookingReview }
@@ -214,6 +215,7 @@ fun TourDetailsScreen(
     LaunchedEffect(touristId) {
         isFavorite = tourDetailsViewModel.isFavorite(tourId, touristId)
         tourDetailsViewModel.incrementViewCount(tourId)
+        tourDetailsViewModel.verifyUser(touristId)
     }
 
 //    val availableDates = tourAvailableDates.map {  tourSchedule ->
@@ -238,28 +240,74 @@ fun TourDetailsScreen(
     ) {
         Scaffold(
             bottomBar = {
-                TourBottomBookingBar(
-                    tourPrice = tour.tourPrice,
-                    underlinedText = if (personCount == 0) {
-                        "Select guests"
-                    } else if (personCount == 1) {
-                        "for $personCount person"
-                    }
-                    else {
-                        "for $personCount persons"
-                    },
-                    enableButton = personCount > 0,
-                    onClickChatHost = {
-                        onNavToChat(touristId, tourHost.hostId.substring(5))
-                    },
-                    onClickChooseDate = {
-                        onNavToChooseDate(touristId)
-                    },
-                    onClickUnderlinedText = {
-                        openBottomSheet = true
-                    }
 
-                )
+                if (isUserVerified == true) {
+                    TourBottomBookingBar(
+                        tourPrice = tour.tourPrice,
+                        underlinedText = if (personCount == 0) {
+                            "Select guests"
+                        } else if (personCount == 1) {
+                            "for $personCount person"
+                        }
+                        else {
+                            "for $personCount persons"
+                        },
+                        enableButton = personCount > 0,
+                        onClickChatHost = {
+                            onNavToChat(touristId, tourHost.hostId.substring(5))
+                        },
+                        onClickChooseDate = {
+                            onNavToChooseDate(touristId)
+                        },
+                        onClickUnderlinedText = {
+                            openBottomSheet = true
+                        }
+
+                    )
+                } else {
+                    Surface(
+                        color = Color.White,
+                        tonalElevation = 10.dp,
+                        shadowElevation = 10.dp,
+                        modifier = Modifier
+                            .height(78.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(
+                                    horizontal = 25.dp,
+                                    //vertical = 25.dp
+                                ),
+                            verticalArrangement = Arrangement.Center
+                            //horizontalAlignment = Alignment.CenterHorizontally
+                        ){
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+
+                                Text(
+                                    text = "Account needs verification",
+                                    //  fontColor = if (isUserVerified?.value == true) Color.Black else Color(0xffCC0033),
+                                    color =  Color(0xFFCC0033),
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier
+                                        //   .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
+                                        .fillMaxWidth()
+                                    //  .wrapContentWidth(align = Alignment.Start)
+                                )
+                            }
+
+                        }
+
+                    }
+                }
+
+
 
             }
         ) {
@@ -883,7 +931,9 @@ fun TourDescriptionCard3(
             )
 
             LazyVerticalGrid(
-                modifier = Modifier.padding(vertical = 8.dp).height(120.dp),
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .height(120.dp),
                 columns = GridCells.Fixed(2),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {

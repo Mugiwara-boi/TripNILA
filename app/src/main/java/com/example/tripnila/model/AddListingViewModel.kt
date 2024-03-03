@@ -39,6 +39,9 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
     private val _isSuccessAddListing = MutableStateFlow(false)
     val isSuccessAddListing: StateFlow<Boolean> = _isSuccessAddListing
 
+    private val _isUserVerified = MutableStateFlow(null)
+    val isUserVerified = _isUserVerified.asStateFlow()
+
 
     fun setHostId(hostId: String) {
         _staycation.value = _staycation.value.copy(host = Host(hostId = hostId))

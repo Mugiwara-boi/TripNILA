@@ -699,7 +699,9 @@ fun HostPropertyCard(
                 )
                 .fillMaxWidth()
         ) {
-            Column {
+            Column(
+                modifier = Modifier.fillMaxWidth(.4f)
+            ) {
                 Row {
                     Text(
                         text = hostProperty.propertyName,

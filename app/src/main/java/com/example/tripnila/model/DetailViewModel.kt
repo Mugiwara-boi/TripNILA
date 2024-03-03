@@ -23,6 +23,9 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
     private val _staycation = MutableStateFlow<Staycation?>(null)
     val staycation = _staycation.asStateFlow()
 
+    private val _isUserVerified = MutableStateFlow<Boolean?>(null)
+    val isUserVerified = _isUserVerified.asStateFlow()
+
     private val _staycationBooking = MutableStateFlow<StaycationBooking?>(null)
     val staycationBooking = _staycationBooking.asStateFlow()
 
@@ -277,6 +280,21 @@ class DetailViewModel(private val repository: UserRepository = UserRepository())
         val bookingFee = _staycation.value?.staycationPrice
 
         return bookingFee?.times(0.05)
+    }
+
+    fun verifyUser(touristId: String) {
+        viewModelScope.launch {
+            try {
+                val verificationStatus = repository.getTouristVerificationDocument(touristId)
+
+                _isUserVerified.value = verificationStatus
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+
+        }
     }
 
     fun getStaycationById(staycationId: String) {

@@ -3444,24 +3444,19 @@ class UserRepository {
         }
     }
 
-    suspend fun getTouristVerificationDocument(touristId: String): String? {
+    suspend fun getTouristVerificationDocument(touristId: String): Boolean {
         return try {
             val querySnapshot  = touristVerificationCollection
                 .whereEqualTo("touristId", touristId)
+                .whereEqualTo("verificationStatus", "Approved")
                 .get()
                 .await()
-
-            if (!querySnapshot.isEmpty) {
-                querySnapshot.documents.firstOrNull()?.getString("verificationStatus")
-            } else {
-                null // Return null if no document found
-            }
+            !querySnapshot.isEmpty
         } catch (e: Exception) {
             // Handle exception
-            null // Return null in case of exception
+            false
         }
     }
-
 
 
     suspend fun getTouristProfile(touristId: String): Tourist? {
