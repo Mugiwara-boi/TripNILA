@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -98,6 +99,7 @@ import com.example.tripnila.data.AttractionUiState
 import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.model.DetailViewModel
+import com.itenirary.IteniraryActivity
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.ZoneId
@@ -338,11 +340,17 @@ fun StaycationDetailsScreen(
 
                                 // Staycation Detail -> Itinerary
                                 // Sa staycationId na variable nakastore yung Id ng staycation
-                                Toast.makeText(
+                                /*Toast.makeText(
                                     context,
                                     "StaycationId: $staycationId",
                                     Toast.LENGTH_SHORT
-                                ).show()
+                                ).show()*/
+
+                                val intent = Intent(context, IteniraryActivity::class.java)
+                                intent.putExtra("cameFromProfile", false)
+                                intent.putExtra("touristId", touristId)
+                                intent.putExtra("staycationId", staycationId)
+                                context.startActivity(intent)
                             },
                             modifier = Modifier
                                 .offset(y = (-5).dp)

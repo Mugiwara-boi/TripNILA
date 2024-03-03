@@ -14,10 +14,14 @@ class IteniraryActivity : AppCompatActivity() {
         setContentView(R.layout.activity_itenirary)
 
         val touristId = intent.getStringExtra("touristId")
+        val staycationId = intent.getStringExtra("staycationId")
+        val cameFromProfile = intent.getBooleanExtra("cameFromProfile",false)
 
         val iteniraryFragment = IteniraryFragment().apply {
             arguments = Bundle().apply {
                 putString("touristId", touristId)
+                putString("staycationId", staycationId)
+                putBoolean("cameFromProfile",cameFromProfile)
             }
         }
 

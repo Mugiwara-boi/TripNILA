@@ -92,7 +92,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="5dp"
                             android:text="Sample Staycation Hotel"
-                            android:textColor="@color/text_color"
+                            android:textColor="#F67E24"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 

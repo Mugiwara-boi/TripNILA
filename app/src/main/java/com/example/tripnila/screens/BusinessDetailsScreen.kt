@@ -52,8 +52,6 @@ import com.example.tripnila.data.ReviewUiState
 
 @Composable
 fun BusinessDetailsScreen(){
-
-
     val amenities = listOf(
         AmenityBrief(
             image = R.drawable.person,

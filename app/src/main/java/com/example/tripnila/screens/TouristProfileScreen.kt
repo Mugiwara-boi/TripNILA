@@ -175,7 +175,9 @@ fun TouristProfileScreen(
                                 ).show()*/
 
                                 val intent = Intent(context, IteniraryActivity::class.java)
+                                intent.putExtra("cameFromProfile", true)
                                 intent.putExtra("touristId", touristId)
+                                intent.putExtra("staycationId", "-")
                                 context.startActivity(intent)
                             }
                         )

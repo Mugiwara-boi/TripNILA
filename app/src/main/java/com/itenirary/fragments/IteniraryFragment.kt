@@ -36,6 +36,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
@@ -48,6 +49,7 @@ import com.google.maps.GeoApiContext
 import com.google.maps.model.TransitMode
 import com.google.maps.model.TravelMode
 import com.google.maps.model.VehicleType
+import com.google.type.DateTime
 import com.itenirary.firebaseclass.business
 import com.itenirary.firebaseclass.business_availability
 import com.itenirary.firebaseclass.filter_data
@@ -66,11 +68,13 @@ import java.lang.Math.atan2
 import java.lang.Math.cos
 import java.lang.Math.sin
 import java.lang.Math.sqrt
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -133,6 +137,8 @@ class IteniraryFragment : Fragment(), OnMapReadyCallback {
     var tempStaycationLng: Double? = null
     var staycationLat: Double? = null
     var staycationLng: Double? = null
+    var cameFromProfile: Boolean? = false
+    var staycationId: String? = ""
     var selectedDay: String = ""
     var isNewDaySelected: Boolean = false
     val utils = utils()
@@ -178,6 +184,7 @@ class IteniraryFragment : Fragment(), OnMapReadyCallback {
     var currentTime = ""
     var arrivalTime = ""
     var currentCount = 0
+    var previousIndex = -1
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -187,6 +194,8 @@ class IteniraryFragment : Fragment(), OnMapReadyCallback {
 
         itineraryView = inflater.inflate(R.layout.fragment_itenirary, container, false)
         touristId = arguments?.getString("touristId").toString()
+        cameFromProfile = arguments?.getBoolean("cameFromProfile")
+        staycationId =  arguments?.getString("staycationId").toString()
 
         itineraryView.apply {
             etStartTime = findViewById(R.id.etStartTime)
@@ -280,7 +289,15 @@ class IteniraryFragment : Fragment(), OnMapReadyCallback {
             }
         })
 
+        if (!cameFromProfile!!) {
+            loadStaycationDetails()
+        }
+
         crdChoose.setOnClickListener {
+            if (!cameFromProfile!!) {
+                return@setOnClickListener
+            }
+
             selectedStaycation = true
             tempSelectedHostId = ""
             loadStaycation()
@@ -800,6 +817,7 @@ class IteniraryFragment : Fragment(), OnMapReadyCallback {
         }
 
         hideProgress()
+        previousIndex = -1
         rvIteniraryAdapter = rv_itenirary_adapter(this,iteniraryBankList_temp )
         rvItenirary.layoutManager = LinearLayoutManager(requireContext())
         rvItenirary.adapter = rvIteniraryAdapter
@@ -811,6 +829,11 @@ class IteniraryFragment : Fragment(), OnMapReadyCallback {
 
     fun getInstruction(rowIndex: Int,startLatLng: LatLng,endLatLng: LatLng) {
         instructionList.clear()
+
+        if (previousIndex != -1) {
+            iteniraryBankList_temp[previousIndex].instructionList = null
+            rvItenirary.adapter?.notifyItemChanged(previousIndex)
+        }
 
         Handler(Looper.getMainLooper()).postDelayed({
             try {
@@ -861,6 +884,7 @@ class IteniraryFragment : Fragment(), OnMapReadyCallback {
                 }
 
                 hideProgress()
+                previousIndex = rowIndex
                 iteniraryBankList_temp[rowIndex].instructionList = instructionList
                 rvItenirary.adapter?.notifyItemChanged(rowIndex)
             } catch (e: Exception) {
@@ -942,6 +966,7 @@ class IteniraryFragment : Fragment(), OnMapReadyCallback {
 
                 val markerOptionsBusiness = MarkerOptions()
                     .position(LatLng(endLatLng.latitude!!, endLatLng.longitude!!))
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
 
                 val markerStay = googleMap?.addMarker(markerOptionsStay)
                 val markerBusiness = googleMap?.addMarker(markerOptionsBusiness)
@@ -1063,6 +1088,167 @@ class IteniraryFragment : Fragment(), OnMapReadyCallback {
             .addOnFailureListener { exception ->
                 Toast.makeText(requireContext(),"Unable to retrieve data",Toast.LENGTH_LONG).show()
             }
+    }
+
+    fun loadStaycationDetails() {
+        db.collection("staycation")
+            .get()
+            .addOnSuccessListener { staycationDocuments ->
+                for (doc in staycationDocuments) {
+                    if (doc.id == staycationId) {
+                        val staycationTitle = doc.getString("staycationTitle")
+                        val hostId = doc.getString("hostId")
+                        val staycationLocation = doc.getString("staycationLocation")
+                        val staycationLat_c = doc.getDouble("staycationLat")
+                        val staycationLong_c = doc.getDouble("staycationLng")
+
+                        selectedHostId = hostId!!
+                        selectedHotelName = staycationTitle!!
+                        selectedAddress = staycationLocation!!
+                        selectedStaycationId = doc.id
+                        staycationLat = staycationLat_c
+                        staycationLng = staycationLong_c
+
+                        loadMap(staycationLat!!,staycationLng!!)
+
+                        tvHotelName.text = selectedHotelName
+                        tvAddress.text = selectedAddress
+                    }
+                }
+
+                db.collection("service_photo")
+                    .whereEqualTo("serviceId", selectedStaycationId)
+                    .whereEqualTo("photoType", "Cover")
+                    .get()
+                    .addOnSuccessListener { photoDocument ->
+                        for (document in photoDocument) {
+                            val photoUrl = document.getString("photoUrl")
+
+                            Glide.with(requireContext())
+                                .load(photoUrl)
+                                .placeholder(R.drawable.image_placeholder)
+                                .into(imgStaycation)
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        // Handle failure to fetch service photos
+                        println("Error fetching service photos: $exception")
+                    }
+
+                db.collection("tourist").document(selectedHostId.replace("HOST-","")).get()
+                    .addOnSuccessListener { tourstDocument ->
+                        val fullNameMap = tourstDocument.get("fullName") as? Map<*, *>
+                        val firstName = fullNameMap?.get("firstName") as? String
+
+                        selectedPersonName = firstName!!
+                        tvHost.text = selectedPersonName
+                    }
+                    .addOnFailureListener { exception ->
+                        // Handle failure to fetch staycation details
+                        println("Error fetching staycation details: $exception")
+                    }
+            }
+            .addOnFailureListener { exception ->
+                Toast.makeText(requireContext(),"Unable to retrieve data",Toast.LENGTH_LONG).show()
+            }
+
+        // Get the current date
+
+        val calendar = Calendar.getInstance()
+        selectedCheckInDate = calendar.time
+
+        calendar.add(Calendar.DAY_OF_MONTH, 7)
+        selectedCheckOutDate = calendar.time
+
+        tvSelect.visibility = View.GONE
+        llSelectedStaycation.visibility = View.VISIBLE
+        selectedStaycation = true
+
+
+
+        /*db.collection("staycation")
+            .whereEqualTo("staycationId", staycationId)
+            .get()
+            .addOnSuccessListener { staycationDocuments ->
+                for (document in staycationDocuments) {
+                    val dateFormat = SimpleDateFormat("dd MMM", Locale.getDefault())
+                    val documentId = document.id
+                    val staycationId = document.getString("staycationId")
+                    *//*val checkInDate = document.getTimestamp("checkInDate")?.toDate()
+                    val checkOutDate = document.getTimestamp("checkOutDate")?.toDate()*//*
+                   *//* val formattedCheckInDate = dateFormat.format(checkInDate)
+                    val formattedCheckOutDate = dateFormat.format(checkOutDate)
+                    val displayDate = "$formattedCheckInDate - $formattedCheckOutDate"*//*
+
+                    staycationId?.let { id ->
+                        db.collection("staycation").document(id).get()
+                            .addOnSuccessListener { staycationDocument ->
+                                val staycationTitle = staycationDocument.getString("staycationTitle")
+                                val hostId = staycationDocument.getString("hostId")
+                                val staycationLocation = staycationDocument.getString("staycationLocation")
+                                val staycationLat_c = staycationDocument.getDouble("staycationLat")
+                                val staycationLong_c = staycationDocument.getDouble("staycationLng")
+
+
+                                hostId?.let { id ->
+                                    db.collection("tourist").document(id.replace("HOST-","")).get()
+                                        .addOnSuccessListener { tourstDocument ->
+                                            val fullNameMap = tourstDocument.get("fullName") as? Map<*, *>
+                                            val firstName = fullNameMap?.get("firstName") as? String
+
+                                            selectedHostId = hostId!!
+                                           *//* selectedCheckInDate = checkInDate
+                                            selectedCheckOutDate = checkOutDate*//*
+                                            selectedHotelName = staycationTitle!!
+                                            selectedPersonName = firstName!!
+                                            selectedAddress = staycationLocation!!
+                                            selectedStaycationId = staycationId
+                                            staycationLat = staycationLat_c
+                                            staycationLng = staycationLong_c
+
+                                            tvHotelName.text = selectedHotelName
+                                        }
+                                        .addOnFailureListener { exception ->
+                                            // Handle failure to fetch staycation details
+                                            println("Error fetching staycation details: $exception")
+                                        }
+                                }
+                            }
+                            .addOnFailureListener { exception ->
+                                // Handle failure to fetch staycation details
+                                println("Error fetching staycation details: $exception")
+                            }
+                    }
+
+
+
+
+
+                    db.collection("service_photo")
+                        .whereEqualTo("serviceId", selectedStaycationId)
+                        .whereEqualTo("photoType", "Cover")
+                        .get()
+                        .addOnSuccessListener { photoDocument ->
+                            for (document in photoDocument) {
+                                val photoUrl = document.getString("photoUrl")
+
+                                Glide.with(requireContext())
+                                    .load(photoUrl)
+                                    .placeholder(R.drawable.image_placeholder)
+                                    .into(imgStaycation)
+                            }
+                        }
+                        .addOnFailureListener { exception ->
+                            // Handle failure to fetch service photos
+                            println("Error fetching service photos: $exception")
+                        }
+                }
+            }
+            .addOnFailureListener { exception ->
+                Toast.makeText(requireContext(),"Unable to retrieve data",Toast.LENGTH_LONG).show()
+            }
+
+        */
     }
 
     fun changeColorOfAMPM() {
