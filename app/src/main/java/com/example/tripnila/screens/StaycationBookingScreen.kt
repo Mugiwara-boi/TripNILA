@@ -622,10 +622,9 @@ fun StaycationBookingScreen(
                                             detailViewModel.addBooking(touristId)
                                             touristWalletViewModel.setBookingPayment(totalFee,touristId)
                                             touristWalletViewModel.setPendingAmount(totalFee = totalFee,hostWalletId = hostWalletId,tripnilaFee = tripnilaFee)
+
                                         }
-
-
-
+                                        onBack()
 
                                     },
                                     modifier = Modifier.padding(horizontal = 10.dp),

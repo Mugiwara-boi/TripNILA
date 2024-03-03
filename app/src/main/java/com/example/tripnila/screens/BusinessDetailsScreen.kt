@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +69,7 @@ fun BusinessDetailsScreen(
     businessDetailViewModel: BusinessDetailViewModel
 ){
 
+    val context = LocalContext.current
     LaunchedEffect(businessId) {
         businessDetailViewModel.getSelectedBusiness(businessId)
         Log.d("Tourist Id", touristId)
@@ -310,7 +312,9 @@ fun BusinessDetailsScreen(
                 item {
                     AppLocationCard(
                         location = business.businessLocation,
-                        locationImage = R.drawable.map_image2,
+                        context = context,
+                        lat = business.businessLat,
+                        lng = business.businessLng,
                         locationDescription =  business.additionalInfo, // CHANGE ADDITIONAL INFO INTO LOCATION INFO
                         modifier = Modifier
                             .offset(y = (-5).dp)
@@ -325,9 +329,6 @@ fun BusinessDetailsScreen(
                             .offset(y = (-5).dp)
                             .padding(bottom = 7.dp)
                     )
-                }
-                item {
-                    BusinessBottomBookingBar()
                 }
             }
 

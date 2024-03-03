@@ -3,13 +3,11 @@ package com.example.tripnila.screens
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -33,8 +31,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,6 +55,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
@@ -79,7 +76,6 @@ import com.example.tripnila.common.AppLocationCard
 import com.example.tripnila.common.AppOutlinedButton
 import com.example.tripnila.common.AppReviewsCard
 import com.example.tripnila.common.LoadingScreen
-import com.example.tripnila.common.Orange
 import com.example.tripnila.common.Tag
 import com.example.tripnila.common.UnderlinedText
 import com.example.tripnila.data.ReviewUiState
@@ -130,6 +126,7 @@ fun TourDetailsScreen(
     val bottomSheetState = rememberModalBottomSheetState( skipPartiallyExpanded = true)
     val hasNavigationBar = WindowInsets.areNavigationBarsVisible
 
+    val context = LocalContext.current
     var openBottomSheet by remember { mutableStateOf(false) }
 
     val tourAvailableDates = tour.schedule
@@ -360,9 +357,10 @@ fun TourDetailsScreen(
                     item {
                         AppLocationCard(
                             location = "Where we'll meet",
-                            locationImage = R.drawable.map_image2,
+                            lat = tour.tourLat,
+                            lng = tour.tourLng,
+                            context = context,
                             locationDescription = tour.tourLocation,
-                            withEditButton = false,
                             modifier = Modifier
                                 .offset(y = (-5).dp)
                                 .padding(bottom = 12.dp)

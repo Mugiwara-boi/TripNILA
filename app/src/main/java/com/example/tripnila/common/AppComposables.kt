@@ -1,5 +1,6 @@
 package com.example.tripnila.common
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -60,6 +61,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -80,6 +82,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
@@ -111,6 +114,10 @@ import coil.compose.rememberImagePainter
 import com.example.tripnila.R
 import com.example.tripnila.data.BottomNavigationItem
 import com.example.tripnila.data.ReviewUiState
+import com.example.tripnila.ui.LocationPermissionScreen
+import com.example.tripnila.ui.MapWindow
+import com.example.tripnila.ui.theme.GoogleMapsTheme
+import com.example.tripnila.utils.checkForPermission
 import java.text.NumberFormat
 
 val Orange = Color(0xfff9a664)
@@ -1198,11 +1205,12 @@ fun AppExpandingText(
 @Composable
 fun AppLocationCard(
     modifier: Modifier = Modifier,
+    context: Context,
     header: String = "Location",
     location: String,
-    locationImage: Int,
     locationDescription: String,
-    withEditButton: Boolean = false
+    lat: Double,
+    lng: Double,
 ){
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -1254,11 +1262,25 @@ fun AppLocationCard(
                     .height(140.dp)
 
             ){
-                Image(
-                    painter = painterResource(id = locationImage),
-                    contentDescription = "Location",
-                    contentScale = ContentScale.Crop
-                )
+                GoogleMapsTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize().height(500.dp),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        var hasLocationPermission by remember {
+                            mutableStateOf(checkForPermission(context))
+                        }
+
+                        if (hasLocationPermission) {
+                                MapWindow(context,lat, lng)
+
+                        } else {
+                            LocationPermissionScreen {
+                                hasLocationPermission = true
+                            }
+                        }
+                    }
+                }
             }
             Row(
                 modifier = Modifier
