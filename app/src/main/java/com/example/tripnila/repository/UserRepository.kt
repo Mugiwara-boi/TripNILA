@@ -6196,12 +6196,12 @@ class UserRepository {
         }
     }
 
-    suspend fun loginUser(username: String, password: String): Boolean {
+    suspend fun loginUser(uid: String, password: String): Boolean {
         return try {
             val hashedPassword = hashPassword(password)
 
             val result = touristCollection
-                .whereEqualTo("username", username)
+                .whereEqualTo("uid", uid)
                 .whereEqualTo("password", hashedPassword)
                 .get()
                 .await()
@@ -6217,7 +6217,7 @@ class UserRepository {
                 val storedUsername = document.getString("username") ?: ""
                 val touristId = document.id
 
-                currentUser = Tourist(touristId, firstName, middleName, lastName, storedUsername, "")
+                currentUser = Tourist(touristId=touristId, firstName = firstName, middleName = middleName, lastName = lastName, username = storedUsername, uid = uid)
                 Log.d("UserRepository", "Login result: true")
                 Log.d("UserRepository", "Current user: $currentUser")
 
