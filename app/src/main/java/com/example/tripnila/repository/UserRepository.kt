@@ -132,13 +132,16 @@ class UserRepository {
             val firstValidIdUrl = firstValidIdUri?.let { uploadImageToStorage(it) }
             val secondValidIdUrl = secondValidIdUri?.let { uploadImageToStorage(it) }
 
+            val timestamp = Timestamp.now() // Get the current timestamp
+
             val verificationData = hashMapOf(
                 "firstValidIdType" to firstValidIdType,
                 "firstValidIdUrl" to firstValidIdUrl,
                 "secondValidIdType" to secondValidIdType,
                 "secondValidIdUrl" to secondValidIdUrl,
                 "touristId" to touristId,
-                "verificationStatus" to verificationStatus
+                "verificationStatus" to verificationStatus,
+                "timestamp" to timestamp // Add the timestamp to the verification data
             )
 
             touristVerificationCollection.add(verificationData).await()
