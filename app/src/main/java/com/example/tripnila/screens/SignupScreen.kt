@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -48,7 +47,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tripnila.R
-import com.example.tripnila.common.*
+import com.example.tripnila.common.Orange
+import com.example.tripnila.common.PasswordFieldWithIcon
+import com.example.tripnila.common.TextFieldWithIcon
+import com.example.tripnila.common.TripNilaIcon
 import com.example.tripnila.model.SignupViewModel
 import kotlinx.coroutines.launch
 
@@ -123,7 +125,7 @@ fun SignupScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 115.dp)
+                    .padding(top = 60.dp)
             ) {
                 Text(
                     text = "Create an account",
@@ -176,6 +178,25 @@ fun SignupScreen(
                         signupViewModel?.setLastName(it)
                     },
                     labelValue = "Last Name",
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions {
+                        localFocusManager.moveFocus(FocusDirection.Down)
+                    },
+                    supportingText = null,
+                    painterResource(id = R.drawable.person)
+                )
+                Spacer(
+                    modifier = Modifier
+                        .height(15.dp)
+                )
+                TextFieldWithIcon(
+                    textValue = signUpUiState?.value?.email ?: "",
+                    onValueChange = {
+                        signupViewModel?.setEmail(it)
+                    },
+                    labelValue = "Email",
                     keyboardOptions = KeyboardOptions(
                         imeAction = ImeAction.Next
                     ),
@@ -260,7 +281,7 @@ fun SignupScreen(
                 BookingFilledButton(
                     buttonText = "Sign in",
                     onClick = {
-                        signupViewModel?.createUser()
+                        signupViewModel?.registerUser()
                         if (signUpUiState?.value?.isSuccessSignin == true){
                             onNavToLoginScreen.invoke()
                         }

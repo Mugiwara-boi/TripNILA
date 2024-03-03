@@ -3,20 +3,15 @@ package com.example.tripnila.model
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Tourist
-import kotlinx.coroutines.launch
 import com.example.tripnila.repository.UserRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.launch
 
 class LoginViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
 
@@ -58,29 +53,37 @@ class LoginViewModel(private val repository: UserRepository = UserRepository()) 
                 }
 
                 _loginUiState.value = _loginUiState.value.copy(isLoading = true, loginError = null)
-                val user = repository.loginUser(
-                    _loginUiState.value.username,
-                    _loginUiState.value.password
-                )
-                Log.d("LoginViewModel", "Login result2: ${_loginUiState.value}")
 
-                if (user) {
+                Log.d("LoginViewModel", "Login result2: ${_loginUiState.value}")
+                val firebaseUser = FirebaseAuth.getInstance().currentUser
+                if (firebaseUser != null && firebaseUser.isEmailVerified) {
                     // Show success message using Toast
                     Toast.makeText(
                         context,
                         "Login successful",
                         Toast.LENGTH_SHORT
                     ).show()
-                } else {
+                    val user = repository.loginUser(
+                        _loginUiState.value.username,
+                        _loginUiState.value.password
+                    )
+                    _loginUiState.value = _loginUiState.value.copy(isSuccessLogin = user)
+                } else if(firebaseUser != null){
                     // Show error message using Toast
-                    Toast.makeText(
-                        context,
-                        "Login failed: Incorrect username or password",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    if (!firebaseUser.isEmailVerified) {
+                        Toast.makeText(
+                            context,
+                            "Email is not verified. Please verify your email.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Login failed: Incorrect username or password",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
-
-                _loginUiState.value = _loginUiState.value.copy(isSuccessLogin = user)
 
                 _currentUser.value = repository.getCurrentUser()
 

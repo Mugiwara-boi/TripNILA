@@ -6244,7 +6244,8 @@ class UserRepository {
                     "lastName" to user.lastName
                 ),
                 "username" to user.username,
-                "password" to hashedPassword
+                "password" to hashedPassword,
+                "uid" to user.uid
             )
 
             val touristDocRef = touristCollection.add(userData).await()
