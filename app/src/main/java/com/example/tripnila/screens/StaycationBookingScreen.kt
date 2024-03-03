@@ -138,6 +138,11 @@ fun StaycationBookingScreen(
     val titleText: MutableState<String?> = remember { mutableStateOf(null) }
     val enableBottomSaveButton: MutableState<Boolean> = remember { mutableStateOf(true) }
     val openAlertDialog = remember { mutableStateOf(false) }
+    val maxGuest = staycation?.value?.maxNoOfGuests
+    val guestCount = staycation?.value?.noOfGuests!!
+    if(maxGuest != 0 && maxGuest!! > guestCount){
+
+    }
 
     val nights = remember { mutableStateOf(0) }
     val hasNavigationBar = WindowInsets.areNavigationBarsVisible
@@ -1359,6 +1364,7 @@ fun GuestsCounter(
 
     var adultsCount = detailViewModel.adultCount.collectAsState().value
     var childrenCount = detailViewModel.childrenCount.collectAsState().value
+    val maxNoOfGuest = detailViewModel.staycation.collectAsState().value?.maxNoOfGuests ?: 0
 
     Row(
         modifier = modifier

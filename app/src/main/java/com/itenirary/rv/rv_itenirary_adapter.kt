@@ -13,21 +13,12 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.core.text.HtmlCompat
-import androidx.navigation.NavHost
 import androidx.recyclerview.widget.RecyclerView
-import com.example.tripnila.HostRoutes
 import com.example.tripnila.R
-import com.example.tripnila.screens.BusinessDetailsScreen
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.DirectionsApi
-import com.google.maps.GeoApiContext
-import com.google.maps.model.TransitMode
-import com.google.maps.model.TravelMode
-import com.google.maps.model.VehicleType
 import com.itenirary.BusinessActivityDetails
 import com.itenirary.firebaseclass.instruction
 import com.itenirary.fragments.IteniraryFragment
@@ -60,11 +51,11 @@ class rv_itenirary_adapter(var iteniraryFragment: IteniraryFragment, var items: 
         if (position == 0) {
             expectedStartLat = item.selectedLat
             expectedStartLng = item.selectedLng
-            expectedPrevLocation = "Return from Staycation"
+            expectedPrevLocation = " "
         } else {
             expectedStartLat = items[position - 1].businessLat
             expectedStartLng = items[position - 1].businessLng
-            expectedPrevLocation = "Return from ${items[position - 1].businessName}"
+            expectedPrevLocation = "Direction from ${items[position - 1].businessName}"
         }
 
         if (position != selectedIndex) {
@@ -102,42 +93,94 @@ class rv_itenirary_adapter(var iteniraryFragment: IteniraryFragment, var items: 
             tvDirectionButton1.text = CHECK_DIRECTIONS
 
             lnCheckDirections.setOnClickListener {
-                val optionChoices = arrayOf(expectedPrevLocation,"Direction from Staycation", "Back to Staycation")
+                if (expectedPrevLocation != " ") {
+                    val optionChoices = arrayOf(
+                        expectedPrevLocation,
+                        "Direction from Staycation",
+                        "Back to Staycation"
+                    )
 
-                showSelectionDialog(itemView.context, optionChoices) { selectedItemIndex ->
-                    lnStepsHolder.visibility = View.GONE
-                    lnStepsHolder.removeAllViews()
-                    iteniraryFragment.showProgress()
-                    optionIndex = selectedItemIndex
 
-                    when(selectedItemIndex) {
-                        0 -> {
-                            iteniraryFragment.getInstruction(position,
-                                LatLng(expectedStartLat,expectedStartLng),
-                                LatLng(item.businessLat,item.selectedLng)
-                            )
+                    showSelectionDialog(itemView.context, optionChoices) { selectedItemIndex ->
+                        lnStepsHolder.visibility = View.GONE
+                        lnStepsHolder.removeAllViews()
+                        iteniraryFragment.showProgress()
+                        optionIndex = selectedItemIndex
+
+                        when (selectedItemIndex) {
+                            0 -> {
+                                iteniraryFragment.getInstruction(
+                                    position,
+                                    LatLng(expectedStartLat, expectedStartLng),
+                                    LatLng(item.businessLat, item.selectedLng)
+                                )
+                            }
+
+                            1 -> {
+                                iteniraryFragment.getInstruction(
+                                    position,
+                                    LatLng(item.selectedLat, item.selectedLng),
+                                    LatLng(item.businessLat, item.businessLng)
+                                )
+                            }
+
+                            2 -> {
+                                iteniraryFragment.getInstruction(
+                                    position,
+                                    LatLng(item.businessLat, item.businessLng),
+                                    LatLng(item.selectedLat, item.selectedLng)
+                                )
+                            }
                         }
-                        1 -> {
-                            iteniraryFragment.getInstruction(position,
-                                LatLng(item.selectedLat,item.selectedLng),
-                                LatLng(item.businessLat,item.businessLng)
-                            )
+
+                        lnStepsHolder.visibility = View.VISIBLE
+                        tvDirectionButton1.text = optionChoices[selectedItemIndex]
+
+                        selectedIndex = adapterPosition
+                        notifyDataSetChanged()
+                    }
+                } else {
+                    val optionChoices = arrayOf(
+                        "Direction from Staycation",
+                        "Back to Staycation"
+                    )
+
+
+                    showSelectionDialog(itemView.context, optionChoices) { selectedItemIndex ->
+                        lnStepsHolder.visibility = View.GONE
+                        lnStepsHolder.removeAllViews()
+                        iteniraryFragment.showProgress()
+                        optionIndex = selectedItemIndex
+
+                        when (selectedItemIndex) {
+                            0 -> {
+                                iteniraryFragment.getInstruction(
+                                    position,
+                                    LatLng(item.selectedLat, item.selectedLng),
+                                    LatLng(item.businessLat, item.businessLng)
+                                )
+                            }
+
+                            1 -> {
+                                iteniraryFragment.getInstruction(
+                                    position,
+                                    LatLng(item.businessLat, item.businessLng),
+                                    LatLng(item.selectedLat, item.selectedLng)
+                                )
+                            }
+
                         }
-                        2 -> {
-                            iteniraryFragment.getInstruction(position,
-                                LatLng(item.businessLat,item.businessLng),
-                                LatLng(item.selectedLat,item.selectedLng)
-                            )
-                        }
+
+                        lnStepsHolder.visibility = View.VISIBLE
+                        tvDirectionButton1.text = optionChoices[selectedItemIndex]
+
+                        selectedIndex = adapterPosition
+                        notifyDataSetChanged()
                     }
 
-                    lnStepsHolder.visibility = View.VISIBLE
-                    tvDirectionButton1.text = optionChoices[selectedItemIndex]
-
-                    selectedIndex = adapterPosition
-                    notifyDataSetChanged()
                 }
             }
+
 
             lnSeeRoute.setOnClickListener {
                 iteniraryFragment.showProgress()
