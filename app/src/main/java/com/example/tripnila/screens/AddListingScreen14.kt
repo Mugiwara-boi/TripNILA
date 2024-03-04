@@ -72,7 +72,7 @@ fun AddListingScreen14(
     val allowPets = addListingViewModel?.staycation?.collectAsState()?.value?.allowPets
     val allowSmoking = addListingViewModel?.staycation?.collectAsState()?.value?.allowSmoking
     val noisePolicy = addListingViewModel?.staycation?.collectAsState()?.value?.noisePolicy
-
+    val isEcoFriendly = false
     val alreadySubmitted = addListingViewModel?.isSuccessAddListing?.collectAsState()?.value
 
     val isLoading = addListingViewModel?.isLoadingAddListing?.collectAsState()?.value
@@ -305,9 +305,10 @@ fun AddListingScreen14(
                             )
                         }
                     }
+
                     item {
                         Text(
-                            text = "Any additional information about your staycation?",
+                            text = "Does your place have any eco-friendly policies or practices?",
                             color = Color(0xff333333),
                             fontSize = 12.sp
                         )
@@ -422,7 +423,7 @@ fun AddListingAgreement(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(34.dp),
+            .height(50.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(

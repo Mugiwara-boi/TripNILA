@@ -1041,19 +1041,13 @@ fun AttractionsNearbyCard(modifier: Modifier = Modifier, attractionUiStates: Lis
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Attractions nearby",
+                text = "Itinerary Planner",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .align(Alignment.Start)
             )
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                attractionUiStates.forEach { attraction ->
-                    AttractionRow(attraction)
-                }
-            }
+            Spacer(modifier = Modifier.height(10.dp))
             AppOutlinedButton(
                 buttonText = "See itinerary",
                 onClick = {
@@ -1475,6 +1469,29 @@ fun StaycationAdditionalInformationCard(withEditButton: Boolean = false, modifie
 
                             Text(
                                 text = "Pets are not allowed.",
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+                            Divider(
+                                color = Color(0xFFDEDEDE),
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                            )
+                        }
+                    }
+                    item{
+                        if(additionalInfo!=""){
+                            Text(
+                                text = "Eco-friendly Policies",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                            )
+
+                            Text(
+                                text = additionalInfo!!,
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier
                                     .padding(start = 16.dp, end = 16.dp)

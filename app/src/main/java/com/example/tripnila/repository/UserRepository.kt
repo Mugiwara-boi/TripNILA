@@ -6432,6 +6432,8 @@ class UserRepository {
                     reviewerId = touristId
                 ) ?: Review()
 
+                val tourist = getTouristProfile(touristId)
+
 
                 // Construct a StaycationBooking object and add it to the list
                 val booking = StaycationBooking(
@@ -6442,7 +6444,7 @@ class UserRepository {
                     checkOutDate = checkOutDate,
                     noOfGuests = noOfGuests,
                     totalAmount = totalAmount,
-                    tourist = Tourist(touristId = touristId),
+                    tourist = tourist,
                     // staycationId = staycationId, /*TODO*/ // RECENTLY UPDATEDDDDDDDDD
                     bookingReview = bookingReview
                     // Add other fields as needed

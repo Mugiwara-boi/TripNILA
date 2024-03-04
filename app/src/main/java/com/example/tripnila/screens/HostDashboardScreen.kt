@@ -699,14 +699,14 @@ fun HostPropertyCard(
                 .fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(.4f)
+                modifier = Modifier.fillMaxWidth(.6f)
             ) {
                 Row {
                     Text(
                         text = hostProperty.propertyName,
                         fontWeight = FontWeight.Medium,
                         fontSize = 16.sp,
-                        modifier = Modifier.width(150.dp)
+                        modifier = Modifier.width(145.dp)
                     )
                     Spacer(modifier = Modifier.width(5.dp))
                     AppOutlinedButtonWithBadge(

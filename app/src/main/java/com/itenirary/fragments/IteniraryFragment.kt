@@ -489,10 +489,17 @@ class IteniraryFragment : Fragment(), OnMapReadyCallback {
                     .get()
                     .addOnSuccessListener { serviceTagDocs ->
                         for (serviceTagDoc in serviceTagDocs) {
-                            serviceTagList.add(servicetag(
-                                businessId = serviceTagDoc.getString("serviceId")!!,
-                                tagName = serviceTagDoc.getString("tagName")!!
-                            ))
+                            val businessId = serviceTagDoc.getString("serviceId")
+                            val tagName = serviceTagDoc.getString("tagName")
+
+                            if (businessId != null && tagName != null) {
+                                serviceTagList.add(servicetag(
+                                    businessId = businessId,
+                                    tagName = tagName
+                                ))
+                            } else {
+                                // Handle the case where either businessId or tagName is null
+                            }
                         }
 
                         db.collection("tourist_preference")

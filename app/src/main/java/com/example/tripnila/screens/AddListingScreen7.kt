@@ -125,10 +125,6 @@ fun AddListingScreen7(
             ),
             PropertyDescription(
                 icon = R.drawable.workspace,
-                label = "Complimentary Toiletries"
-            ),
-            PropertyDescription(
-                icon = R.drawable.workspace,
                 label = "Air Conditioning"
             ),
             PropertyDescription(
