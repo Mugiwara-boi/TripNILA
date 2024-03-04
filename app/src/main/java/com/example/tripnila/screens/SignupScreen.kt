@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -59,6 +61,7 @@ fun SignupScreen(
     signupViewModel: SignupViewModel? = null,
     onNavToLoginScreen : () -> Unit
 ){
+    val context = LocalContext.current
     val signUpUiState = signupViewModel?.signupUiState?.collectAsState()
     var localFocusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
@@ -71,6 +74,11 @@ fun SignupScreen(
 //        }
 //    }
     if (signUpUiState?.value?.isSuccessSignin == true){
+        Toast.makeText(
+            context,
+            "Email verification sent",
+            Toast.LENGTH_SHORT
+        ).show()
         onNavToLoginScreen.invoke()
     }
     LaunchedEffect(signUpUiState?.value) {

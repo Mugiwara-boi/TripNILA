@@ -1,5 +1,6 @@
 package com.example.tripnila.model
 
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tripnila.data.Tourist
@@ -33,6 +34,8 @@ class SignupViewModel(
                     val user = FirebaseAuth.getInstance().currentUser
                     user?.sendEmailVerification()?.addOnCompleteListener { verificationTask ->
                         if (verificationTask.isSuccessful) {
+
+
                             createUser(user?.uid ?: "")
                         } else {
                             // Email verification failed
