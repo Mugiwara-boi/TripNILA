@@ -37,8 +37,11 @@ class HostDashboardViewModel(private val repository: UserRepository = UserReposi
 
 
 
-    fun getHostDetailsByTouristId(touristId: String) {
-        viewModelScope.launch {
+    suspend fun getHostDetailsByTouristId(touristId: String) {
+       // viewModelScope.launch {
+
+        _isLoadingState.value = true
+
             try {
                 val hostDetails = repository.getHostProfile(touristId)
                 val staycations = hostDetails?.let { repository.getStaycationsByHostId(it) }
@@ -55,10 +58,14 @@ class HostDashboardViewModel(private val repository: UserRepository = UserReposi
                 _isStateRetrieved.value = true
 
 
+
+
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
+                _isLoadingState.value = false
             }
-        }
+    //    }
     }
 
 

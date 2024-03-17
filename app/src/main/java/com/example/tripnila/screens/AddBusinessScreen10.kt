@@ -37,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tripnila.common.Orange
+import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.HostTourViewModel
 import kotlinx.coroutines.delay
@@ -83,14 +85,9 @@ fun AddBusinessScreen10(
 
     val context = LocalContext.current
 
-
-    var selectedOpeningHour by remember { mutableStateOf(0) }
-    var selectedOpeningMinute by remember { mutableStateOf(0) }
-
-    var selectedClosingHour by remember { mutableStateOf(0) }
-    var selectedClosingMinute by remember { mutableStateOf(0) }
-
     var selectedDays by remember { mutableStateOf(addBusinessViewModel?.business?.value?.schedule?.map { it.day }) }
+
+    val business = addBusinessViewModel?.business?.collectAsState()?.value
 
     val coroutineScope = rememberCoroutineScope()
     val alreadySubmitted = addBusinessViewModel?.isSuccessAddBusiness?.collectAsState()?.value
@@ -168,13 +165,20 @@ fun AddBusinessScreen10(
 
 
                     items(days){day ->
+
+                        val selectedOpeningTime = business?.schedule?.find { it.day == day }?.openingTime ?: "00:00 am"
+                        val selectedClosingTime = business?.schedule?.find { it.day == day }?.closingTime ?: "00:00 am"
+
+                        val (selectedOpeningHour, selectedOpeningMinute) = addBusinessViewModel!!.extractHourAndMinute(selectedOpeningTime)
+                        val (selectedClosingHour, selectedClosingMinute) = addBusinessViewModel.extractHourAndMinute(selectedClosingTime)
+
                         ScheduleCard(
                             day = day,
                             selected = selectedDays?.contains(day) == true  ,//days.indexOf(day) in selectedDayIndex,
-                            selectedOpeningHour = selectedOpeningHour,
-                            selectedOpeningMinute = selectedOpeningMinute,
-                            selectedClosingHour = selectedClosingHour,
-                            selectedClosingMinute = selectedClosingMinute,
+                            initialSelectedOpeningHour = selectedOpeningHour,
+                            initialSelectedOpeningMinute = selectedOpeningMinute,
+                            initialSelectedClosingHour = selectedClosingHour,
+                            initialSelectedClosingMinute = selectedClosingMinute,
                             onSelectedChange = { isSelected ->
                                 if (isSelected) {
                                     selectedDays = selectedDays?.plus(day)
@@ -210,22 +214,22 @@ fun AddBusinessScreen10(
 fun ScheduleCard(
     day: String,
     selected: Boolean,
-    selectedOpeningHour: Int,
-    selectedOpeningMinute: Int,
-    selectedClosingHour: Int,
-    selectedClosingMinute: Int,
+    initialSelectedOpeningHour: Int,
+    initialSelectedOpeningMinute: Int,
+    initialSelectedClosingHour: Int,
+    initialSelectedClosingMinute: Int,
     onSelectedChange: (Boolean) -> Unit,
     onConfirm: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ){
 
-    var selectedOpeningHour by remember { mutableStateOf(selectedOpeningHour) }
-    var selectedOpeningMinute by remember { mutableStateOf(selectedOpeningMinute) }
+    var selectedOpeningHour by remember { mutableIntStateOf(initialSelectedOpeningHour) }
+    var selectedOpeningMinute by remember { mutableIntStateOf(initialSelectedOpeningMinute) }
     var showOpeningDialog by remember { mutableStateOf(false) }
-    var coroutineScope = rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope()
 
-    var selectedClosingHour by remember { mutableStateOf(selectedClosingHour) }
-    var selectedClosingMinute by remember { mutableStateOf(selectedClosingMinute) }
+    var selectedClosingHour by remember { mutableIntStateOf(initialSelectedClosingHour) }
+    var selectedClosingMinute by remember { mutableIntStateOf(initialSelectedClosingMinute) }
     var showClosingDialog by remember { mutableStateOf(false) }
 
     val openingTimePickerState = rememberTimePickerState(
@@ -248,6 +252,15 @@ fun ScheduleCard(
     }
 
     val formattedOpeningTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(openingCalendar.time)
+
+    val closingCalendar = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, selectedClosingHour.toInt())
+        set(Calendar.MINUTE, selectedClosingMinute.toInt())
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+
+    val formattedClosingTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(closingCalendar.time)
 
 
 
@@ -306,9 +319,6 @@ fun ScheduleCard(
                         .clickable { showOpeningDialog = true }
 
                 ){
-
-
-
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -369,16 +379,6 @@ fun ScheduleCard(
                                 .align(Alignment.Start)
 
                         )
-
-                        val closingCalendar = Calendar.getInstance().apply {
-                            set(Calendar.HOUR_OF_DAY, selectedClosingHour.toInt())
-                            set(Calendar.MINUTE, selectedClosingMinute.toInt())
-                            set(Calendar.SECOND, 0)
-                            set(Calendar.MILLISECOND, 0)
-                        }
-
-                        val formattedClosingTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(closingCalendar.time)
-
                         Text(
                             text = if(!selected) "00:00 PM" else formattedClosingTime,
                             color = Color(0xff333333),
@@ -508,15 +508,28 @@ fun ScheduleCard(
                     TextButton(
                         onClick = {
                             coroutineScope.launch{
-                                val closingCalendar = Calendar.getInstance().apply {
+
+/*
+                                showOpeningDialog = false
+                                selectedOpeningHour = openingTimePickerState.hour
+                                selectedOpeningMinute = openingTimePickerState.minute
+                                delay(300)
+
+                                showClosingDialog = true*/
+
+/*                                val closingCalendar = Calendar.getInstance().apply {
                                     set(Calendar.HOUR_OF_DAY, closingTimePickerState.hour.toInt())
                                     set(Calendar.MINUTE, closingTimePickerState.minute.toInt())
                                     set(Calendar.SECOND, 0)
                                     set(Calendar.MILLISECOND, 0)
                                 }
 
-                                val formattedClosingTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(closingCalendar.time)
+                                val formattedClosingTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(closingCalendar.time)*/
                              //   delay(300)
+
+                                selectedClosingHour = closingTimePickerState.hour
+                                selectedClosingMinute = closingTimePickerState.minute
+
                                 onConfirm(formattedOpeningTime, formattedClosingTime)
                                 showClosingDialog = false
                             }

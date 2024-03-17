@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -84,7 +85,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.BottomCenter
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
+import androidx.compose.ui.Alignment.Companion.TopCenter
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.onFocusChanged
@@ -116,6 +119,7 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.example.tripnila.R
+import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.common.Orange
 import com.example.tripnila.common.Tag
 import com.example.tripnila.common.TouristBottomNavigationBar
@@ -146,8 +150,50 @@ fun HomeScreen(
 ){
 
     LaunchedEffect(touristId) {
-        homeViewModel.getUserPreference(touristId)
-        homeViewModel.getUniqueServiceIds()
+
+        Log.d("TouristID", touristId)
+
+        if (touristId != homeViewModel.touristId.value) {
+
+            homeViewModel.setUserId(touristId)
+            homeViewModel.getUserPreference()
+
+            homeViewModel.refreshForYouPagingData()
+            homeViewModel.refreshSportsPagingData()
+            homeViewModel.refreshFoodTripPagingData()
+            homeViewModel.refreshShopPagingData()
+            homeViewModel.refreshNaturePagingData()
+            homeViewModel.refreshGamingPagingData()
+            homeViewModel.refreshKaraokePagingData()
+            homeViewModel.refreshHistoryPagingData()
+            homeViewModel.refreshClubsPagingData()
+            homeViewModel.refreshSightseeingPagingData()
+            homeViewModel.refreshSwimmingPagingData()
+
+
+
+
+        }
+
+
+
+
+    //    homeViewModel.getAllTags()
+
+/*
+        homeViewModel.refreshForYouPagingData()
+        homeViewModel.refreshSportsPagingData()
+        homeViewModel.refreshFoodTripPagingData()
+        homeViewModel.refreshShopPagingData()
+        homeViewModel.refreshNaturePagingData()
+        homeViewModel.refreshGamingPagingData()
+        homeViewModel.refreshKaraokePagingData()
+        homeViewModel.refreshHistoryPagingData()
+        homeViewModel.refreshClubsPagingData()
+        homeViewModel.refreshSightseeingPagingData()
+        homeViewModel.refreshSwimmingPagingData()
+*/
+
         Log.d("Selected Tab", homeViewModel.selectedTab.value)
     }
 
@@ -161,7 +207,9 @@ fun HomeScreen(
 
     // Observe the selected tab from the HomeViewModel
     val selectedTab by homeViewModel.selectedTab.collectAsState()
-    val serviceIdSet by homeViewModel.serviceIdSet.collectAsState()
+ //   val serviceIdSet by homeViewModel.serviceIdSet.collectAsState()
+
+    val fetchedTags by homeViewModel.fetchedTags.collectAsState()
 
 
     val pagerState = rememberPagerState(
@@ -247,775 +295,808 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Scaffold(
-            bottomBar = {
-                TouristBottomNavigationBar(
-                    touristId = touristId,
-                    navController = navController,
-                    selectedItemIndex = selectedItemIndex,
-                    onItemSelected = { newIndex ->
-                        selectedItemIndex = newIndex
-                    }
-                )
-            },
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "Home",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    },
-                    actions = {
-                        IconButton(
-                            onClick = { openModalBottomSheet = true },
-                        ) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(R.drawable.filter),
-                                contentDescription = "Close",
-                                tint = Color(0xFF333333),
-                                modifier = Modifier.size(40.dp)
-                            )
+        if (homeViewModel.touristId.value != touristId) {
+            LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
+        } else {
+            Scaffold(
+                bottomBar = {
+                    TouristBottomNavigationBar(
+                        touristId = touristId,
+                        navController = navController,
+                        selectedItemIndex = selectedItemIndex,
+                        onItemSelected = { newIndex ->
+                            selectedItemIndex = newIndex
                         }
-                    },
-                    modifier = Modifier
-                        .drawWithContent {
-                            drawContent()
-                            drawLine(
-                                color = Color(0xFFF8F8F9),
-                                start = Offset(0f, size.height),
-                                end = Offset(size.width, size.height),
-                                strokeWidth = 2f
-                            )
-                    }
-                )
-
-
-
-            }
-        ) {
-
-            Column(
-                modifier = Modifier
-                    .padding(it)
-                    .fillMaxSize()
-            ) {
-                //TripNilaIcon(modifier = Modifier.offset(x = (-15).dp, y = (-7).dp))
-                ScrollableTabRow(
-                    selectedTabIndex = preferences.indexOf(selectedTab),
-                    edgePadding = 3.dp,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
-                            color = Orange,
-                            modifier = Modifier.tabIndicatorOffset(tabPositions[preferences.indexOf(selectedTab)])
-                        )
-                    },
-                    divider = { Divider(color = Color.Transparent) }
-                ) {
-                    preferences.forEach { tabName ->
-                        val isSelected = selectedTab == tabName
-                        Tab(
-                            selected = isSelected,
-                            onClick = {
-                                homeViewModel.selectTab(tabName)
-                              //  homeViewModel.getServicesByTab(selectedTab)
-
-                                scope.launch {
-                                    pagerState.animateScrollToPage(preferences.indexOf(tabName))
-                                }
-
-                            },
-                            modifier = Modifier.padding(horizontal = 5.dp)
-                        ) {
+                    )
+                },
+                topBar = {
+                    TopAppBar(
+                        title = {
                             Text(
-                                text = tabName,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = if (isSelected) Orange else Color.Gray,
-                                modifier = Modifier.padding(
-                                    top = 12.dp,
-                                    bottom = 5.dp,
-                                    start = 7.dp,
-                                    end = 7.dp
-                                ),
+                                text = "Home",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Medium
                             )
+                        },
+                        actions = {
+                            IconButton(
+                                onClick = { openModalBottomSheet = true },
+                            ) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(R.drawable.filter),
+                                    contentDescription = "Close",
+                                    tint = Color(0xFF333333),
+                                    modifier = Modifier.size(40.dp)
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .drawWithContent {
+                                drawContent()
+                                drawLine(
+                                    color = Color(0xFFF8F8F9),
+                                    start = Offset(0f, size.height),
+                                    end = Offset(size.width, size.height),
+                                    strokeWidth = 2f
+                                )
+                            }
+                    )
+
+
+
+                }
+            ) {
+
+                Column(
+                    modifier = Modifier
+                        .padding(it)
+                        .fillMaxSize()
+                ) {
+                    //TripNilaIcon(modifier = Modifier.offset(x = (-15).dp, y = (-7).dp))
+                    ScrollableTabRow(
+                        selectedTabIndex = preferences.indexOf(selectedTab),
+                        edgePadding = 3.dp,
+                        indicator = { tabPositions ->
+                            TabRowDefaults.Indicator(
+                                color = Orange,
+                                modifier = Modifier.tabIndicatorOffset(tabPositions[preferences.indexOf(selectedTab)])
+                            )
+                        },
+                        divider = { Divider(color = Color.Transparent) }
+                    ) {
+                        preferences.forEach { tabName ->
+                            val isSelected = selectedTab == tabName
+                            Tab(
+                                selected = isSelected,
+                                onClick = {
+                                    homeViewModel.selectTab(tabName)
+                                    //  homeViewModel.getServicesByTab(selectedTab)
+
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(preferences.indexOf(tabName))
+                                    }
+
+                                },
+                                modifier = Modifier.padding(horizontal = 5.dp)
+                            ) {
+                                Text(
+                                    text = tabName,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isSelected) Orange else Color.Gray,
+                                    modifier = Modifier.padding(
+                                        top = 12.dp,
+                                        bottom = 5.dp,
+                                        start = 7.dp,
+                                        end = 7.dp
+                                    ),
+                                )
+                            }
                         }
                     }
-                }
 
-                HorizontalPager(
-                    state = pagerState,
-                    userScrollEnabled = false,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    if (serviceIdSet.isNotEmpty()) {
-                        val lazyPagingItems = when (selectedTab) {
-                            "For You" -> homeViewModel.forYouPagingData.collectAsLazyPagingItems()
-                            "Sports" -> homeViewModel.sportsPagingData.collectAsLazyPagingItems()
-                            "Food Trip" -> homeViewModel.foodTripPagingData.collectAsLazyPagingItems()
-                            "Shop" -> homeViewModel.shopPagingData.collectAsLazyPagingItems()
-                            "Nature" -> homeViewModel.naturePagingData.collectAsLazyPagingItems()
-                            "Gaming" -> homeViewModel.gamingPagingData.collectAsLazyPagingItems()
-                            "Karaoke" -> homeViewModel.karaokePagingData.collectAsLazyPagingItems()
-                            "History" -> homeViewModel.historyPagingData.collectAsLazyPagingItems()
-                            "Clubs" -> homeViewModel.clubsPagingData.collectAsLazyPagingItems()
-                            "Sightseeing" -> homeViewModel.sightseeingPagingData.collectAsLazyPagingItems()
-                            "Swimming" -> homeViewModel.swimmingPagingData.collectAsLazyPagingItems()
-                            else -> null
-                        }
+                    HorizontalPager(
+                        state = pagerState,
+                        userScrollEnabled = false,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        if (fetchedTags.isNotEmpty()) {
+                            val lazyPagingItems = when (selectedTab) {
 
-                        if (lazyPagingItems != null) {
-                            Column(
-                                modifier = Modifier.fillMaxSize()
-                            ) {
+                                "For You" -> homeViewModel.forYouPagingData.collectAsLazyPagingItems()
+                                "Sports" -> homeViewModel.sportsPagingData.collectAsLazyPagingItems()
+                                "Food Trip" -> homeViewModel.foodTripPagingData.collectAsLazyPagingItems()
+                                "Shop" -> homeViewModel.shopPagingData.collectAsLazyPagingItems()
+                                "Nature" -> homeViewModel.naturePagingData.collectAsLazyPagingItems()
+                                "Gaming" -> homeViewModel.gamingPagingData.collectAsLazyPagingItems()
+                                "Karaoke" -> homeViewModel.karaokePagingData.collectAsLazyPagingItems()
+                                "History" -> homeViewModel.historyPagingData.collectAsLazyPagingItems()
+                                "Clubs" -> homeViewModel.clubsPagingData.collectAsLazyPagingItems()
+                                "Sightseeing" -> homeViewModel.sightseeingPagingData.collectAsLazyPagingItems()
+                                "Swimming" -> homeViewModel.swimmingPagingData.collectAsLazyPagingItems()
+                                else -> null
+                            }
 
-                                LazyVerticalGrid(
-                                    state = rememberLazyGridState(),
-                                    columns = GridCells.Fixed(2), // Number of columns
-                                    contentPadding = PaddingValues(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            if (lazyPagingItems != null) {
+
+                                Column(
+                                    modifier = Modifier.fillMaxSize()
                                 ) {
-                                    items(lazyPagingItems.itemCount) { index ->
-                                        val service = lazyPagingItems[index]
-                                        val cardHeight = (150..180).random()
-                                        val imageHeight = cardHeight - 55
-                                        // Step 2: Create a Composable for a single grid item
-                                        if (service != null) {
-                                            ServiceListingCard(
-                                                service = service,
-                                                homeViewModel = homeViewModel,
-                                                imageHeight = imageHeight.dp,
-                                                touristId = touristId,
-                                                scope = scope,
-                                                onItemClick = { serviceType ->
-                                                    if (serviceType == "Tour") {
-                                                        onNavToTourDetails(touristId, service.serviceId)
-                                                    } else {
-                                                        onNavToDetailScreen(touristId, service.serviceId)
+
+                                    Box(modifier = Modifier.fillMaxSize()) {
+                                        if (lazyPagingItems.loadState.refresh is LoadState.Loading) {
+                                            CircularProgressIndicator(
+                                                color = Orange,
+                                                modifier = Modifier
+                                                    .size(50.dp)
+                                                    .padding(16.dp)
+                                                    .align(TopCenter)
+                                            )
+                                        }
+
+                                        LazyVerticalGrid(
+                                            state = rememberLazyGridState(),
+                                            columns = GridCells.Fixed(2), // Number of columns
+                                            contentPadding = PaddingValues(16.dp),
+                                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                        ) {
+                                            items(lazyPagingItems.itemCount) { index ->
+                                                val service = lazyPagingItems[index]
+                                                val cardHeight = (150..180).random()
+                                                val imageHeight = cardHeight - 55
+                                                // Step 2: Create a Composable for a single grid item
+                                                if (service != null) {
+                                                    ServiceListingCard(
+                                                        service = service,
+                                                        homeViewModel = homeViewModel,
+                                                        imageHeight = imageHeight.dp,
+                                                        touristId = touristId,
+                                                        scope = scope,
+                                                        onItemClick = { serviceType ->
+                                                            if (serviceType == "Tour") {
+                                                                onNavToTourDetails(
+                                                                    touristId,
+                                                                    service.serviceId
+                                                                )
+                                                            } else {
+                                                                onNavToDetailScreen(
+                                                                    touristId,
+                                                                    service.serviceId
+                                                                )
+                                                            }
+                                                        }
+                                                    )
+                                                }
+                                            }
+
+                                            if (lazyPagingItems.loadState.append is LoadState.Loading) {
+                                                item(
+                                                    span = {
+                                                        GridItemSpan(2)
+                                                    }
+                                                ) {
+                                                    Box(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        CircularProgressIndicator(
+                                                            color = Orange,
+                                                            modifier = Modifier
+                                                                .size(50.dp)
+                                                                .padding(16.dp)
+                                                        )
                                                     }
                                                 }
-                                            )
+                                            }
                                         }
                                     }
                                 }
+                            }
+                        }
+                    }
 
-                                if (lazyPagingItems.loadState.refresh is LoadState.Loading) {
-                                    CircularProgressIndicator(
-                                        color = Orange,
-                                        modifier = Modifier
-                                            .size(50.dp)
-                                            .padding(16.dp)
-                                            .align(CenterHorizontally)
+                }
+            }
+
+            if (openModalBottomSheet) {
+                ModalBottomSheet(
+                    shape = RoundedCornerShape(20.dp),
+                    containerColor = Color.White,
+                    dragHandle = {
+                        Column {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Start,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 10.dp) //, top = 3.dp
+                                    .fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "Filter",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                IconButton(
+                                    onClick = {
+                                        openModalBottomSheet = false
+                                    },
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = "Close"
+                                    )
+                                }
+                            }
+                            Divider(modifier = Modifier.fillMaxWidth())
+                        }
+                    },
+                    onDismissRequest = { openModalBottomSheet = false },
+                    sheetState = modalBottomSheetState,
+                    modifier = Modifier
+                        .fillMaxHeight(0.9f) //0.693
+                ) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .background(Color.White)
+                            .padding(horizontal = 16.dp)
+                    ) {
+
+                        item {
+                            SearchField(
+                                initialValue = searchText,
+                                onValueChange = {
+                                    homeViewModel.updateSearchText(it)
+                                },
+                                onClear = {
+                                    homeViewModel.updateSearchText("")
+                                },
+                                modifier = Modifier
+                                    .padding(top = 10.dp)
+                                    .fillMaxWidth()
+                            )
+                        }
+
+                        item {
+                            Text(
+                                text = "Type of Service",
+                                color = Color.Black,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(top = 10.dp)
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceAround,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .height(20.dp)
+                                ) {
+                                    Checkbox(
+                                        checked = includeStaycation,
+                                        onCheckedChange = { checked ->
+                                            homeViewModel.updateIncludeStaycation(checked)
+                                        },
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = Orange
+                                        ),
+                                    )
+                                    Text(
+                                        text = "Show Staycations",
+                                        color = Color(0xff666666),
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 14.sp,
+                                    )
+                                }
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .height(20.dp)
+                                ) {
+                                    Checkbox(
+                                        checked = includeTour,
+                                        onCheckedChange = { checked ->
+                                            homeViewModel.updateIncludeTour(checked)
+                                        },
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = Orange
+                                        ),
+                                    )
+                                    Text(
+                                        text = "Show Tours",
+                                        color = Color(0xff666666),
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 14.sp,
+                                    )
+                                }
+                            }
+
+                        }
+
+                        item {
+                            // ------------------------------------------------------
+                            // STAYCATION TYPE
+                            Text(
+                                text = "Type of Staycation",
+                                color = Color.Black,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    // .padding(top = 5.dp, bottom = 5.dp)
+                                    .padding(vertical = 5.dp)
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.Start,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    TypeFilterChip(
+                                        text = "House",
+                                        enabled = includeStaycation,
+                                        selected = if (includeStaycation) houseSelected else false,  //if (includeStaycation) bedroomCount == bedroomCountOption else false,
+                                        onSelectedChange = { selected ->
+//                                        houseSelected = selected
+                                            homeViewModel.updateHouseSelected(selected)
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    TypeFilterChip(
+                                        text = "Apartment",
+                                        enabled = includeStaycation,
+                                        selected = if (includeStaycation) apartmentSelected else false,
+                                        onSelectedChange = { selected ->
+                                            homeViewModel.updateApartmentSelected(selected)
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    TypeFilterChip(
+                                        text = "Condominium",
+                                        enabled = includeStaycation,
+                                        selected = if (includeStaycation) condoSelected else false,
+                                        onSelectedChange = { selected ->
+                                            homeViewModel.updateCondoSelected(selected)
+                                        }
+                                    )
+                                }
+                                Row(
+                                    horizontalArrangement = Arrangement.Start,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    TypeFilterChip(
+                                        text = "Camp",
+                                        enabled = includeStaycation,
+                                        selected = if (includeStaycation) campSelected else false,
+                                        onSelectedChange = { selected ->
+                                            homeViewModel.updateCampSelected(selected)
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    TypeFilterChip(
+                                        text = "Guest House",
+                                        enabled = includeStaycation,
+                                        selected = if (includeStaycation) guestHouseSelected else false,
+                                        onSelectedChange = { selected ->
+                                            homeViewModel.updateGuestHouseSelected(selected)
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    TypeFilterChip(
+                                        text = "Hotel",
+                                        enabled = includeStaycation,
+                                        selected = if (includeStaycation) hotelSelected else false,
+                                        onSelectedChange = { selected ->
+                                            homeViewModel.updateHotelSelected(selected)
+                                        }
                                     )
                                 }
                             }
                         }
-                    }
-                }
 
-            }
-        }
-
-        if (openModalBottomSheet) {
-            ModalBottomSheet(
-                shape = RoundedCornerShape(20.dp),
-                containerColor = Color.White,
-                dragHandle = {
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Start,
-                            modifier = Modifier
-                                .padding(start = 16.dp, end = 10.dp) //, top = 3.dp
-                                .fillMaxWidth()
-                        ) {
+                        item {
+                            // ------------------------------------------------------
+                            // Tour TYPE
                             Text(
-                                text = "Filter",
+                                text = "Type of Tour",
+                                color = Color.Black,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.Start,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 5.dp, bottom = 5.dp)
+                            ) {
+
+                                TypeFilterChip(
+                                    text = "Photo Tour",
+                                    enabled = includeTour,
+                                    selected = if (includeTour) photoTourSelected else false,
+                                    onSelectedChange = { selected ->
+                                        // photoTourSelected = selected
+                                        homeViewModel.updatePhotoTourSelected(selected)
+                                    }
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                TypeFilterChip(
+                                    text = "Food Trip",
+                                    enabled = includeTour,
+                                    selected = if (includeTour) foodTripSelected else false,
+                                    onSelectedChange = { selected ->
+                                        homeViewModel.updateFoodTripSelected(selected)
+                                    }
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                TypeFilterChip(
+                                    text = "Bar Hopping",
+                                    enabled = includeTour,
+                                    selected = if (includeTour) barHoppingSelected else false,
+                                    onSelectedChange = { selected ->
+                                        homeViewModel.updateBarHoppingSelected(selected)
+                                    }
+                                )
+                            }
+                        }
+
+                        item {
+                            Text(
+                                text = "Rating",
+                                color = Color.Black,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceAround,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                val ratings = (5 downTo 1) // Create a range from 5 down to 1
+                                ratings.forEach { rating ->
+                                    RatingFilterChip(
+                                        enabled = includeStaycation || includeTour,
+                                        text = rating.toString(),
+                                        selected = if(includeStaycation || includeTour) selectedRating == rating else false, // Set selected state based on a condition
+                                        onSelectedChange = { selected ->
+                                            if (selected) {
+                                                homeViewModel.updateSelectedRating(rating)
+                                            } else {
+                                                homeViewModel.updateSelectedRating(0)
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        item {
+                            // ------------------------------------------------------
+                            // PRICE RANGE
+                            Text(
+                                text = "Price range",
+                                color = Color.Black,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Medium
                             )
-                            Spacer(modifier = Modifier.weight(1f))
-                            IconButton(
-                                onClick = {
-                                    openModalBottomSheet = false
-                                },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Close,
-                                    contentDescription = "Close"
-                                )
-                            }
-                        }
-                        Divider(modifier = Modifier.fillMaxWidth())
-                    }
-                },
-                onDismissRequest = { openModalBottomSheet = false },
-                sheetState = modalBottomSheetState,
-                modifier = Modifier
-                    .fillMaxHeight(0.9f) //0.693
-            ) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .background(Color.White)
-                        .padding(horizontal = 16.dp)
-                ) {
-
-                    item {
-                        SearchField(
-                            initialValue = searchText,
-                            onValueChange = {
-                                homeViewModel.updateSearchText(it)
-                            },
-                            onClear = {
-                                homeViewModel.updateSearchText("")
-                            },
-                            modifier = Modifier
-                                .padding(top = 10.dp)
-                                .fillMaxWidth()
-                        )
-                    }
-
-                    item {
-                        Text(
-                            text = "Type of Service",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(top = 10.dp)
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceAround,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 10.dp)
-                        ) {
                             Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .height(20.dp)
-                            ) {
-                                Checkbox(
-                                    checked = includeStaycation,
-                                    onCheckedChange = { checked ->
-                                        homeViewModel.updateIncludeStaycation(checked)
-                                    },
-                                    colors = CheckboxDefaults.colors(
-                                        checkedColor = Orange
-                                    ),
-                                )
-                                Text(
-                                    text = "Show Staycations",
-                                    color = Color(0xff666666),
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 14.sp,
-                                )
-                            }
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .height(20.dp)
-                            ) {
-                                Checkbox(
-                                    checked = includeTour,
-                                    onCheckedChange = { checked ->
-                                        homeViewModel.updateIncludeTour(checked)
-                                    },
-                                    colors = CheckboxDefaults.colors(
-                                        checkedColor = Orange
-                                    ),
-                                )
-                                Text(
-                                    text = "Show Tours",
-                                    color = Color(0xff666666),
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 14.sp,
-                                )
-                            }
-                        }
-
-                    }
-
-                    item {
-                        // ------------------------------------------------------
-                        // STAYCATION TYPE
-                        Text(
-                            text = "Type of Staycation",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                        )
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                // .padding(top = 5.dp, bottom = 5.dp)
-                                .padding(vertical = 5.dp)
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.Start,
+                                horizontalArrangement = Arrangement.SpaceAround,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                TypeFilterChip(
-                                    text = "House",
-                                    enabled = includeStaycation,
-                                    selected = if (includeStaycation) houseSelected else false,  //if (includeStaycation) bedroomCount == bedroomCountOption else false,
-                                    onSelectedChange = { selected ->
-//                                        houseSelected = selected
-                                        homeViewModel.updateHouseSelected(selected)
-                                    }
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
-                                TypeFilterChip(
-                                    text = "Apartment",
-                                    enabled = includeStaycation,
-                                    selected = if (includeStaycation) apartmentSelected else false,
-                                    onSelectedChange = { selected ->
-                                        homeViewModel.updateApartmentSelected(selected)
-                                    }
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
-                                TypeFilterChip(
-                                    text = "Condominium",
-                                    enabled = includeStaycation,
-                                    selected = if (includeStaycation) condoSelected else false,
-                                    onSelectedChange = { selected ->
-                                        homeViewModel.updateCondoSelected(selected)
-                                    }
-                                )
-                            }
-                            Row(
-                                horizontalArrangement = Arrangement.Start,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                TypeFilterChip(
-                                    text = "Camp",
-                                    enabled = includeStaycation,
-                                    selected = if (includeStaycation) campSelected else false,
-                                    onSelectedChange = { selected ->
-                                        homeViewModel.updateCampSelected(selected)
-                                    }
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
-                                TypeFilterChip(
-                                    text = "Guest House",
-                                    enabled = includeStaycation,
-                                    selected = if (includeStaycation) guestHouseSelected else false,
-                                    onSelectedChange = { selected ->
-                                        homeViewModel.updateGuestHouseSelected(selected)
-                                    }
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
-                                TypeFilterChip(
-                                    text = "Hotel",
-                                    enabled = includeStaycation,
-                                    selected = if (includeStaycation) hotelSelected else false,
-                                    onSelectedChange = { selected ->
-                                        homeViewModel.updateHotelSelected(selected)
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    item {
-                        // ------------------------------------------------------
-                        // Tour TYPE
-                        Text(
-                            text = "Type of Tour",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.Start,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 5.dp, bottom = 5.dp)
-                        ) {
-
-                            TypeFilterChip(
-                                text = "Photo Tour",
-                                enabled = includeTour,
-                                selected = if (includeTour) photoTourSelected else false,
-                                onSelectedChange = { selected ->
-                                   // photoTourSelected = selected
-                                    homeViewModel.updatePhotoTourSelected(selected)
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(5.dp))
-                            TypeFilterChip(
-                                text = "Food Trip",
-                                enabled = includeTour,
-                                selected = if (includeTour) foodTripSelected else false,
-                                onSelectedChange = { selected ->
-                                    homeViewModel.updateFoodTripSelected(selected)
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(5.dp))
-                            TypeFilterChip(
-                                text = "Bar Hopping",
-                                enabled = includeTour,
-                                selected = if (includeTour) barHoppingSelected else false,
-                                onSelectedChange = { selected ->
-                                    homeViewModel.updateBarHoppingSelected(selected)
-                                }
-                            )
-                        }
-                    }
-
-                    item {
-                        Text(
-                            text = "Rating",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceAround,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            val ratings = (5 downTo 1) // Create a range from 5 down to 1
-                            ratings.forEach { rating ->
-                                RatingFilterChip(
-                                    enabled = includeStaycation || includeTour,
-                                    text = rating.toString(),
-                                    selected = if(includeStaycation || includeTour) selectedRating == rating else false, // Set selected state based on a condition
-                                    onSelectedChange = { selected ->
-                                        if (selected) {
-                                            homeViewModel.updateSelectedRating(rating)
-                                        } else {
-                                            homeViewModel.updateSelectedRating(0)
+                                Column(
+                                    modifier = Modifier.padding(vertical = 5.dp)
+                                ) {
+                                    PriceTextField(
+                                        value = minPrice,
+                                        enabled = includeStaycation || includeTour,
+                                        placeholder = "Minimum",
+                                        onValueChange = { updatedPrice ->
+                                            homeViewModel.updateMinPrice(updatedPrice)
                                         }
-                                    }
-                                )
+                                    )
+                                }
+                                Column(
+                                    modifier = Modifier.padding(vertical = 5.dp)
+                                ) {
+                                    PriceTextField(
+                                        value = maxPrice,
+                                        enabled = includeStaycation || includeTour,
+                                        placeholder = "Maximum",
+                                        onValueChange = { updatedPrice ->
+                                            homeViewModel.updateMaxPrice(updatedPrice)
+                                        }
+                                    )
+                                }
                             }
+
                         }
-                    }
-                    item {
-                        // ------------------------------------------------------
-                        // PRICE RANGE
-                        Text(
-                            text = "Price range",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceAround,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(vertical = 5.dp)
+
+                        item {
+                            // ------------------------------------------------------
+                            // LOCATION + CAPACITY
+
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceAround,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 5.dp)
                             ) {
-                                PriceTextField(
-                                    value = minPrice,
-                                    enabled = includeStaycation || includeTour,
-                                    placeholder = "Minimum",
-                                    onValueChange = { updatedPrice ->
-                                        homeViewModel.updateMinPrice(updatedPrice)
-                                    }
-                                )
+                                Column {
+                                    Text(
+                                        text = "Location",
+                                        color = Color.Black,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.offset(x = (-22).dp)
+                                    )
+                                    LocationTextField(
+                                        initialValue = city,
+                                        enabled = includeStaycation || includeTour,
+                                        onValueChange = { newCity ->
+                                            homeViewModel.updateCity(newCity)
+                                        }
+                                    )
+                                }
+                                Column {
+                                    Text(
+                                        text = "Capacity",
+                                        color = Color.Black,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.offset(x = (-22).dp)
+                                    )
+                                    NumberTextField(
+                                        initialValue = capacity,
+                                        enabled = includeStaycation,
+                                        onValueChange = { newCapacity ->
+                                            homeViewModel.updateCapacity(newCapacity)
+                                        }
+                                    )
+                                }
                             }
-                            Column(
-                                modifier = Modifier.padding(vertical = 5.dp)
+                            // ------------------------------------------------------
+                            // BEDROOM AND BEDS
+
+                            Text(
+                                text = "Bedroom and beds",
+                                color = Color.Black,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            // BEDROOM
+                            Text(
+                                text = "Bedroom",
+                                color = Color.Black,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(horizontal = 11.dp)
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                PriceTextField(
-                                    value = maxPrice,
-                                    enabled = includeStaycation || includeTour,
-                                    placeholder = "Maximum",
-                                    onValueChange = { updatedPrice ->
-                                        homeViewModel.updateMaxPrice(updatedPrice)
-                                    }
-                                )
-                            }
-                        }
+                                val bedroomCounts = listOf("Any", "1", "2", "3", "4")
 
-                    }
-
-                    item {
-                        // ------------------------------------------------------
-                        // LOCATION + CAPACITY
-
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceAround,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 5.dp)
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Location",
-                                    color = Color.Black,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.offset(x = (-22).dp)
-                                )
-                                LocationTextField(
-                                    initialValue = city,
-                                    enabled = includeStaycation || includeTour,
-                                    onValueChange = { newCity ->
-                                        homeViewModel.updateCity(newCity)
-                                    }
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = "Capacity",
-                                    color = Color.Black,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.offset(x = (-22).dp)
-                                )
-                                NumberTextField(
-                                    initialValue = capacity,
-                                    enabled = includeStaycation,
-                                    onValueChange = { newCapacity ->
-                                        homeViewModel.updateCapacity(newCapacity)
-                                    }
-                                )
-                            }
-                        }
-                        // ------------------------------------------------------
-                        // BEDROOM AND BEDS
-
-                        Text(
-                            text = "Bedroom and beds",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-
-                        // BEDROOM
-                        Text(
-                            text = "Bedroom",
-                            color = Color.Black,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier
-                                .padding(horizontal = 11.dp)
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            val bedroomCounts = listOf("Any", "1", "2", "3", "4")
-
-                            bedroomCounts.forEachIndexed { index, bedroomCountOption ->
-                                CountFilterChip(
-                                    text = bedroomCountOption,
-                                    enabled = includeStaycation,
-                                    selected = if (includeStaycation) bedroomCount == bedroomCountOption else false,
-                                    onSelectedChange = { selected ->
-                                        if (selected) {
+                                bedroomCounts.forEachIndexed { index, bedroomCountOption ->
+                                    CountFilterChip(
+                                        text = bedroomCountOption,
+                                        enabled = includeStaycation,
+                                        selected = if (includeStaycation) bedroomCount == bedroomCountOption else false,
+                                        onSelectedChange = { selected ->
+                                            if (selected) {
 //                                            bedroomCount = bedroomCountOption
-                                            homeViewModel.updateBedroomCount(bedroomCountOption)
-                                        }
-                                    }
-                                )
-                            }
-                        }
-
-
-                        // BEDS
-                        Text(
-                            text = "Beds",
-                            color = Color.Black,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier
-                                .padding(horizontal = 11.dp)
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            val bedCounts = listOf("Any", "1", "2", "3", "4")
-
-                            bedCounts.forEachIndexed { index, bedCountOption ->
-                                CountFilterChip(
-                                    text = bedCountOption,
-                                    enabled = includeStaycation,
-                                    selected = if (includeStaycation) bedCount == bedCountOption else false,
-                                    onSelectedChange = { selected ->
-                                        if (selected) {
-                                          //  bedCount = bedCountOption
-                                            homeViewModel.updateBedCount(bedCountOption)
-                                        }
-                                    },
-                                )
-                            }
-                        }
-
-                        // BATHROOM
-                        Text(
-                            text = "Bathroom",
-                            color = Color.Black,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier
-                                .padding(horizontal = 11.dp)
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            val bathroomCounts = listOf("Any", "1", "2", "3", "4")
-
-                            bathroomCounts.forEachIndexed { index, bathroomCountOption ->
-                                CountFilterChip(
-                                    text = bathroomCountOption,
-                                    enabled = includeStaycation,
-                                    selected = if (includeStaycation) bathroomCount == bathroomCountOption else false,
-                                    onSelectedChange = { selected ->
-                                        if (selected) {
-                                          //  bathroomCount = bathroomCountOption
-                                            homeViewModel.updateBathroomCount(bathroomCountOption)
-                                        }
-                                    }
-                                )
-                            }
-                        }
-
-                    }
-
-
-                    item {
-                        // ------------------------------------------------------
-                        // AMENITIES
-                        Text(
-                            text = "Staycation Amenities",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
-                            userScrollEnabled = false,
-                            modifier = if (!showAllAmenities) {
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(110.dp)
-                            } else {
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(130.dp)
-                            }
-                        ) {
-                            items(visibleAmenities) { amenity ->
-                                AmenityCheckboxItem(
-                                    amenityName = amenity,
-                                    checked = if (includeStaycation) checkedAmenities[allAmenities.indexOf(amenity)] else false,
-                                    onCheckedChange = { isChecked ->
-                                        onAmenityCheckedChange(allAmenities.indexOf(amenity), isChecked)
-                                    },
-                                    enabled = includeStaycation,
-                                    modifier = Modifier.height(25.dp)
-                                )
-                            }
-                            item {
-                                Text(
-                                    text = if (showAllAmenities) "Show Less" else "Show More",
-                                    color = Color.Black,
-                                    fontSize = 12.sp,
-                                    textDecoration = TextDecoration.Underline,
-                                    modifier = Modifier
-                                        .padding(horizontal = 15.dp)
-                                        .padding(top = 5.dp)
-                                        .clickable { toggleShowAllAmenities() }
-                                )
-                            }
-                        }
-                    }
-                    item {
-                        // ------------------------------------------------------
-                        // Tour OFFERS
-                        Text(
-                            text = "Tour Offers",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
-                            userScrollEnabled = false,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(70.dp),
-                        ) {
-                            items(allOffers) { offer ->
-                                AmenityCheckboxItem(
-                                    amenityName = offer,
-                                    checked = if(includeTour) checkedOffers[allOffers.indexOf(offer)] else false,
-                                    onCheckedChange = { isChecked ->
-                                        onOfferCheckedChange(allOffers.indexOf(offer), isChecked)
-                                    },
-                                    enabled = includeTour,
-                                    modifier = Modifier.height(25.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    item {
-                        Text(
-                            text = "Choose Dates",
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-
-
-                        Box(
-                            modifier = Modifier
-                                .padding(vertical = 20.dp)
-                                .height(420.dp)
-                                .padding(4.dp)
-                                .border(1.dp, Color.Black, shape = MaterialTheme.shapes.medium)
-                                .background(Color(0xfff8c6a4).copy(alpha = 0.24f))
-                        ) {
-                            DateRangePicker(
-                                modifier = Modifier.fillMaxSize(),
-
-                                title = {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(20.dp),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        if (dateRangePickerState.selectedStartDateMillis != null && dateRangePickerState.selectedEndDateMillis != null) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(24.dp)
-                                                    .offset(x = 225.dp, y = (-15).dp),
-                                                contentAlignment = Alignment.CenterEnd
-                                            ) {
-                                                IconButton(
-                                                    onClick = {
-                                                        dateRangePickerState.setSelection(
-                                                            null,
-                                                            null
-                                                        )
-                                                    },
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Close,
-                                                        contentDescription = "Clear date selection",
-                                                        tint = Color.Black
-                                                    )
-                                                }
+                                                homeViewModel.updateBedroomCount(bedroomCountOption)
                                             }
                                         }
+                                    )
+                                }
+                            }
+
+
+                            // BEDS
+                            Text(
+                                text = "Beds",
+                                color = Color.Black,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(horizontal = 11.dp)
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                val bedCounts = listOf("Any", "1", "2", "3", "4")
+
+                                bedCounts.forEachIndexed { index, bedCountOption ->
+                                    CountFilterChip(
+                                        text = bedCountOption,
+                                        enabled = includeStaycation,
+                                        selected = if (includeStaycation) bedCount == bedCountOption else false,
+                                        onSelectedChange = { selected ->
+                                            if (selected) {
+                                                //  bedCount = bedCountOption
+                                                homeViewModel.updateBedCount(bedCountOption)
+                                            }
+                                        },
+                                    )
+                                }
+                            }
+
+                            // BATHROOM
+                            Text(
+                                text = "Bathroom",
+                                color = Color.Black,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(horizontal = 11.dp)
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                val bathroomCounts = listOf("Any", "1", "2", "3", "4")
+
+                                bathroomCounts.forEachIndexed { index, bathroomCountOption ->
+                                    CountFilterChip(
+                                        text = bathroomCountOption,
+                                        enabled = includeStaycation,
+                                        selected = if (includeStaycation) bathroomCount == bathroomCountOption else false,
+                                        onSelectedChange = { selected ->
+                                            if (selected) {
+                                                //  bathroomCount = bathroomCountOption
+                                                homeViewModel.updateBathroomCount(bathroomCountOption)
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+
+                        }
+
+
+                        item {
+                            // ------------------------------------------------------
+                            // AMENITIES
+                            Text(
+                                text = "Staycation Amenities",
+                                color = Color.Black,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(2),
+                                userScrollEnabled = false,
+                                modifier = if (!showAllAmenities) {
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(110.dp)
+                                } else {
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(130.dp)
+                                }
+                            ) {
+                                items(visibleAmenities) { amenity ->
+                                    AmenityCheckboxItem(
+                                        amenityName = amenity,
+                                        checked = if (includeStaycation) checkedAmenities[allAmenities.indexOf(amenity)] else false,
+                                        onCheckedChange = { isChecked ->
+                                            onAmenityCheckedChange(allAmenities.indexOf(amenity), isChecked)
+                                        },
+                                        enabled = includeStaycation,
+                                        modifier = Modifier.height(25.dp)
+                                    )
+                                }
+                                item {
+                                    Text(
+                                        text = if (showAllAmenities) "Show Less" else "Show More",
+                                        color = Color.Black,
+                                        fontSize = 12.sp,
+                                        textDecoration = TextDecoration.Underline,
+                                        modifier = Modifier
+                                            .padding(horizontal = 15.dp)
+                                            .padding(top = 5.dp)
+                                            .clickable { toggleShowAllAmenities() }
+                                    )
+                                }
+                            }
+                        }
+                        item {
+                            // ------------------------------------------------------
+                            // Tour OFFERS
+                            Text(
+                                text = "Tour Offers",
+                                color = Color.Black,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(2),
+                                userScrollEnabled = false,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(70.dp),
+                            ) {
+                                items(allOffers) { offer ->
+                                    AmenityCheckboxItem(
+                                        amenityName = offer,
+                                        checked = if(includeTour) checkedOffers[allOffers.indexOf(offer)] else false,
+                                        onCheckedChange = { isChecked ->
+                                            onOfferCheckedChange(allOffers.indexOf(offer), isChecked)
+                                        },
+                                        enabled = includeTour,
+                                        modifier = Modifier.height(25.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        item {
+                            Text(
+                                text = "Choose Dates",
+                                color = Color.Black,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+
+                            Box(
+                                modifier = Modifier
+                                    .padding(vertical = 20.dp)
+                                    .height(420.dp)
+                                    .padding(4.dp)
+                                    .border(1.dp, Color.Black, shape = MaterialTheme.shapes.medium)
+                                    .background(Color(0xfff8c6a4).copy(alpha = 0.24f))
+                            ) {
+                                DateRangePicker(
+                                    modifier = Modifier.fillMaxSize(),
+
+                                    title = {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(20.dp),
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            if (dateRangePickerState.selectedStartDateMillis != null && dateRangePickerState.selectedEndDateMillis != null) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(24.dp)
+                                                        .offset(x = 225.dp, y = (-15).dp),
+                                                    contentAlignment = Alignment.CenterEnd
+                                                ) {
+                                                    IconButton(
+                                                        onClick = {
+                                                            dateRangePickerState.setSelection(
+                                                                null,
+                                                                null
+                                                            )
+                                                        },
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Close,
+                                                            contentDescription = "Clear date selection",
+                                                            tint = Color.Black
+                                                        )
+                                                    }
+                                                }
+                                            }
 
 
 
-                                        Text(
-                                            text = if (dateRangePickerState.selectedStartDateMillis == null && dateRangePickerState.selectedEndDateMillis == null) {
+                                            Text(
+                                                text = if (dateRangePickerState.selectedStartDateMillis == null && dateRangePickerState.selectedEndDateMillis == null) {
                                                     "Select date range"
                                                 } else if(dateRangePickerState.selectedStartDateMillis != null && dateRangePickerState.selectedEndDateMillis == null) {
                                                     "${formatToPhilippineTime(dateRangePickerState.selectedStartDateMillis)}     -     ${formatToPhilippineTime(dateRangePickerState.selectedEndDateMillis)}"
@@ -1024,97 +1105,98 @@ fun HomeScreen(
                                                 } else {
                                                     "Select date range"
                                                 },
-                                            color = Color.Black,
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Medium
-                                        )
+                                                color = Color.Black,
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    },
+                                    headline = null,
+                                    showModeToggle = false,
+                                    state = dateRangePickerState,
+                                    colors = DatePickerDefaults.colors(
+                                        containerColor = Orange,
+                                        dayContentColor = Color.Black,
+                                        selectedDayContainerColor = Orange,
+                                        dayInSelectionRangeContainerColor = Orange.copy(alpha = 0.3f),
+                                        disabledDayContentColor = Color.Black.copy(alpha = 0.3f),
+                                        todayDateBorderColor = Orange,
+                                        todayContentColor = Color.Black,
+                                        weekdayContentColor = Color.Black,
+                                    ),
+                                    dateValidator = { date ->
+                                        val selectedDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate()
+                                        val today = LocalDateTime.now().toLocalDate()
+
+                                        selectedDate.isAfter(today)
                                     }
-                                },
-                                headline = null,
-                                showModeToggle = false,
-                                state = dateRangePickerState,
-                                colors = DatePickerDefaults.colors(
-                                    containerColor = Orange,
-                                    dayContentColor = Color.Black,
-                                    selectedDayContainerColor = Orange,
-                                    dayInSelectionRangeContainerColor = Orange.copy(alpha = 0.3f),
-                                    disabledDayContentColor = Color.Black.copy(alpha = 0.3f),
-                                    todayDateBorderColor = Orange,
-                                    todayContentColor = Color.Black,
-                                    weekdayContentColor = Color.Black,
-                                ),
-                                dateValidator = { date ->
-                                    val selectedDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate()
-                                    val today = LocalDateTime.now().toLocalDate()
 
-                                    selectedDate.isAfter(today)
-                                }
+                                )
+                            }
 
-                            )
+
+
                         }
 
 
-
                     }
+                    //Spacer(modifier = Modifier.weight(1f))
+
+                    FilterBottomBar(
+                        onSearch = {
+                            //  onFilterServices = true
+                            homeViewModel.refreshForYouPagingData()
+                            homeViewModel.refreshSportsPagingData()
+                            homeViewModel.refreshFoodTripPagingData()
+                            homeViewModel.refreshShopPagingData()
+
+                            homeViewModel.refreshNaturePagingData()
+                            homeViewModel.refreshGamingPagingData()
+                            homeViewModel.refreshKaraokePagingData()
+                            homeViewModel.refreshHistoryPagingData()
+
+                            homeViewModel.refreshClubsPagingData()
+                            homeViewModel.refreshSightseeingPagingData()
+                            homeViewModel.refreshSwimmingPagingData()
+
+                            openModalBottomSheet = false
+                        },
+                        onRestore = {
+                            homeViewModel.updateSearchText("")
+                            homeViewModel.updateIncludeStaycation(true)
+                            homeViewModel.updateIncludeTour(true)
+                            homeViewModel.updateHouseSelected(true)
+                            homeViewModel.updateApartmentSelected(true)
+                            homeViewModel.updateCondoSelected(true)
+                            homeViewModel.updateCampSelected(true)
+                            homeViewModel.updateGuestHouseSelected(true)
+                            homeViewModel.updateHotelSelected(true)
+                            homeViewModel.updatePhotoTourSelected(true)
+                            homeViewModel.updateFoodTripSelected(true)
+                            homeViewModel.updateBarHoppingSelected(true)
+                            homeViewModel.updateSelectedRating(0)
+                            homeViewModel.updateMinPrice("")
+                            homeViewModel.updateMaxPrice("")
+                            homeViewModel.updateCity("")
+                            homeViewModel.updateCapacity("")
+                            homeViewModel.updateBedroomCount("Any")
+                            homeViewModel.updateBedCount("Any")
+                            homeViewModel.updateBathroomCount("Any")
+
+                            homeViewModel.updateCheckedAmenities(List(allAmenities.size) { true })
+                            homeViewModel.updateCheckedOffers(List(allOffers.size) { true })
+                            dateRangePickerState.setSelection(null, null)
+                        },
+                        modifier = Modifier
+                            .noPaddingIf(hasNavigationBar)
+                    )
 
 
+                    Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars))
                 }
-                //Spacer(modifier = Modifier.weight(1f))
-
-                FilterBottomBar(
-                    onSearch = {
-                      //  onFilterServices = true
-                        homeViewModel.refreshForYouPagingData()
-                        homeViewModel.refreshSportsPagingData()
-                        homeViewModel.refreshFoodTripPagingData()
-                        homeViewModel.refreshShopPagingData()
-
-                        homeViewModel.refreshNaturePagingData()
-                        homeViewModel.refreshGamingPagingData()
-                        homeViewModel.refreshKaraokePagingData()
-                        homeViewModel.refreshHistoryPagingData()
-
-                        homeViewModel.refreshClubsPagingData()
-                        homeViewModel.refreshSightseeingPagingData()
-                        homeViewModel.refreshSwimmingPagingData()
-
-                        openModalBottomSheet = false
-                    },
-                    onRestore = {
-                        homeViewModel.updateSearchText("")
-                        homeViewModel.updateIncludeStaycation(true)
-                        homeViewModel.updateIncludeTour(true)
-                        homeViewModel.updateHouseSelected(true)
-                        homeViewModel.updateApartmentSelected(true)
-                        homeViewModel.updateCondoSelected(true)
-                        homeViewModel.updateCampSelected(true)
-                        homeViewModel.updateGuestHouseSelected(true)
-                        homeViewModel.updateHotelSelected(true)
-                        homeViewModel.updatePhotoTourSelected(true)
-                        homeViewModel.updateFoodTripSelected(true)
-                        homeViewModel.updateBarHoppingSelected(true)
-                        homeViewModel.updateSelectedRating(0)
-                        homeViewModel.updateMinPrice("")
-                        homeViewModel.updateMaxPrice("")
-                        homeViewModel.updateCity("")
-                        homeViewModel.updateCapacity("")
-                        homeViewModel.updateBedroomCount("Any")
-                        homeViewModel.updateBedCount("Any")
-                        homeViewModel.updateBathroomCount("Any")
-
-                        homeViewModel.updateCheckedAmenities(List(allAmenities.size) { true })
-                        homeViewModel.updateCheckedOffers(List(allOffers.size) { true })
-                        dateRangePickerState.setSelection(null, null)
-                    },
-                    modifier = Modifier
-                        .noPaddingIf(hasNavigationBar)
-                )
-
-
-                Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars))
             }
-        }
 
+        }
 
     }
 
@@ -1348,7 +1430,7 @@ fun ServiceListingCard(
                     Text(
                         modifier = Modifier
                             .fillMaxWidth(0.55f),
-                        text = service.serviceTitle,
+                        text = service.serviceId,
                         fontWeight = FontWeight.Medium,
                         fontSize = 11.sp,
                         lineHeight = 11.sp,

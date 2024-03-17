@@ -36,14 +36,6 @@ class PreferenceViewModel(private val repository: UserRepository = UserRepositor
     fun savePreferences(touristId: String) {
         viewModelScope.launch {
             try {
-//
-//                Log.d("PreferenceViewModel", "Current User Before: ${_currentUser.value}")
-//                _currentUser.value = repository.getCurrentUser()
-//                Log.d("PreferenceViewModel", "Current User After: ${_currentUser.value}")
-//
-//                Log.d("PreferenceViewModel", "Saving preferences")
-
-                //val userId = _currentUser.value?.touristId ?: ""
                 val selectedPreferences = _preferenceUiState.value.selectedPreferences
 
                 if (!validatePreferences()) {

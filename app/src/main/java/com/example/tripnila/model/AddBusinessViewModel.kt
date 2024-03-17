@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class AddBusinessViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
 
@@ -188,6 +190,26 @@ class AddBusinessViewModel(private val repository: UserRepository = UserReposito
 
             Log.d("AddBusinessViewModel", "${_business.value}")
         }
+    }
+
+    fun extractHourAndMinute(timeString: String): Pair<Int, Int> {
+        // Define the input format
+        val inputFormat = SimpleDateFormat("hh:mm a", Locale.ENGLISH)
+
+        // Parse the time string
+        val date = inputFormat.parse(timeString) ?: return Pair(0, 0)
+
+        // Define the output format
+        val outputFormat = SimpleDateFormat("HH:mm", Locale.ENGLISH)
+
+        // Format the parsed time to 24-hour format
+        val formattedTime = outputFormat.format(date)
+
+        // Extract hour and minute
+        val hour = formattedTime.substring(0, 2).toInt()
+        val minute = formattedTime.substring(3, 5).toInt()
+
+        return Pair(hour, minute)
     }
 
 

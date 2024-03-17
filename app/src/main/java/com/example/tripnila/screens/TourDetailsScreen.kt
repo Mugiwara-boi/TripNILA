@@ -238,82 +238,83 @@ fun TourDetailsScreen(
             .fillMaxSize(),
         color = Color(0xFFEFEFEF)
     ) {
-        Scaffold(
-            bottomBar = {
+        if (tour.tourId != tourId) {
+            LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
+        } else {
+            Scaffold(
+                bottomBar = {
 
-                if (isUserVerified == true) {
-                    TourBottomBookingBar(
-                        tourPrice = tour.tourPrice,
-                        underlinedText = if (personCount == 0) {
-                            "Select guests"
-                        } else if (personCount == 1) {
-                            "for $personCount person"
-                        }
-                        else {
-                            "for $personCount persons"
-                        },
-                        enableButton = personCount > 0,
-                        onClickChatHost = {
-                            onNavToChat(touristId, tourHost.hostId.substring(5))
-                        },
-                        onClickChooseDate = {
-                            onNavToChooseDate(touristId)
-                        },
-                        onClickUnderlinedText = {
-                            openBottomSheet = true
-                        }
+                    if (isUserVerified == true) {
+                        TourBottomBookingBar(
+                            tourPrice = tour.tourPrice,
+                            underlinedText = if (personCount == 0) {
+                                "Select guests"
+                            } else if (personCount == 1) {
+                                "for $personCount person"
+                            }
+                            else {
+                                "for $personCount persons"
+                            },
+                            enableButton = personCount > 0,
+                            onClickChatHost = {
+                                onNavToChat(touristId, tourHost.hostId.substring(5))
+                            },
+                            onClickChooseDate = {
+                                onNavToChooseDate(touristId)
+                            },
+                            onClickUnderlinedText = {
+                                openBottomSheet = true
+                            }
 
-                    )
-                } else {
-                    Surface(
-                        color = Color.White,
-                        tonalElevation = 10.dp,
-                        shadowElevation = 10.dp,
-                        modifier = Modifier
-                            .height(78.dp)
-                            .fillMaxWidth()
-                    ) {
-                        Column(
+                        )
+                    } else {
+                        Surface(
+                            color = Color.White,
+                            tonalElevation = 10.dp,
+                            shadowElevation = 10.dp,
                             modifier = Modifier
-                                .padding(
-                                    horizontal = 25.dp,
-                                    //vertical = 25.dp
-                                ),
-                            verticalArrangement = Arrangement.Center
-                            //horizontalAlignment = Alignment.CenterHorizontally
-                        ){
-                            Row(
+                                .height(78.dp)
+                                .fillMaxWidth()
+                        ) {
+                            Column(
                                 modifier = Modifier
-                                    .fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-
-                                Text(
-                                    text = "Account needs verification",
-                                    //  fontColor = if (isUserVerified?.value == true) Color.Black else Color(0xffCC0033),
-                                    color =  Color(0xFFCC0033),
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Medium,
+                                    .padding(
+                                        horizontal = 25.dp,
+                                        //vertical = 25.dp
+                                    ),
+                                verticalArrangement = Arrangement.Center
+                                //horizontalAlignment = Alignment.CenterHorizontally
+                            ){
+                                Row(
                                     modifier = Modifier
-                                        //   .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
-                                        .fillMaxWidth()
-                                    //  .wrapContentWidth(align = Alignment.Start)
-                                )
+                                        .fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+
+                                    Text(
+                                        text = "Account needs verification",
+                                        //  fontColor = if (isUserVerified?.value == true) Color.Black else Color(0xffCC0033),
+                                        color =  Color(0xFFCC0033),
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier
+                                            //   .padding(vertical = 10.dp, horizontal = horizontalPaddingValue)
+                                            .fillMaxWidth()
+                                        //  .wrapContentWidth(align = Alignment.Start)
+                                    )
+                                }
+
                             }
 
                         }
-
                     }
+
+
+
                 }
+            ) {
 
-
-
-            }
-        ) {
-            if (tour.tourId != tourId) {
-                LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
-            } else {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -467,139 +468,140 @@ fun TourDetailsScreen(
                     }
 
                 }
+
             }
-        }
 
 
-        if (openBottomSheet) {
-            ModalBottomSheet(
-                shape = RoundedCornerShape(20.dp),
-                containerColor = Color.White,
-                dragHandle = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start,
-                        modifier = Modifier
-                            .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
-                            .fillMaxWidth()
-                    ) {
-                        IconButton(
-                            onClick = {
-                                openBottomSheet = false
-                            },
+            if (openBottomSheet) {
+                ModalBottomSheet(
+                    shape = RoundedCornerShape(20.dp),
+                    containerColor = Color.White,
+                    dragHandle = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start,
+                            modifier = Modifier
+                                .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
+                                .fillMaxWidth()
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.ArrowBack,
-                                contentDescription = "Close"
-                            )
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        ClickableText(
-                            text = buildAnnotatedString {
-                                withStyle(
-                                    style = SpanStyle(
-                                        fontSize = 16.sp,
-                                        textDecoration = TextDecoration.Underline
-                                    )
-                                ) {
-                                    append("Clear")
-                                }
-                            },
-                            onClick = {
-                                tourDetailsViewModel.setTempCount(0)
+                            IconButton(
+                                onClick = {
+                                    openBottomSheet = false
+                                },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowBack,
+                                    contentDescription = "Close"
+                                )
                             }
-
-                        )
-
-
-                    }
-                },
-                onDismissRequest = { openBottomSheet = false },
-                sheetState = bottomSheetState,
-                modifier = Modifier
-                    .fillMaxHeight(0.25f) //0.693
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .background(Color.White)
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 10.dp)
-
-                    ) {
-                        Text(
-                            text = "Guests",
-                            color = Color(0xff333333),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        IconButton(
-                            onClick = {
-                                if (count > 0) {
-                                   // tourDetailsViewModel.decrementPersonCount()
-                                    //count--
-                                    tourDetailsViewModel.decrementCount()
+                            Spacer(modifier = Modifier.weight(1f))
+                            ClickableText(
+                                text = buildAnnotatedString {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            fontSize = 16.sp,
+                                            textDecoration = TextDecoration.Underline
+                                        )
+                                    ) {
+                                        append("Clear")
+                                    }
+                                },
+                                onClick = {
+                                    tourDetailsViewModel.setTempCount(0)
                                 }
-                            },
-                            enabled = count > 0,
-                            modifier = Modifier.size(17.dp)
-                        ) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(R.drawable.subtract_circle),
-                                contentDescription = "Subtract",
-                                tint = if (count > 0) Color(0xff333333) else Color(0xFFDEDEDE)
+
                             )
+
+
                         }
-                        Text(
-                            text = count.toString(),
-                            color = Color(0xff333333),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 15.dp)
-                        )
-                        IconButton(
-                            onClick = {
-                             //   if (count < limit) {
-                                  //  tourDetailsViewModel.incrementPersonCount()
+                    },
+                    onDismissRequest = { openBottomSheet = false },
+                    sheetState = bottomSheetState,
+                    modifier = Modifier
+                        .fillMaxHeight(0.25f) //0.693
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .background(Color.White)
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 10.dp)
+
+                        ) {
+                            Text(
+                                text = "Guests",
+                                color = Color(0xff333333),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            IconButton(
+                                onClick = {
+                                    if (count > 0) {
+                                        // tourDetailsViewModel.decrementPersonCount()
+                                        //count--
+                                        tourDetailsViewModel.decrementCount()
+                                    }
+                                },
+                                enabled = count > 0,
+                                modifier = Modifier.size(17.dp)
+                            ) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(R.drawable.subtract_circle),
+                                    contentDescription = "Subtract",
+                                    tint = if (count > 0) Color(0xff333333) else Color(0xFFDEDEDE)
+                                )
+                            }
+                            Text(
+                                text = count.toString(),
+                                color = Color(0xff333333),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 15.dp)
+                            )
+                            IconButton(
+                                onClick = {
+                                    //   if (count < limit) {
+                                    //  tourDetailsViewModel.incrementPersonCount()
                                     tourDetailsViewModel.incrementCount()
-                             //   }
-                            },
-                          //  enabled = count < limit, //
-                            modifier = Modifier.size(17.dp)
-                        ) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(R.drawable.add_circle),
-                                contentDescription = "Add",
-                               // tint = if (count < limit) Color(0xff333333) else Color(0xFFDEDEDE),
-                                tint = Color(0xff333333)
-                            )
+                                    //   }
+                                },
+                                //  enabled = count < limit, //
+                                modifier = Modifier.size(17.dp)
+                            ) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(R.drawable.add_circle),
+                                    contentDescription = "Add",
+                                    // tint = if (count < limit) Color(0xff333333) else Color(0xFFDEDEDE),
+                                    tint = Color(0xff333333)
+                                )
+                            }
                         }
+
+                        Spacer(modifier = Modifier.weight(1f))
+                        ConfirmCount(
+                            tourPrice = tour.tourPrice,
+                            personCount = count,
+                            enableButton = count != personCount,
+                            onClickSave = {
+                                //    isSaveButtonClicked = true
+                                tourDetailsViewModel.setTempCount(count)
+                                tourDetailsViewModel.setPersonCount(count)
+                                openBottomSheet = false
+
+                            },
+                            modifier = Modifier
+                                .noPaddingIf(hasNavigationBar)
+                        )
+                        Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars))
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
-                    ConfirmCount(
-                        tourPrice = tour.tourPrice,
-                        personCount = count,
-                        enableButton = count != personCount,
-                        onClickSave = {
-                        //    isSaveButtonClicked = true
-                            tourDetailsViewModel.setTempCount(count)
-                            tourDetailsViewModel.setPersonCount(count)
-                            openBottomSheet = false
-
-                        },
-                        modifier = Modifier
-                            .noPaddingIf(hasNavigationBar)
-                    )
-                    Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars))
                 }
 
+
             }
-
-
         }
     }
 }

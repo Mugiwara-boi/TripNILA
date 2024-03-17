@@ -5,14 +5,14 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.example.tripnila.data.HomePagingItem
 import com.example.tripnila.repository.UserRepository
-import java.util.SortedSet
 
 class ForYouPagingSource(
     private val hostId: String,
     private val repository: UserRepository,
     private val tags: List<String>,
-    private val serviceIdSet: SortedSet<String>,
     private val initialLoadSize: Int,
+
+    private val serviceIds: List<String>,
 
     private val searchText: String,
     private val includeStaycation: Boolean,
@@ -49,16 +49,49 @@ class ForYouPagingSource(
             Log.d("Page Size(PS)", pageSize.toString())
             Log.d("hostId(PS)", hostId)
             Log.d("tags(PS)", tags.toString())
-            Log.d("serviceIdSet(PS)", serviceIdSet.toString())
 
-            val services = repository.getAllServicesByTagsWithPaging(
+            val tourList = mutableListOf<String>()
+            val staycationList = mutableListOf<String>()
+
+            for (id in serviceIds) {
+                if (id.startsWith("2")) {
+                    tourList.add(id)
+                } else {
+                    staycationList.add(id)
+                }
+            }
+
+            Log.d("includeStaycation", includeStaycation.toString())
+            Log.d("includeTour", includeTour.toString())
+
+            val filteredServiceIds = when {
+                includeStaycation && includeTour -> {
+                    Log.d("Include Both", "Include Both")
+                    serviceIds
+                }
+                includeStaycation -> {
+                    Log.d("Staycation Only", "Staycation Only")
+                    staycationList
+                }
+                includeTour -> {
+                    Log.d("Tour Only", "Tour Only")
+                    tourList
+                }
+                else -> {
+                    Log.d("Empty", "Empty")
+                    emptyList()
+                }
+            }
+
+
+
+
+            val services = repository.getAllServicesFromFilteredList(
                 hostId = hostId,
-                tags = tags,
                 pageNumber = currentPageNumber,
                 pageSize = pageSize,
                 initialLoadSize = initialLoadSize,
-
-                serviceIdSet = serviceIdSet,
+                serviceIds = filteredServiceIds,
                 searchText = searchText,
                 includeStaycation = includeStaycation,
                 includeTour = includeTour,
@@ -96,8 +129,10 @@ class ForYouPagingSource(
     }
 
     override fun getRefreshKey(state: PagingState<Int, HomePagingItem>): Int? {
-        // We don't need to refresh the data here, so just return null
-        return null
+        return state.anchorPosition?.let { anchorPosition ->
+            val anchorPage = state.closestPageToPosition(anchorPosition)
+            anchorPage?.prevKey?.plus(1) ?: anchorPage?.nextKey?.minus(1)
+        }
     }
 
 }

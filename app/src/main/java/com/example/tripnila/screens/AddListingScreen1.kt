@@ -27,6 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -34,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.common.Orange
 import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
@@ -51,6 +53,10 @@ fun AddListingScreen1(
     hostTourViewModel: HostTourViewModel? = null,
     addBusinessViewModel: AddBusinessViewModel? = null,
 ){
+
+    val staycationId = addListingViewModel?.staycation?.collectAsState()?.value?.staycationId
+    val tourId = hostTourViewModel?.tour?.collectAsState()?.value?.tourId
+    val businessId = addBusinessViewModel?.business?.collectAsState()?.value?.businessId
 
     LaunchedEffect(hostId) {
         if (hostId != "") {
@@ -73,9 +79,16 @@ fun AddListingScreen1(
         }
     }
 
+    val currentServiceId = when(listingType) {
+        "Staycation" -> if (staycationId != "") staycationId else "empty"
+        "Tour" -> if (tourId != "") tourId else "empty"
+        "Business" -> if (businessId != "") businessId else "empty"
+        else -> "empty"
+    }
 
 
-    Log.d("HostId", "Host ID: $hostId, ListingType: $listingType, Service ID: $serviceId")
+
+    Log.d("HostId", "Host ID: $hostId, ListingType: $listingType, Service ID: $serviceId, Current Service ID: $currentServiceId" )
 
     val header = when (listingType) {
         "Staycation" -> {
@@ -108,57 +121,61 @@ fun AddListingScreen1(
         modifier = Modifier
             .fillMaxSize()
     ){
-        Scaffold(
-            bottomBar = {
-                AddListingBottomBookingBar(
-                    onNext = {
-                        onNavToNext(listingType)
-                    },
-                    onCancel = {
-                        onNavToCancel(hostId.substring(5))
-                    }
-                )
-            },
-            topBar = {
-                TopAppBar(
-                    title = {
-                        /*SaveAndExitButton(
-                            onClick = { *//*TODO*//* }
-                        )*/
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.White
+        if ((serviceId != currentServiceId)) {
+            LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
+        } else {
+            Scaffold(
+                bottomBar = {
+                    AddListingBottomBookingBar(
+                        onNext = {
+                            onNavToNext(listingType)
+                        },
+                        onCancel = {
+                            onNavToCancel(hostId.substring(5))
+                        }
                     )
-                )
-            }
-        ){
-            Column(
-                modifier = Modifier
-                    .background(Color.White)
-                    .fillMaxWidth()
-                    .padding(horizontal = 25.dp, vertical = 20.dp)
-                    .padding(it)
-            ) {
-                Text(
-                    text = "Step 1",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = header,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Medium,
+                },
+                topBar = {
+                    TopAppBar(
+                        title = {
+                            /*SaveAndExitButton(
+                                onClick = { *//*TODO*//* }
+                        )*/
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.White
+                        )
+                    )
+                }
+            ){
+                Column(
                     modifier = Modifier
-                )
-                Spacer(modifier = Modifier.height(5.dp))
-                Text(
-                    text = description,
-                    fontSize = 12.sp,
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                AddListingStepIndicator(modifier = Modifier, currentPage = 0, pageCount = 4)
+                        .background(Color.White)
+                        .fillMaxWidth()
+                        .padding(horizontal = 25.dp, vertical = 20.dp)
+                        .padding(it)
+                ) {
+                    Text(
+                        text = "Step 1",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = header,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                    )
+                    Spacer(modifier = Modifier.height(5.dp))
+                    Text(
+                        text = description,
+                        fontSize = 12.sp,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    AddListingStepIndicator(modifier = Modifier, currentPage = 0, pageCount = 4)
 
 
+                }
             }
         }
 

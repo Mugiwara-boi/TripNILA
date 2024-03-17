@@ -1,5 +1,6 @@
 package com.example.tripnila.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -72,49 +73,66 @@ fun InboxScreen(
     navController: NavHostController? = null
 ){
 
+    val currentUserId = inboxViewModel?.currentUserId?.collectAsState()?.value
+
     LaunchedEffect(touristId) {
-        inboxViewModel?.setCurrentUser(touristId)
+        if (touristId != currentUserId) {
+            inboxViewModel?.setCurrentUser(touristId)
+            inboxViewModel?.refreshInboxPagingData()
+        }
+
+        Log.d("Tourist ID (Inbox Screen)", touristId)
     }
+
+    val inboxItems = inboxViewModel?.inboxPagingData?.collectAsLazyPagingItems()
+
+/*
+    if (touristId != currentUserId) {
+        val inboxFlow = remember { inboxViewModel?.getUserInbox() }
+        val inboxItems = inboxFlow?.collectAsLazyPagingItems()
+    }
+
+*/
 
     var selectedItemIndex by rememberSaveable {
         mutableIntStateOf(1)
     }
 
-    val lazyPagingItems = inboxViewModel?.inboxPagingData?.collectAsLazyPagingItems()
+
 
     Surface(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Scaffold(
-            topBar = {
-                AppTopBar(headerText = "Inbox")
-            },
-            bottomBar = {
-                navController?.let {
-                    TouristBottomNavigationBar(
-                        touristId = touristId,
-                        navController = it,
-                        selectedItemIndex = selectedItemIndex,
-                        onItemSelected = { newIndex ->
-                            selectedItemIndex = newIndex
-                        }
-                    )
+
+        if (inboxItems?.loadState?.refresh == LoadState.Loading) {
+            LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
+        } else {
+            Scaffold(
+                topBar = {
+                    AppTopBar(headerText = "Inbox")
+                },
+                bottomBar = {
+                    navController?.let {
+                        TouristBottomNavigationBar(
+                            touristId = touristId,
+                            navController = it,
+                            selectedItemIndex = selectedItemIndex,
+                            onItemSelected = { newIndex ->
+                                selectedItemIndex = newIndex
+                            }
+                        )
+                    }
                 }
-            }
-        ) {
-            Divider()
+            ) {
+                Divider()
 
-
-            if (lazyPagingItems?.loadState?.refresh == LoadState.Loading) {
-                LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
-            } else {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(it)
                 ) {
-                    lazyPagingItems?.let { items ->
+                    inboxItems?.let { items ->
                         items(items) { inboxItem ->
                             if (inboxItem != null) {
                                 InboxItem(
@@ -128,6 +146,7 @@ fun InboxScreen(
                         }
                     }
                 }
+
             }
         }
     }

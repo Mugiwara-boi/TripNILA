@@ -10,11 +10,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -34,10 +37,13 @@ fun HostInboxScreen(
     navController: NavHostController? = null
 ){
 
+    val currentUserId = hostInboxViewModel.currentUserId.collectAsState().value
 
     LaunchedEffect(hostId) {
-        hostInboxViewModel.setCurrentUser(hostId.substring(0, 5))
-
+        if (hostId.substring(5) != currentUserId) {
+            hostInboxViewModel.setCurrentUser(hostId.substring(5))
+            hostInboxViewModel.refreshInboxPagingData()
+        }
 
 
         Log.d("HostId" , hostId)
@@ -52,28 +58,28 @@ fun HostInboxScreen(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Scaffold(
-            topBar = {
-                AppTopBar(headerText = "Inbox")
-            },
-            bottomBar = {
-                navController?.let {
-                    HostBottomNavigationBar(
-                        hostId = hostId,
-                        navController = it,
-                        selectedItemIndex = selectedItemIndex,
-                        onItemSelected = { newIndex ->
-                            selectedItemIndex = newIndex
-                        }
-                    )
-                }
-            }
-        ) {
-            Divider()
 
-            if (lazyPagingItems.loadState.refresh == LoadState.Loading) {
-                LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
-            } else {
+        if (lazyPagingItems.loadState.refresh == LoadState.Loading) {
+            LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
+        } else {
+            Scaffold(
+                topBar = {
+                    AppTopBar(headerText = "Inbox")
+                },
+                bottomBar = {
+                    navController?.let {
+                        HostBottomNavigationBar(
+                            hostId = hostId,
+                            navController = it,
+                            selectedItemIndex = selectedItemIndex,
+                            onItemSelected = { newIndex ->
+                                selectedItemIndex = newIndex
+                            }
+                        )
+                    }
+                }
+            ) {
+                Divider()
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -94,7 +100,21 @@ fun HostInboxScreen(
                     }
                 }
             }
-
         }
     }
+}
+
+@Preview
+@Composable
+private fun HostInboxScreenPreview() {
+    val hostInboxViewModel = viewModel(modelClass = HostInboxViewModel::class.java)
+
+
+    HostInboxScreen(
+        hostId = "HOST-ITZbCFfF7Fzqf1qPBiwx",
+        onNavToChat = {_, _ ->},
+        hostInboxViewModel = hostInboxViewModel
+    )
+
+
 }

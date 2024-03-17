@@ -23,6 +23,13 @@ class HostInboxViewModel(private val repository: UserRepository = UserRepository
     private val _isLoading = MutableStateFlow(false)  // Add this line
     val isLoading = _isLoading.asStateFlow()
 
+    private var inboxPager: Pager<Int, Inbox>? = null
+
+    fun refreshInboxPagingData() {
+        inboxPager = createInboxPager()
+        inboxPagingData = inboxPager!!.flow.cachedIn(viewModelScope)
+    }
+
     fun setCurrentUser(touristId: String) {
 
         _isLoading.value = true
@@ -30,11 +37,23 @@ class HostInboxViewModel(private val repository: UserRepository = UserRepository
         _currentUserId.value = touristId
     }
 
-    val inboxPagingData: Flow<PagingData<Inbox>> = Pager(PagingConfig(pageSize = 6)) {
+    private fun createInboxPager(): Pager<Int, Inbox> {
+        return Pager(PagingConfig(pageSize = 6)) {
+            HostInboxPagingSource(
+                _currentUserId.value,
+                repository,
+            ) // Initial tags
+        }
+    }
+
+    var inboxPagingData: Flow<PagingData<Inbox>> =
+        createInboxPager().flow.cachedIn(viewModelScope)
+
+/*    val inboxPagingData: Flow<PagingData<Inbox>> = Pager(PagingConfig(pageSize = 6)) {
         HostInboxPagingSource(
             _currentUserId.value,
             repository,
         ) // Initial tags
-    }.flow.cachedIn(viewModelScope)
+    }.flow.cachedIn(viewModelScope)*/
 
 }

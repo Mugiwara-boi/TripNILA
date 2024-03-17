@@ -93,7 +93,10 @@ fun HostDashboardScreen(
 
     Log.d("TouristId", "$touristId")
 
+    val host = hostDashboardViewModel?.host?.collectAsState()?.value
+
     LaunchedEffect(touristId) {
+
         hostDashboardViewModel?.getHostDetailsByTouristId(touristId)
 
     }
@@ -101,12 +104,12 @@ fun HostDashboardScreen(
 //    touristWalletViewModel.setWallet(touristId)
     val touristWallet by touristWalletViewModel.touristWallet.collectAsState()
     val currentBalance = touristWallet.currentBalance
-    val host = hostDashboardViewModel?.host?.collectAsState()?.value
+
 
     val horizontalPaddingValue = 16.dp
     val verticalPaddingValue = 10.dp
 
-    val staycationProperties = hostDashboardViewModel?.staycations?.collectAsState()?.value?.mapNotNull { staycation ->
+    val staycationProperties = hostDashboardViewModel?.staycations?.collectAsState()?.value?.map { staycation ->
             HostProperty(
                 propertyId = staycation.staycationId,
                 propertyName = staycation.staycationTitle,
@@ -118,7 +121,7 @@ fun HostDashboardScreen(
 
     Log.d("StaycationProperties", "$staycationProperties")
 
-    val businessProperties = hostDashboardViewModel?.businesses?.collectAsState()?.value?.mapNotNull { business ->
+    val businessProperties = hostDashboardViewModel?.businesses?.collectAsState()?.value?.map { business ->
             HostProperty(
                 propertyId = business.businessId,
                 propertyName = business.businessTitle,
@@ -131,7 +134,7 @@ fun HostDashboardScreen(
 
     Log.d("BusinessProperties", "$businessProperties")
 
-    val tourProperties = hostDashboardViewModel?.tours?.collectAsState()?.value?.mapNotNull { tour ->
+    val tourProperties = hostDashboardViewModel?.tours?.collectAsState()?.value?.map { tour ->
             HostProperty(
                 propertyId = tour.tourId,
                 propertyName = tour.tourTitle,
@@ -151,25 +154,25 @@ fun HostDashboardScreen(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Scaffold(
-            bottomBar = {
-                if (host != null) {
-                    HostBottomNavigationBar(
-                        hostId = host.hostId,
-                        selectedItemIndex = selectedItemIndex,
-                        onItemSelected = { newIndex ->
-                            selectedItemIndex = newIndex
-                        },
-                        navController = navController
-                    )
+        if ((hostDashboardViewModel?.isLoadingState?.collectAsState()?.value == true) && (touristId != host?.touristId)) {
+            LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
+        } else {
+            Scaffold(
+                bottomBar = {
+                    if (host != null) {
+                        HostBottomNavigationBar(
+                            hostId = host.hostId,
+                            selectedItemIndex = selectedItemIndex,
+                            onItemSelected = { newIndex ->
+                                selectedItemIndex = newIndex
+                            },
+                            navController = navController
+                        )
+                    }
+
                 }
+            ) {
 
-            }
-        ) {
-
-            if (hostDashboardViewModel?.isStateRetrieved?.collectAsState()?.value == false) {
-                LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
-            } else {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -282,9 +285,10 @@ fun HostDashboardScreen(
                         )
                     }
                 }
+
+
+
             }
-
-
         }
     }
 }

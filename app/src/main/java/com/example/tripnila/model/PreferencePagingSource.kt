@@ -13,6 +13,8 @@ class PreferencePagingSource(
     private val tag: String,
     private val initialLoadSize: Int,
 
+    private val serviceIds: List<String>,
+
     private val searchText: String,
     private val includeStaycation: Boolean,
     private val includeTour: Boolean,
@@ -45,6 +47,72 @@ class PreferencePagingSource(
             val pageSize = params.loadSize
 
            // val services = repository.getAllServicesByTagWithPaging(hostId, tag, currentPageNumber, pageSize)
+            val tourList = mutableListOf<String>()
+            val staycationList = mutableListOf<String>()
+
+            for (id in serviceIds) {
+                if (id.startsWith("2")) {
+                    tourList.add(id)
+                } else {
+                    staycationList.add(id)
+                }
+            }
+
+            Log.d("includeStaycation", includeStaycation.toString())
+            Log.d("includeTour", includeTour.toString())
+
+            val filteredServiceIds = when {
+                includeStaycation && includeTour -> {
+                    Log.d("Include Both", "Include Both")
+                    serviceIds
+                }
+                includeStaycation -> {
+                    Log.d("Staycation Only", "Staycation Only")
+                    staycationList
+                }
+                includeTour -> {
+                    Log.d("Tour Only", "Tour Only")
+                    tourList
+                }
+                else -> {
+                    Log.d("Empty", "Empty")
+                    emptyList()
+                }
+            }
+
+            val services = repository.getAllServicesFromFilteredList(
+                hostId = hostId,
+                pageNumber = currentPageNumber,
+                pageSize = pageSize,
+                initialLoadSize = initialLoadSize,
+                serviceIds = filteredServiceIds,
+                searchText = searchText,
+                includeStaycation = includeStaycation,
+                includeTour = includeTour,
+                houseSelected = houseSelected,
+                apartmentSelected = apartmentSelected,
+                condoSelected = condoSelected,
+                campSelected = campSelected,
+                guestHouseSelected = guestHouseSelected,
+                hotelSelected = hotelSelected,
+                photoTourSelected = photoTourSelected,
+                foodTripSelected = foodTripSelected,
+                barHoppingSelected = barHoppingSelected,
+                selectedRating = selectedRating,
+                minPrice = minPrice,
+                maxPrice = maxPrice,
+                city = city,
+                capacity = capacity,
+                bedroomCount = bedroomCount,
+                bedCount = bedCount,
+                bathroomCount = bathroomCount,
+                checkedAmenities = checkedAmenities,
+                checkedOffers = checkedOffers,
+                startDate = startDate,
+                endDate = endDate
+            )
+
+/*
 
             val services = repository.getAllServicesByTagWithPaging(
                 hostId = hostId,
@@ -77,7 +145,7 @@ class PreferencePagingSource(
                 startDate = startDate,
                 endDate = endDate
             )
-
+*/
 
             LoadResult.Page(
                 data = services,

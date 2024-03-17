@@ -83,8 +83,15 @@ fun FavoriteScreen(
     onNavToTourDetails: (String, String) -> Unit
 ) {
 
+    val currentUserId by favoriteViewModel.touristId.collectAsState()
+
     LaunchedEffect(touristId) {
-        favoriteViewModel.setTouristId(touristId)
+        if (touristId != currentUserId) {
+            favoriteViewModel.setTouristId(touristId)
+            favoriteViewModel.refreshFavoritePagingData()
+        }
+
+
     }
 
     val lazyPagingItems = favoriteViewModel.favoritePagingData.collectAsLazyPagingItems()
@@ -132,7 +139,9 @@ fun FavoriteScreen(
             },
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(it)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it)
             ) {
                 LazyVerticalGrid(
                     state = rememberLazyGridState(),

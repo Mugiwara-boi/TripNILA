@@ -143,29 +143,30 @@ fun ChatScreen(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Scaffold(
-            topBar = {
+        if (isLoading) {
+            LoadingScreen(isLoadingCompleted = false, isLightModeActive = false)
+        } else {
+            Scaffold(
+                topBar = {
 
-                ChatTopBar(
-                    name =  "${otherUser.firstName} ${otherUser.lastName}",
-                    isActive = false,
-                    activeStatus = "Offline",
-                    onBack = {
-                        onBack()
-                    }
-                )
+                    ChatTopBar(
+                        name =  "${otherUser.firstName} ${otherUser.lastName}",
+                        isActive = false,
+                        activeStatus = "Offline",
+                        onBack = {
+                            onBack()
+                        }
+                    )
 
-            },
-            bottomBar = {
-                ChatBottomBar(
-                    chatViewModel = chatViewModel,
-                    context = context
-                )
-            }
-        ) {
-            if (isLoading) {
-                LoadingScreen(isLoadingCompleted = false, isLightModeActive = false)
-            } else {
+                },
+                bottomBar = {
+                    ChatBottomBar(
+                        chatViewModel = chatViewModel,
+                        context = context
+                    )
+                }
+            ) {
+
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
@@ -203,23 +204,24 @@ fun ChatScreen(
                     }
 
                 }
+
             }
-        }
-        if (clickedImageUrl != null) {
-            FullScreenImage(
-                imageUrl = clickedImageUrl,
-                onClose = { setClickedImageUrl(null) },
-                onSave = {
-                    scope.launch {
-                        val bitmap = urlToBitmap(context, clickedImageUrl)
-                        if (saveImageToGallery(context, bitmap, UUID.randomUUID().toString(), "New image")) {
-                            Toast.makeText(context, "Image saved to gallery", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(context, "Failed to save image", Toast.LENGTH_SHORT).show()
+            if (clickedImageUrl != null) {
+                FullScreenImage(
+                    imageUrl = clickedImageUrl,
+                    onClose = { setClickedImageUrl(null) },
+                    onSave = {
+                        scope.launch {
+                            val bitmap = urlToBitmap(context, clickedImageUrl)
+                            if (saveImageToGallery(context, bitmap, UUID.randomUUID().toString(), "New image")) {
+                                Toast.makeText(context, "Image saved to gallery", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "Failed to save image", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }

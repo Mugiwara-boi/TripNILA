@@ -3,20 +3,24 @@ package com.example.tripnila.model
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.LoadState
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.example.tripnila.data.HomePagingItem
 import com.example.tripnila.data.Preference
+import com.example.tripnila.data.Tag
+import com.example.tripnila.data.TourBooking
 import com.example.tripnila.repository.UserRepository
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.util.SortedSet
 
 class HomeViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
@@ -27,6 +31,22 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
 
     private val _serviceIdSet = MutableStateFlow<SortedSet<String>>(sortedSetOf())
     val serviceIdSet = _serviceIdSet.asStateFlow()
+
+    private val _fetchedTags = MutableStateFlow<List<Tag>>(emptyList())
+    val fetchedTags = _fetchedTags.asStateFlow()
+
+    private var forYouIds = listOf<String>()
+    private var sportsIds = listOf<String>()
+    private var foodTripIds = listOf<String>()
+    private var shopIds = listOf<String>()
+    private var natureIds = listOf<String>()
+    private var gamingIds = listOf<String>()
+    private var karaokeIds = listOf<String>()
+    private var historyIds = listOf<String>()
+    private var clubsIds = listOf<String>()
+    private var sightseeingIds = listOf<String>()
+    private var swimmingIds = listOf<String>()
+
 
     private val _searchText = MutableStateFlow("")
     val searchText = _searchText.asStateFlow()
@@ -247,14 +267,19 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
         }
     }
 
-    fun getUserPreference(touristId: String) {
-        viewModelScope.launch {
+    fun setUserId(touristId: String) {
+        _fetchedTags.value = emptyList()
+        _touristId.value = touristId
+    }
+
+    suspend fun getUserPreference() {
+  //      viewModelScope.launch {
             try {
-                val preferences = repository.getTouristPreferences(touristId)
+                val preferences = repository.getTouristPreferences(_touristId.value)
                 _preferences.value = preferences
 
-                _touristId.value = touristId
-                Log.d("TouristId", _touristId.value)
+/*                _touristId.value = touristId
+                Log.d("TouristId", _touristId.value)*/
 //                // temp
 //                val preferencesList = listOf(
 //                    Preference("Sports"),
@@ -270,22 +295,58 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
 //                )
 //                _preferences.value = preferencesList
 
+                getAllTags()
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-        }
+   //     }
     }
 
-    fun getUniqueServiceIds() {
-        viewModelScope.launch {
+    fun clearViewModel() {
+        viewModelScope.cancel()
+    }
+
+    private suspend fun getAllTags() {
+     //   viewModelScope.launch {
             try {
-                val uniqueServiceIds = repository.getAllUniqueServiceId().toSortedSet()
-                _serviceIdSet.value = uniqueServiceIds
-                Log.d("Service IDs", _serviceIdSet.value.toString())
+
+
+                val tags = repository.getAllTagsForPaging()
+
+                val userPreferences = _preferences.value.map { it.preference }
+
+                _fetchedTags.value = tags
+
+                forYouIds = _fetchedTags.value.filter { it.tagName in userPreferences }.map { it.serviceId }.toSet().toList()
+                sportsIds = _fetchedTags.value.filter { it.tagName == "Sports" }.map { it.serviceId }.toSet().toList()
+                foodTripIds = _fetchedTags.value.filter { it.tagName == "Food Trip" }.map { it.serviceId }.toSet().toList()
+                shopIds = _fetchedTags.value.filter { it.tagName == "Shop" }.map { it.serviceId }.toSet().toList()
+                natureIds = _fetchedTags.value.filter { it.tagName == "Nature" }.map { it.serviceId }.toSet().toList()
+                gamingIds = _fetchedTags.value.filter { it.tagName == "Gaming" }.map { it.serviceId }.toSet().toList()
+                karaokeIds = _fetchedTags.value.filter { it.tagName == "Karaoke" }.map { it.serviceId }.toSet().toList()
+                historyIds = _fetchedTags.value.filter { it.tagName == "History" }.map { it.serviceId }.toSet().toList()
+                clubsIds = _fetchedTags.value.filter { it.tagName == "Clubs" }.map { it.serviceId }.toSet().toList()
+                sightseeingIds = _fetchedTags.value.filter { it.tagName == "Sightseeing" }.map { it.serviceId }.toSet().toList()
+                swimmingIds = _fetchedTags.value.filter { it.tagName == "Swimming" }.map { it.serviceId }.toSet().toList()
+
+
+                Log.d("forYouIds", forYouIds.toString())
+                Log.d("sportsIds", sportsIds.toString())
+                Log.d("foodTripIds", foodTripIds.toString())
+                Log.d("shopIds", shopIds.toString())
+                Log.d("natureIds", natureIds.toString())
+                Log.d("gamingIds", gamingIds.toString())
+                Log.d("karaokeIds", karaokeIds.toString())
+                Log.d("historyIds", historyIds.toString())
+                Log.d("clubsIds", clubsIds.toString())
+                Log.d("sightseeingIds", sightseeingIds.toString())
+                Log.d("swimmingIds", swimmingIds.toString())
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-        }
+   //     }
     }
 
     private var forYouPager: Pager<Int, HomePagingItem>? = null
@@ -353,16 +414,21 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
         swimmingPagingData = swimmingPager!!.flow.cachedIn(viewModelScope)
     }
 
-    private val pageSize = 5
-    private val initialLoadSize = 10
+
+    private val pageSize = 6
+    private val initialLoadSize = 8
 
     private fun createForYouPager(): Pager<Int, HomePagingItem> {
-        return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
+        return Pager(
+            PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)
+        ) {
             ForYouPagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
                 tags = _preferences.value.map { it.preference },
-                serviceIdSet = _serviceIdSet.value,
+
+                serviceIds = forYouIds,
+
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
                 includeTour = _includeTour.value,
@@ -392,12 +458,57 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
         }
     }
 
+/*
+    private fun createForYouPager(): Pager<Int, HomePagingItem> {
+        return Pager(
+            PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)
+        ) {
+            ForYouPagingSource(
+                hostId = "HOST-${_touristId.value}",
+                repository = repository,
+                tags = _preferences.value.map { it.preference },
+
+                serviceIds = forYouIds,
+
+                searchText = _searchText.value,
+                includeStaycation = _includeStaycation.value,
+                includeTour = _includeTour.value,
+                houseSelected = _houseSelected.value,
+                apartmentSelected = _apartmentSelected.value,
+                condoSelected = _condoSelected.value,
+                campSelected = _campSelected.value,
+                guestHouseSelected = _guestHouseSelected.value,
+                hotelSelected = _hotelSelected.value,
+                photoTourSelected = _photoTourSelected.value,
+                foodTripSelected = _foodTripSelected.value,
+                barHoppingSelected = _barHoppingSelected.value,
+                selectedRating = _selectedRating.value,
+                minPrice = _minPrice.value,
+                maxPrice = _maxPrice.value,
+                city = _city.value,
+                capacity = _capacity.value,
+                bedroomCount = _bedroomCount.value,
+                bedCount = _bedCount.value,
+                bathroomCount = _bathroomCount.value,
+                checkedAmenities = _checkedAmenities.value,
+                checkedOffers = _checkedOffers.value,
+                startDate = _startDate.value,
+                endDate = _endDate.value,
+                initialLoadSize = initialLoadSize
+            )
+        }
+    }
+    */
+
     private fun createSportsPager(): Pager<Int, HomePagingItem> {
         return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             PreferencePagingSource(
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
                 tag = "Sports",
+
+                serviceIds = sportsIds,
+
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
                 includeTour = _includeTour.value,
@@ -433,6 +544,9 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
                 tag = "Food Trip",
+
+                serviceIds = foodTripIds,
+
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
                 includeTour = _includeTour.value,
@@ -468,6 +582,9 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
                 tag = "Shop",
+
+                serviceIds = shopIds,
+
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
                 includeTour = _includeTour.value,
@@ -503,6 +620,9 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
                 tag = "Nature",
+
+                serviceIds = natureIds,
+
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
                 includeTour = _includeTour.value,
@@ -538,6 +658,9 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
                 tag = "Gaming",
+
+                serviceIds = gamingIds,
+
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
                 includeTour = _includeTour.value,
@@ -573,6 +696,9 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
                 tag = "Karaoke",
+
+                serviceIds = karaokeIds,
+
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
                 includeTour = _includeTour.value,
@@ -608,6 +734,9 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
                 tag = "History",
+
+                serviceIds = historyIds,
+
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
                 includeTour = _includeTour.value,
@@ -643,6 +772,9 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
                 tag = "Clubs",
+
+                serviceIds = clubsIds,
+
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
                 includeTour = _includeTour.value,
@@ -678,6 +810,9 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
                 tag ="Sightseeing",
+
+                serviceIds = sightseeingIds,
+
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
                 includeTour = _includeTour.value,
@@ -713,6 +848,9 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 hostId = "HOST-${_touristId.value}",
                 repository = repository,
                 tag ="Swimming",
+
+                serviceIds = swimmingIds,
+
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
                 includeTour = _includeTour.value,

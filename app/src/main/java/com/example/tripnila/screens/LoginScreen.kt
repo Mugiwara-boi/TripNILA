@@ -112,19 +112,21 @@ fun LoginScreen(
             sheetShape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
             scaffoldState = scaffoldState,
             sheetContainerColor = Color.White,
+            sheetSwipeEnabled = false,
             sheetPeekHeight = 0.dp,
             snackbarHost = { SnackbarHost(hostState = scaffoldState.snackbarHostState) },
             sheetDragHandle = {
                 Box(
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    BottomSheetDefaults.DragHandle(modifier = Modifier.align(Center))
+                   // BottomSheetDefaults.DragHandle(modifier = Modifier.align(Center))
                     IconButton(
                         onClick = {
-                            bottomSheetExpanded = !bottomSheetExpanded
+                      //      bottomSheetExpanded = !bottomSheetExpanded
+                            bottomSheetExpanded = false
                         },
                         modifier = Modifier
-                            .padding(end = 12.dp, top = 0.dp)
+                            .padding(end = 12.dp, top = 5.dp)
                             .size(30.dp)
                             .align(CenterEnd)
 
@@ -242,7 +244,7 @@ fun LoginScreen(
                 BookingFilledButton(
                     buttonText = "Sign in",
                     onClick = {
-                        bottomSheetExpanded = !bottomSheetExpanded
+                        bottomSheetExpanded = true
                     },
                     modifier = Modifier.width(width = 216.dp)
                 )

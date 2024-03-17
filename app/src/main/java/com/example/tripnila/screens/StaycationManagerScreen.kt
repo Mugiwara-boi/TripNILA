@@ -177,7 +177,10 @@ fun StaycationManagerScreen(
             .fillMaxSize(),
         color = Color(0xFFEFEFEF)
     ) {
-        if (staycationManagerViewModel?.isStateRetrieved?.collectAsState()?.value == false) {
+
+            //staycationManagerViewModel?.isStateRetrieved?.collectAsState()?.value == false &&
+
+        if (staycation?.value?.staycationId != staycationId) {
             LoadingScreen(isLoadingCompleted = false, isLightModeActive = true)
         } else {
             LazyColumn(

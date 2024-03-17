@@ -48,8 +48,8 @@ class FavoriteViewModel(private val repository: UserRepository = UserRepository(
         favoritePagingData = favoritePager!!.flow.cachedIn(viewModelScope)
     }
 
-    private val pageSize = 5
-    private val initialLoadSize = 10
+    private val pageSize = 6
+    private val initialLoadSize = 8
     private fun createFavoritePager(): Pager<Int, HomePagingItem> {
         return Pager(PagingConfig(pageSize = pageSize, initialLoadSize = initialLoadSize)) {
             FavoritePagingSource(

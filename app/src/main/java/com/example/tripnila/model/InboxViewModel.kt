@@ -9,6 +9,7 @@ import androidx.paging.cachedIn
 import com.example.tripnila.data.HomePagingItem
 import com.example.tripnila.data.Inbox
 import com.example.tripnila.data.Message
+import com.example.tripnila.data.StaycationBooking
 import com.example.tripnila.data.Tourist
 import com.example.tripnila.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +27,13 @@ class InboxViewModel(private val repository: UserRepository = UserRepository()) 
     private val _isLoading = MutableStateFlow(false)  // Add this line
     val isLoading = _isLoading.asStateFlow()
 
+    private var inboxPager: Pager<Int, Inbox>? = null
+
+    fun refreshInboxPagingData() {
+        inboxPager = createInboxPager()
+        inboxPagingData = inboxPager!!.flow.cachedIn(viewModelScope)
+    }
+
     fun setCurrentUser(touristId: String) {
 
         _isLoading.value = true
@@ -33,11 +41,37 @@ class InboxViewModel(private val repository: UserRepository = UserRepository()) 
         _currentUserId.value = touristId
     }
 
+    private fun createInboxPager(): Pager<Int, Inbox> {
+        return Pager(PagingConfig(pageSize = 6)) {
+            InboxPagingSource(
+                _currentUserId.value,
+                repository,
+            ) // Initial tags
+        }
+    }
+
+    var inboxPagingData: Flow<PagingData<Inbox>> =
+        createInboxPager().flow.cachedIn(viewModelScope)
+
+
+/*    fun getUserInbox(): Flow<PagingData<Inbox>> {
+        return Pager(PagingConfig(pageSize = 6)) {
+            InboxPagingSource(
+                _currentUserId.value,
+                repository,
+            ) // Initial tags
+        }.flow.cachedIn(viewModelScope)
+    }*/
+
+}
+
+
+/*
+
     val inboxPagingData: Flow<PagingData<Inbox>> = Pager(PagingConfig(pageSize = 6)) {
         InboxPagingSource(
             _currentUserId.value,
             repository,
         ) // Initial tags
     }.flow.cachedIn(viewModelScope)
-
-}
+*/
