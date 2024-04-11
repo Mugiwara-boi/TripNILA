@@ -51,6 +51,7 @@ data class Staycation(
     val additionalInfo: String = "",
     val noCancel: Boolean = false,
     val noReschedule: Boolean = false,
+    val isEcoFriendly: Boolean = false,
 
     val phoneNo: String = "",
     val email: String = "",

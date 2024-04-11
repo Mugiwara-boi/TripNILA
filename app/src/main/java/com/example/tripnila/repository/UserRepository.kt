@@ -1886,6 +1886,9 @@ class UserRepository {
         allowSmoking: Boolean = false,
         noReschedule: Boolean = false,
         noCancel: Boolean = false,
+
+        isEcoFriendly: Boolean = false,
+
         additionalInfo: String = "",
         hostId: String = "",
         noOfBathrooms: Int = 1,
@@ -1935,6 +1938,9 @@ class UserRepository {
                 "hasSecurityCamera" to hasSecurityCamera,
                 "hasWeapon" to hasWeapon,
                 "hasFireExit" to hasFireExit,
+
+                "isEcoFriendly" to isEcoFriendly,
+
                 "hasFireExtinguisher" to hasFireExtinguisher,
                 "hasFirstAid" to hasFirstAid,
                 "allowPets" to allowPets,
@@ -6967,6 +6973,9 @@ class UserRepository {
         val hasDangerousAnimal = document.getBoolean("hasDangerousAnimal") ?: false
         val hasFirstAid = document.getBoolean("hasFirstAid") ?: false
         val hasFireExit = document.getBoolean("hasFireExit") ?: false
+
+        val isEcoFriendly = document.getBoolean("isEcoFriendly") ?: false
+
         val hasFireExtinguisher = document.getBoolean("hasFireExtinguisher") ?: false
         val maxNoOfGuests = document.getLong("maxNoOfGuests")?.toInt() ?: 0
         val additionalFeePerGuest = document.getDouble("additionalFeePerGuest") ?: 0.0
@@ -6999,6 +7008,7 @@ class UserRepository {
             noOfGuests = noOfGuests,
             noOfBedrooms = noOfBedrooms,
             noOfBeds = noOfBeds,
+            isEcoFriendly = isEcoFriendly,
             noOfBathrooms = noOfBathrooms,
             staycationDescription = staycationDescription,
             staycationLocation = staycationLocation,

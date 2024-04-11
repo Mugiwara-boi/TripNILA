@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -72,7 +73,7 @@ fun AddListingScreen14(
     val allowPets = addListingViewModel?.staycation?.collectAsState()?.value?.allowPets
     val allowSmoking = addListingViewModel?.staycation?.collectAsState()?.value?.allowSmoking
     val noisePolicy = addListingViewModel?.staycation?.collectAsState()?.value?.noisePolicy
-    val isEcoFriendly = false
+    val isEcoFriendly = addListingViewModel?.staycation?.collectAsState()?.value?.isEcoFriendly
     val alreadySubmitted = addListingViewModel?.isSuccessAddListing?.collectAsState()?.value
 
     val isLoading = addListingViewModel?.isLoadingAddListing?.collectAsState()?.value
@@ -307,11 +308,51 @@ fun AddListingScreen14(
                     }
 
                     item {
-                        Text(
-                            text = "Does your place have any eco-friendly policies or practices?",
-                            color = Color(0xff333333),
-                            fontSize = 12.sp
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Does your place have any eco-friendly policies or practices?",
+                                color = Color(0xff333333),
+                                fontSize = 12.sp,
+                                minLines = 2,
+                                modifier = Modifier.fillMaxWidth(.7f)
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            if (isEcoFriendly != null) {
+                                Checkbox(
+                                    checked = isEcoFriendly,
+                                    onCheckedChange = { isSelected ->
+                                        if (isSelected) {
+                                            addListingViewModel.setEcoFriendly(true)
+                                        } else {
+                                            addListingViewModel.setEcoFriendly(false)
+                                        }
+                                    },
+                                    colors = CheckboxDefaults.colors(
+                                        checkedColor = Orange
+                                    ),
+                                    modifier = Modifier.offset(x = 13.dp)
+                                )
+                            }
+                        }
+
+
+
+//                            Spacer(modifier = Modifier.weight(1f))
+//                            Checkbox(
+//                                checked = selected,
+//                                onCheckedChange = { onSelectedChange(it) },
+//                                colors = CheckboxDefaults.colors(
+//                                    checkedColor = Orange
+//                                ),
+//                                modifier = Modifier.offset(x = 13.dp)
+//                            )
+//                        }
+
                     }
                     item {
                         LongBasicTextFieldWithCharacterLimit(
@@ -467,16 +508,7 @@ fun AddListingAgreement(
     }
 }
 
-@Preview
-@Composable
-private fun AddListingPreview(){
-//    AddListingAgreement(
-//        clickableText1 = "privacy policy",
-//        clickableText2 = "rebooking and cancellation policy",
-//    )
 
-
-}
 
 @Preview
 @Composable
