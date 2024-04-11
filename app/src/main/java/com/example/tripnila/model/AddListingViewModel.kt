@@ -116,6 +116,8 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
         Log.d("Staycation", "${_staycation.value.amenities.map { it.amenityName }}")
     }
 
+
+
     fun addStaycationAmenity(amenity: String) {
         val newAmenity = Amenity(amenityName = amenity)
         _staycation.value = _staycation.value.copy(amenities = _staycation.value.amenities + newAmenity)
@@ -278,6 +280,11 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
         Log.d("Staycation", "${_staycation.value.noisePolicy}")
     }
 
+    fun setEcoFriendly(isTrue: Boolean) {
+        _staycation.value = _staycation.value.copy(isEcoFriendly = isTrue)
+
+    }
+
     fun setHasSecurityCamera(isTrue: Boolean) {
         _staycation.value = _staycation.value.copy(hasSecurityCamera = isTrue)
         Log.d("Staycation", "${_staycation.value.hasSecurityCamera}")
@@ -373,6 +380,7 @@ class AddListingViewModel(private val repository: UserRepository = UserRepositor
                     hasFireExit = _staycation.value.hasFireExit,
                     hasFireExtinguisher = _staycation.value.hasFireExtinguisher,
                     hasFirstAid = _staycation.value.hasFirstAid,
+                    isEcoFriendly = _staycation.value.isEcoFriendly,
                     allowPets = _staycation.value.allowPets,
                     allowSmoking = _staycation.value.allowSmoking,
                     noCancel = _staycation.value.noCancel,

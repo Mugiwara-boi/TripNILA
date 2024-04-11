@@ -454,13 +454,18 @@ fun StaycationDetailsScreen(
                             )
                         }
                     }
-                    item {
-                        StaycationDescriptionCard2(
-                            modifier = Modifier
-                                .offset(y = (-5).dp)
-                                .padding(bottom = 12.dp)
-                        )
+
+                    if (staycation.value?.isEcoFriendly == true) {
+                        item {
+                            StaycationDescriptionCard2(
+                                modifier = Modifier
+                                    .offset(y = (-5).dp)
+                                    .padding(bottom = 12.dp)
+                            )
+                        }
                     }
+
+
                     item {
                         staycation.value?.let { staycation ->
                             StaycationDescriptionCard3(
