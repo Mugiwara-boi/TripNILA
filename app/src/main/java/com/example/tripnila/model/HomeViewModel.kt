@@ -54,6 +54,9 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
     private val _includeStaycation = MutableStateFlow(true)
     val includeStaycation = _includeStaycation.asStateFlow()
 
+    private val _ecoFriendlyOnly = MutableStateFlow(false)
+    val ecoFriendlyOnly = _ecoFriendlyOnly.asStateFlow()
+
     private val _includeTour = MutableStateFlow(true)
     val includeTour = _includeTour.asStateFlow()
 
@@ -109,7 +112,8 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
     val bathroomCount = _bathroomCount.asStateFlow()
 
     private val _checkedAmenities = MutableStateFlow(
-        listOf(true, true, true, true, true, true, true, true, true)
+        listOf(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+            true, true, true)
     )
     val checkedAmenities = _checkedAmenities.asStateFlow()
 
@@ -153,6 +157,10 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
 
     fun updateIncludeTour(newValue: Boolean) {
         _includeTour.value = newValue
+    }
+
+    fun updateEcoFriendlyOnly(newValue: Boolean) {
+        _ecoFriendlyOnly.value = newValue
     }
 
     fun updateHouseSelected(newValue: Boolean) {
@@ -428,6 +436,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 tags = _preferences.value.map { it.preference },
 
                 serviceIds = forYouIds,
+                ecoFriendlyOnly = _ecoFriendlyOnly.value,
 
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
@@ -508,6 +517,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 tag = "Sports",
 
                 serviceIds = sportsIds,
+                ecoFriendlyOnly = _ecoFriendlyOnly.value,
 
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
@@ -546,6 +556,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 tag = "Food Trip",
 
                 serviceIds = foodTripIds,
+                ecoFriendlyOnly = _ecoFriendlyOnly.value,
 
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
@@ -584,6 +595,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 tag = "Shop",
 
                 serviceIds = shopIds,
+                ecoFriendlyOnly = _ecoFriendlyOnly.value,
 
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
@@ -622,6 +634,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 tag = "Nature",
 
                 serviceIds = natureIds,
+                ecoFriendlyOnly = _ecoFriendlyOnly.value,
 
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
@@ -660,6 +673,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 tag = "Gaming",
 
                 serviceIds = gamingIds,
+                ecoFriendlyOnly = _ecoFriendlyOnly.value,
 
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
@@ -698,6 +712,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 tag = "Karaoke",
 
                 serviceIds = karaokeIds,
+                ecoFriendlyOnly = _ecoFriendlyOnly.value,
 
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
@@ -736,6 +751,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 tag = "History",
 
                 serviceIds = historyIds,
+                ecoFriendlyOnly = _ecoFriendlyOnly.value,
 
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
@@ -774,6 +790,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 tag = "Clubs",
 
                 serviceIds = clubsIds,
+                ecoFriendlyOnly = _ecoFriendlyOnly.value,
 
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
@@ -812,6 +829,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 tag ="Sightseeing",
 
                 serviceIds = sightseeingIds,
+                ecoFriendlyOnly = _ecoFriendlyOnly.value,
 
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,
@@ -850,6 +868,7 @@ class HomeViewModel(private val repository: UserRepository = UserRepository()) :
                 tag ="Swimming",
 
                 serviceIds = swimmingIds,
+                ecoFriendlyOnly = _ecoFriendlyOnly.value,
 
                 searchText = _searchText.value,
                 includeStaycation = _includeStaycation.value,

@@ -225,6 +225,8 @@ fun HomeScreen(
 
     val searchText by homeViewModel.searchText.collectAsState()
 
+    val ecoFriendlyOnly by homeViewModel.ecoFriendlyOnly.collectAsState()
+
     val includeStaycation by homeViewModel.includeStaycation.collectAsState()
     val includeTour by homeViewModel.includeTour.collectAsState()
 
@@ -251,7 +253,13 @@ fun HomeScreen(
     val bedCount by homeViewModel.bedCount.collectAsState()
     val bathroomCount by homeViewModel.bathroomCount.collectAsState()
 
-    val allAmenities = listOf("Wifi", "TV", "Kitchen", "Washing machine", "Dedicated workspace" , "Pool", "Gym equipment", "Hot tub", "City view")
+   // val allAmenities = listOf("Wifi", "TV", "Kitchen", "Washing machine", "Dedicated workspace" , "Pool", "Gym equipment", "Hot tub", "City view")
+    val allAmenities = listOf("Wifi", "TV", "Kitchen", "Washing machine", "Dedicated workspace", "Gaming Consoles",
+        "Air Conditioning", "Honesty Snack Bar", "Welcome Basket", "House Keeping", "Parking", "Refrigerator", "Smoking Area", "Board Games", "Netflix/Disney+",
+        "Karaoke", "Swimming pool", "Gym equipment", "Hot tub", "Sauna", "Spa Services", "Play Ground", "Balcony", "Billiard Table", "City View", "Sunset/Sunrise View",
+        "Garden View", "Park View"
+    )
+
     val checkedAmenities by homeViewModel.checkedAmenities.collectAsState()
     val onAmenityCheckedChange: (Int, Boolean) -> Unit = { index, isChecked ->
         homeViewModel.updateCheckedAmenities(checkedAmenities.toMutableList().apply { set(index, isChecked) })
@@ -559,6 +567,48 @@ fun HomeScreen(
                                     .fillMaxWidth()
                             )
                         }
+
+                        item {
+                            Text(
+                                text = "Eco-Friendly",
+                                color = Color.Black,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(top = 10.dp)
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Start,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp) //  horizontal = 17.dp
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .height(20.dp)
+                                ) {
+                                    Checkbox(
+                                        checked = ecoFriendlyOnly,
+                                        onCheckedChange = { checked ->
+                                            homeViewModel.updateEcoFriendlyOnly(checked)
+                                        },
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = Orange
+                                        ),
+                                    )
+                                    Text(
+                                        text = "Show Eco-Friendly Staycations Only",
+                                        color = Color(0xff666666),
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 14.sp,
+                                    )
+                                }
+
+                            }
+
+                        }
+
 
                         item {
                             Text(
@@ -983,7 +1033,8 @@ fun HomeScreen(
                                 } else {
                                     Modifier
                                         .fillMaxWidth()
-                                        .height(130.dp)
+                                        .height(380.dp)
+                                      //  .height(130.dp)
                                 }
                             ) {
                                 items(visibleAmenities) { amenity ->
@@ -2033,7 +2084,9 @@ private fun HomeScreenPreview() {
     val homeViewModel = viewModel(modelClass = HomeViewModel::class.java)
 
 
-    HomeScreen("mgPPHdYnYlJXMFxCaJOj", homeViewModel, { a,b -> }, { c,d ->}, rememberNavController())
+ //   HomeScreen("mgPPHdYnYlJXMFxCaJOj", homeViewModel, { a,b -> }, { c,d ->}, rememberNavController())
+
+
 
 }
 
