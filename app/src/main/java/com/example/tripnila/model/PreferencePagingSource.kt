@@ -15,6 +15,8 @@ class PreferencePagingSource(
 
     private val serviceIds: List<String>,
 
+    private val ecoFriendlyOnly: Boolean,
+
     private val searchText: String,
     private val includeStaycation: Boolean,
     private val includeTour: Boolean,
@@ -70,6 +72,10 @@ class PreferencePagingSource(
                     Log.d("Staycation Only", "Staycation Only")
                     staycationList
                 }
+                ecoFriendlyOnly -> {
+                    Log.d("Staycation Only", "Staycation Only")
+                    staycationList
+                }
                 includeTour -> {
                     Log.d("Tour Only", "Tour Only")
                     tourList
@@ -109,7 +115,8 @@ class PreferencePagingSource(
                 checkedAmenities = checkedAmenities,
                 checkedOffers = checkedOffers,
                 startDate = startDate,
-                endDate = endDate
+                endDate = endDate,
+                ecoFriendlyOnly = ecoFriendlyOnly
             )
 
 /*

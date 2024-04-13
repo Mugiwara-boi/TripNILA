@@ -15,8 +15,11 @@ class ForYouPagingSource(
     private val serviceIds: List<String>,
 
     private val searchText: String,
+
     private val includeStaycation: Boolean,
     private val includeTour: Boolean,
+    private val ecoFriendlyOnly: Boolean,
+
     private val houseSelected: Boolean,
     private val apartmentSelected: Boolean,
     private val condoSelected: Boolean,
@@ -73,6 +76,10 @@ class ForYouPagingSource(
                     Log.d("Staycation Only", "Staycation Only")
                     staycationList
                 }
+                ecoFriendlyOnly -> {
+                    Log.d("Staycation Only", "Staycation Only")
+                    staycationList
+                }
                 includeTour -> {
                     Log.d("Tour Only", "Tour Only")
                     tourList
@@ -115,7 +122,8 @@ class ForYouPagingSource(
                 checkedAmenities = checkedAmenities,
                 checkedOffers = checkedOffers,
                 startDate = startDate,
-                endDate = endDate
+                endDate = endDate,
+                ecoFriendlyOnly = ecoFriendlyOnly
             )
 
             LoadResult.Page(

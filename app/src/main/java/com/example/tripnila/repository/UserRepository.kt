@@ -4811,6 +4811,8 @@ class UserRepository {
         pageSize: Int,
         initialLoadSize: Int,
 
+        ecoFriendlyOnly: Boolean,
+
         serviceIds: List<String>,
 
         searchText: String,
@@ -4840,7 +4842,13 @@ class UserRepository {
 
     ): List<HomePagingItem> {
 
-        val allAmenities = listOf("Wifi", "TV", "Kitchen", "Washing machine", "Dedicated workspace" , "Pool", "Gym equipment", "Hot tub", "City view")
+       // val allAmenities = listOf("Wifi", "TV", "Kitchen", "Washing machine", "Dedicated workspace" , "Pool", "Gym equipment", "Hot tub", "City view")
+        val allAmenities = listOf("Wifi", "TV", "Kitchen", "Washing machine", "Dedicated workspace", "Gaming Consoles",
+            "Air Conditioning", "Honesty Snack Bar", "Welcome Basket", "House Keeping", "Parking", "Refrigerator", "Smoking Area", "Board Games", "Netflix/Disney+",
+            "Karaoke", "Swimming pool", "Gym equipment", "Hot tub", "Sauna", "Spa Services", "Play Ground", "Balcony", "Billiard Table", "City View", "Sunset/Sunrise View",
+            "Garden View", "Park View"
+        )
+
         val allOffers = listOf("Food", "Souvenir", "Transportation", "Drinks")
 
         val checkedAmenityNames = mutableListOf<String>()
@@ -4920,6 +4928,9 @@ class UserRepository {
                 val staycationBedrooms = staycationDoc.getLong("noOfBedrooms")?.toInt() ?: 0
                 val staycationBathrooms = staycationDoc.getLong("noOfBathrooms")?.toInt() ?: 0
                 val staycationPrice = staycationDoc.getLong("staycationPrice")?.toInt() ?: 0
+                
+                val isEcoFriendly = staycationDoc.getBoolean("isEcoFriendly") ?: false
+                
                 val bookings = getStaycationBookings(serviceId)
                 val amenities = getAmenities(serviceId, "Staycation")
                 val staycationAvailability = getStaycationAvailability(serviceId)
@@ -4957,8 +4968,8 @@ class UserRepository {
                     averageReviewRating >= selectedRating &&
                     (minPrice == "" || staycationPrice >= minPrice.toInt()) &&
                     (maxPrice == "" || staycationPrice <= maxPrice.toInt()) &&
-                    inBetween
-                // staycationAmenities.isNotEmpty()   UNCOMMENT THIS
+                    inBetween &&
+                    staycationAmenities.isNotEmpty()
                 ) {
 
                     val staycation = HomePagingItem(
@@ -4972,7 +4983,14 @@ class UserRepository {
                         hostId = staycationDoc.getString("hostId") ?: "",
                         serviceType = "Staycation"
                     )
-                    itemsList.add(staycation)
+                    if (ecoFriendlyOnly) {
+                        if (isEcoFriendly) {
+                            itemsList.add(staycation)
+                        }
+                    } else {
+                        itemsList.add(staycation)
+                    }
+
                 }
             }
 
