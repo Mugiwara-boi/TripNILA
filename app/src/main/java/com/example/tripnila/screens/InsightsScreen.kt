@@ -155,7 +155,7 @@ fun InsightsScreen(
                     SelectedStaycationInsightCard(
                         staycation = selectedStaycation,
                         onChange = {
-                            //   itineraryViewModel.clearSelectedStaycation()
+                            //   itineraryViewModel.clearSelectedTour()
                             isDialogOpen = true
                         }
                     )
