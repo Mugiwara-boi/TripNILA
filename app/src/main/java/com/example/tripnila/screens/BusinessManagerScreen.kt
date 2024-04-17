@@ -1,27 +1,58 @@
 package com.example.tripnila.screens
 
 import android.util.Log
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tripnila.R
+import com.example.tripnila.common.AppDropDownFilterWithCallback
 import com.example.tripnila.common.AppLocationCard
+import com.example.tripnila.common.AppOutlinedButton
 import com.example.tripnila.common.AppReviewsCard
 import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.data.AmenityBrief
@@ -217,6 +248,16 @@ fun BusinessManagerScreen(
                             .padding(bottom = 12.dp)
                     )
                 }
+
+                item {
+                    BusinessInsightsCard(
+                        amenities = amenities,
+                        withEditButton = false,
+                        modifier = Modifier
+                            .offset(y = (-5).dp)
+                            .padding(bottom = 12.dp)
+                    )
+                }
                 item {
                     BusinessMenuCard(
                         menuImage = business?.businessMenu?.find { it.photoType == "Cover" }?.photoUrl  ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
@@ -275,6 +316,139 @@ private fun BusinessManagerItemPreviews(){
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BusinessInsightsCard(
+    modifier: Modifier = Modifier,
+    amenities: List<AmenityBrief>,
+    withEditButton: Boolean = false,
+
+    ) {
+    var insightsSelectedCategory by remember { mutableStateOf("Monthly") }
+    val seeAllAmenities = remember { mutableStateOf(false) }
+    val amenitiesSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val horizontalPaddingValue = 16.dp
+    val verticalPaddingValue = 10.dp
+
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                //                .padding(horizontal = 25.dp, vertical = 12.dp),
+                .padding(
+                    horizontal = 25.dp,
+                    vertical = 20.dp // 12
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically // Optional alignment
+            ) {
+                Text(
+                    text = "Insight",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f) // Allow text to expand to fill available space
+                )
+                AppDropDownFilterWithCallback(
+                    options = listOf("Monthly", "Yearly"),
+                    fontSize = 10.sp,
+                    selectedCategory = insightsSelectedCategory,
+                    onCategorySelected = { newCategory ->
+                        insightsSelectedCategory = newCategory
+                    },
+                    modifier = Modifier.align(Alignment.CenterVertically) // Align at the center vertically
+                )
+            }
+            Row(
+                modifier = Modifier.padding(top = 5.dp)
+            ){
+                InsightInfoCard(
+                    modifier = Modifier.weight(.7f),
+                    cardLabel = "Views",
+                    cardInfoCount = 12
+                )
+            }
+
+
+
+        }
+    }
+
+    if (seeAllAmenities.value) {
+        ModalBottomSheet(
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White,
+            dragHandle = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = { seeAllAmenities.value = false },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Close"
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+
+                }
+            },
+            onDismissRequest = { seeAllAmenities.value = false },
+            sheetState = amenitiesSheetState,
+            modifier = Modifier
+                .fillMaxHeight(0.8f) //0.693
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    // .padding(horizontal = 25.dp,)
+                    .background(Color.White)
+            ) {
+                Text(
+                    text = "Amenities and offers",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
+                        .fillMaxWidth()
+                )
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    items(amenities) { amenity ->
+                        BusinessAmenityDetail(amenity = amenity)
+                    }
+                }
+            }
+
+        }
+    }
+
+}
 
 @Preview
 @Composable

@@ -11,6 +11,7 @@ import com.example.tripnila.data.Tour
 import com.example.tripnila.repository.UserRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -41,6 +42,12 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
 
     private val _selectedStaycation = MutableStateFlow(Staycation()) // Initialize with an empty Host
     val selectedStaycation = _selectedStaycation.asStateFlow()
+
+    private val _selectedTour = MutableStateFlow(Tour()) // Initialize with an empty Host
+    val selectedTour = _selectedTour.asStateFlow()
+
+    private val _isTourSelected = MutableStateFlow(false)
+    val isTourSelected: StateFlow<Boolean> = _isTourSelected
 
     private val documentIds = mutableListOf<String>()
 
@@ -108,6 +115,26 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
         _selectedStaycation.value = selectedStaycationInList?: Staycation()
         Log.d("ViewModel" , "${_selectedStaycation.value}")
     }
+    fun setSelectedTour(tourId: String) {
+        val currentTours = _tours.value.toMutableList()
+        val selectedTourInList = currentTours.find { it.tourId == tourId}
+        _selectedTour.value = selectedTourInList?: Tour()
+        Log.d("ViewModel" , "${_selectedTour.value}")
+    }
+
+    fun deleteSelectedStaycation() {
+        _selectedStaycation.value = Staycation() // Assign a new instance of Staycation()
+    }
+    fun setIsTourSelected(bool: Boolean) {
+
+        _isTourSelected.value = bool
+        Log.d("ViewModel-isTourSelected" , "${_isTourSelected.value}")
+    }
+
+    fun deleteSelectedTour() {
+        _selectedTour.value = Tour() // Assign a new instance of Staycation()
+    }
+
     fun getHostedStaycation(hostId : String){
         val db = FirebaseFirestore.getInstance()
         val collectionName = "staycation"
@@ -134,6 +161,13 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
         viewModelScope.launch{
             val staycation = repository.getHostedStaycation(hostId)
             _staycations.value = staycation
+        }
+    }
+
+    fun getTours(hostId: String){
+        viewModelScope.launch{
+            val tour = repository.getHostedTours(hostId)
+            _tours.value = tour
         }
     }
 

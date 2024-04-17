@@ -567,6 +567,44 @@ fun ChooseStaycationButton(modifier: Modifier = Modifier) {
 }
 
 @Composable
+fun ChooseStaycationTourButton(modifier: Modifier = Modifier) {
+
+    val stroke = Stroke(width = 10f,
+        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+    )
+
+    Card(
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = Color.Transparent
+        ),
+        shape = RoundedCornerShape(20.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height = 90.dp)
+            .drawBehind {
+                drawRoundRect(
+                    color = Color(0xff7d7d7d),
+                    style = stroke,
+                    cornerRadius = CornerRadius(20.dp.toPx())
+                )
+            }
+    ){
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Text(
+                text = "Choose Staycation or Tour",
+                color = Color(0xff7d7d7d),
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+@Composable
 fun BudgetCard(
     modifier: Modifier = Modifier
 ){

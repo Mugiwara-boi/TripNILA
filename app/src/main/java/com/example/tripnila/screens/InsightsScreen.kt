@@ -53,6 +53,7 @@ import com.example.tripnila.common.AppDropDownFilterWithCallback
 import com.example.tripnila.common.ChartDropDownFilter
 import com.example.tripnila.common.Orange
 import com.example.tripnila.data.Staycation
+import com.example.tripnila.data.Tour
 import com.example.tripnila.model.InsightViewModel
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
@@ -83,6 +84,7 @@ fun InsightsScreen(
     Log.d("staycation", hostedStaycations.toString())
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(state = rememberTopAppBarState())
     val selectedStaycation = insightViewModel.selectedStaycation.collectAsState().value
+    val selectedTour = insightViewModel.selectedTour.collectAsState().value
     val completedBooking = insightViewModel.completedStaycationBookings.collectAsState().value
     val completedMonthlyBooking = insightViewModel.completedMonthlyStaycationBookings.collectAsState().value
     val totalRevenue = insightViewModel.revenue.collectAsState().value
@@ -94,6 +96,7 @@ fun InsightsScreen(
     val reviewCount = insightViewModel.reviewCount.collectAsState().value
     var isDialogOpen by remember { mutableStateOf(false) }
 
+    var isTourSelected = insightViewModel.isTourSelected.collectAsState().value
     var insightsSelectedCategory by remember { mutableStateOf("Monthly") }
     var staycationStatsSelectedCategory by remember { mutableStateOf("Monthly") }
     var tourStatsSelectedCategory by remember { mutableStateOf("Daily") }
@@ -101,6 +104,7 @@ fun InsightsScreen(
     LaunchedEffect(hostId) {
         if (hostId != "") {
             insightViewModel.getStaycation(hostId)
+            insightViewModel.getTours(hostId)
             Log.d("staycation-1", insightViewModel.getStaycation(hostId).toString())
         }
 
@@ -130,8 +134,8 @@ fun InsightsScreen(
                     .padding(it)
             ) {item {
 
-                if (selectedStaycation.staycationId == "") {
-                    ChooseStaycationButton(
+                if (selectedStaycation.staycationId == "" && selectedTour.tourId == "") {
+                    ChooseStaycationTourButton(
                         modifier = Modifier
                             .padding(
                                 horizontal = horizontalPaddingValue,
@@ -139,7 +143,15 @@ fun InsightsScreen(
                             )
                             .clickable { isDialogOpen = true }
                     )
-                } else {
+                } else if(isTourSelected){
+                    SelectedTourInsightCard(
+                        tour = selectedTour,
+                        onChange = {
+                            //   itineraryViewModel.clearSelectedStaycation()
+                            isDialogOpen = true
+                        }
+                    )
+                }else if(!isTourSelected){
                     SelectedStaycationInsightCard(
                         staycation = selectedStaycation,
                         onChange = {
@@ -381,7 +393,9 @@ fun ChooseStaycationInsightDialog(
     // var selectedCard by remember { mutableStateOf(-1) }
 
     var selectedCard by remember { mutableStateOf("") }
+    var selectTour = insightViewModel.isTourSelected.collectAsState().value
     val staycations = insightViewModel.staycations.collectAsState().value
+    val tours = insightViewModel.tours.collectAsState().value
 
     if (isDialogOpen) {
         Dialog(
@@ -430,6 +444,31 @@ fun ChooseStaycationInsightDialog(
                             modifier = Modifier.padding(vertical = 3.dp)
                         )
                     }
+
+                    Text(
+                        text = "Choose Tours",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .align(Alignment.Start)
+                            .padding(start = 10.dp, end = 10.dp, bottom = 15.dp, top = 10.dp)
+                    )
+                    tours.forEach { booking ->
+
+                        val staycationId = booking.tourId
+
+                        ChooseStaycationInsightCard(
+                            staycationName = booking.tourTitle ?: "Greenhills Staycation",
+                            staycationId = staycationId,
+                            isSelected = selectedCard == booking.tourId,
+                            onSelectedChange = {
+                                selectedCard = it
+                                insightViewModel.setIsTourSelected(true)
+
+                            },
+                            modifier = Modifier.padding(vertical = 3.dp)
+                        )
+                    }
                     Row(
                         modifier = Modifier.padding(top = 15.dp)
                     ) {
@@ -444,8 +483,15 @@ fun ChooseStaycationInsightDialog(
                         BookingFilledButton(
                             buttonText = "Confirm",
                             onClick = {
-                                if (selectedCard.isNotBlank()) {
+                                if (selectedCard.isNotBlank() && selectTour) {
+                                    insightViewModel.setSelectedTour(selectedCard)
+                                    insightViewModel.deleteSelectedStaycation()
+                                    onConfirm()
+                                }
+                                else if(selectedCard.isNotBlank() && !selectTour){
                                     insightViewModel.setSelectedStaycation(selectedCard)
+                                    insightViewModel.deleteSelectedTour()
+                                    insightViewModel.setIsTourSelected(false)
                                     onConfirm()
                                 }
                             }
@@ -597,7 +643,6 @@ fun SalesChart(
                 modifier = Modifier
                     .wrapContentWidth(Alignment.CenterHorizontally)
             )
-
             ChartDropDownFilter(
                 options = listOf("2024", "2023"),
                 onItemSelected = { year ->
@@ -964,6 +1009,103 @@ fun SelectedStaycationInsightCard(
                 ) {
                     AsyncImage(
                         model = staycation?.staycationImages?.find { it.photoType == "Cover" }?.photoUrl
+                            ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
+                        contentDescription = "Staycation"
+                    )
+                }
+
+            }
+        }
+
+    }
+
+}
+
+@Composable
+fun SelectedTourInsightCard(
+
+    modifier: Modifier = Modifier,
+    tour: Tour? = null,
+    onChange: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 5.dp
+        ),
+        shape = RoundedCornerShape(20.dp),
+        modifier = modifier
+            .fillMaxWidth()
+        //.requiredHeight(height = 93.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(
+                    horizontal = 16.dp,
+                    vertical = 15.dp // 12
+                )
+                .fillMaxWidth()
+        ) {
+            Row {
+                Column {
+                    Row {
+                        Text(
+                            text = tour?.tourTitle ?: "Modern house with 2 bedrooms",
+                            color = Color(0xff333333),
+                            style = TextStyle(
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            modifier = Modifier
+                                .width(147.dp)
+                        )
+                        AppOutlinedButtonWithBadge(
+                            buttonLabel = "Change",
+                            onClick = {
+                                onChange()
+                            }
+                        )
+
+
+                    }
+                    Text(
+                        text = "by ${tour?.host?.firstName ?: "Joshua"}",
+                        color = Color(0xfff9a664),
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                    Row {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.location),
+                            contentDescription = "Location",
+                            tint = Color(0xff999999),
+                            modifier = Modifier
+                                .padding(top = 3.dp, end = 5.dp)
+                        )
+                        Text(
+                            text = tour?.tourLocation ?: "North Greenhills",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xff999999),
+                            modifier = Modifier
+                                .width(207.dp)
+                        )
+
+                    }
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Card(
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = modifier
+                        .width(width = 90.dp)
+                        .height(height = 66.dp)
+                ) {
+                    AsyncImage(
+                        model = tour?.tourImages?.find { it.photoType == "Cover" }?.photoUrl
                             ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/1022px-Placeholder_view_vector.svg.png",
                         contentDescription = "Staycation"
                     )
