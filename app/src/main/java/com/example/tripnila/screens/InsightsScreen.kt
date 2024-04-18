@@ -86,6 +86,8 @@ fun InsightsScreen(
     val selectedStaycation = insightViewModel.selectedStaycation.collectAsState().value
     val selectedTour = insightViewModel.selectedTour.collectAsState().value
     val completedBooking = insightViewModel.completedStaycationBookings.collectAsState().value
+    val completedTourBooking = insightViewModel.completedTourBookings.collectAsState().value
+    val completedMonthlyTourBooking = insightViewModel.completedMonthlyTourBookings.collectAsState().value
     val completedMonthlyBooking = insightViewModel.completedMonthlyStaycationBookings.collectAsState().value
     val totalRevenue = insightViewModel.revenue.collectAsState().value
     val totalMonthlyRevenue = insightViewModel.monthlyRevenue.collectAsState().value
@@ -181,11 +183,35 @@ fun InsightsScreen(
                         }
 
                     }
+                    LaunchedEffect(selectedTour){
+                        val selectedTourId = selectedTour.tourId
+                        if (selectedTourId != null) {
+                            Log.d("Selected Tour ID", selectedTourId)
+                            insightViewModel.getCompletedTourBookings(selectedTourId)
+                            insightViewModel.getCancellationRate(selectedTourId)
+                            insightViewModel.getReviewRatings(selectedTourId)
+                            insightViewModel.getCompletedTourBookingsForMonth(selectedTourId)
+                            insightViewModel.fetchMonthlyViews(selectedTourId, "Tour")
+                            insightViewModel.fetchAllViews(selectedTourId)
+                        } else {
+                            Log.e("Selected Tour ID", "Tour ID is null or empty")
+                        }
+
+                    }
+
                     LaunchedEffect(completedBooking){
                         insightViewModel.getMonthlyRevenue(completedBooking)
                         insightViewModel.getYearlyRevenue(completedBooking)
                         val numberOfMonthlyBookings = completedMonthlyBooking.size
                         val numberOfYearlyBookings = completedBooking.size
+                        monthlyBookingCount.value = numberOfMonthlyBookings
+                        yearlyBookingCount.value = numberOfYearlyBookings
+                    }
+                    LaunchedEffect(completedTourBooking){
+                        insightViewModel.getTourMonthlyRevenue(completedTourBooking)
+                        insightViewModel.getTourYearlyRevenue(completedTourBooking)
+                        val numberOfMonthlyBookings = completedMonthlyTourBooking.size
+                        val numberOfYearlyBookings = completedTourBooking.size
                         monthlyBookingCount.value = numberOfMonthlyBookings
                         yearlyBookingCount.value = numberOfYearlyBookings
                     }
@@ -246,11 +272,21 @@ fun InsightsScreen(
                     }
                 }
                 item {
-                    SalesChart(
-                        modifier = Modifier.padding(horizontalPaddingValue,verticalPaddingValue),
-                        staycationId = selectedStaycation.staycationId,
-                        insightViewModel = InsightViewModel()
-                    )
+                    if(isTourSelected){
+                        TourSalesChart(
+                            modifier = Modifier.padding(horizontalPaddingValue,verticalPaddingValue),
+                            tourId = selectedTour.tourId,
+                            insightViewModel = InsightViewModel()
+                        )
+                    }
+                    else{
+                        SalesChart(
+                            modifier = Modifier.padding(horizontalPaddingValue,verticalPaddingValue),
+                            staycationId = selectedStaycation.staycationId,
+                            insightViewModel = InsightViewModel()
+                        )
+                }
+
                 }
                 item {
                     Text(
@@ -439,7 +475,7 @@ fun ChooseStaycationInsightDialog(
                             isSelected = selectedCard == booking.staycationId,
                             onSelectedChange = {
                                 selectedCard = it
-
+                                insightViewModel.setIsTourSelected(false)
                             },
                             modifier = Modifier.padding(vertical = 3.dp)
                         )
@@ -647,6 +683,121 @@ fun SalesChart(
                 options = listOf("2024", "2023"),
                 onItemSelected = { year ->
                     insightViewModel.setSelectedYear(year.toInt(),staycationId) // Update the selected year in ViewModel
+                },
+                modifier = Modifier.align(Alignment.CenterEnd)
+            )
+
+        }
+        ProvideChartStyle(
+            chartStyle = m3ChartStyle(
+                axisLabelColor = Color.Black,
+                axisGuidelineColor = Color(0xff999999),
+                axisLineColor = Color.Transparent,
+                entityColors = listOf(
+                    Color(0xfff9a664),
+                    Color(0xff9FFFB4)
+                ),
+                // elevationOverlayColor = Color.Transparent
+            )
+        ) {
+            Chart(
+                chart = lineChart(),
+                model = chartEntryModel,
+                startAxis = rememberStartAxis(
+                    title = "Top Values",
+                    tickLength = 0.dp,
+                    valueFormatter = { value, _ -> value.toInt().toString()
+
+                    }, itemPlacer = AxisItemPlacer.Vertical.default(
+                        maxItemCount = 6
+                    )
+                ),
+                bottomAxis = rememberBottomAxis(
+                    title = "Count of Values",
+                    tickLength = 0.dp,
+                    valueFormatter = horizontalAxisValueFormatter
+                ),
+                // legend = horizontalLegend(items = , iconSize = , iconPadding = ),
+                modifier = Modifier.padding(start = 5.dp, end = 20.dp, bottom = 5.dp),
+            )
+        }
+    }
+}
+
+
+@Composable
+fun TourSalesChart(
+    modifier: Modifier = Modifier,
+    insightViewModel : InsightViewModel,
+    tourId: String
+) {
+    var year by remember { mutableStateOf(insightViewModel.selectedYear.value) }
+
+    // Observe changes in aggregated sales data based on the selected year
+    val aggregatedData = insightViewModel.aggregatedSalesData.collectAsState()
+
+    // Fetch sales data whenever the year changes
+    LaunchedEffect(key1 = year) {
+        insightViewModel.getTourSales(year,tourId)
+    }
+    val monthNames = mapOf(
+        2 to "Jan",
+        3 to "Feb",
+        4 to "Mar",
+        5 to "Apr",
+        6 to "May",
+        7 to "Jun",
+        8 to "Jul",
+        9 to "Aug",
+        10 to "Sep",
+        11 to "Oct",
+        12 to "Nov",
+        13 to "Dec"
+    )
+
+    // Prepare chart data
+    val chartEntries = remember(aggregatedData.value) {
+        aggregatedData.value.map { entry ->
+            Pair(entry.month.toFloat(), entry.totalAmount.toFloat())
+        }
+    }
+
+    // Pass the entries to the chart model
+    val chartEntryModel = entryModelOf(*chartEntries.toTypedArray())
+    val horizontalAxisValueFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
+        val monthNumber = value.toInt()+1 // Assuming month numbers start from 1
+        monthNames[monthNumber] ?: ""
+    }
+
+    //val chartEntries = aggregatedData.map { entry -> Entry(entry.month.toFloat(), entry.totalAmount.toFloat()) }
+    Card(
+        shape = RoundedCornerShape(10.dp),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 10.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(5.dp, 5.dp)
+        ) {
+            Text(
+                text = "Sales for Year ${insightViewModel.selectedYear.value}",
+                color = Color(0xfff9a664),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+            )
+            ChartDropDownFilter(
+                options = listOf("2024", "2023"),
+                onItemSelected = { year ->
+                    insightViewModel.setTourSelectedYear(year.toInt(),tourId) // Update the selected year in ViewModel
                 },
                 modifier = Modifier.align(Alignment.CenterEnd)
             )

@@ -8,6 +8,7 @@ import com.example.tripnila.data.MonthTotal
 import com.example.tripnila.data.Staycation
 import com.example.tripnila.data.StaycationBooking
 import com.example.tripnila.data.Tour
+import com.example.tripnila.data.TourBooking
 import com.example.tripnila.repository.UserRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,12 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
 
     private val _completedMonthlyStaycationBookings = MutableStateFlow<List<StaycationBooking>>(emptyList()) // Initialize with an empty Host
     val completedMonthlyStaycationBookings = _completedMonthlyStaycationBookings.asStateFlow()
+
+    private val _completedTourBookings = MutableStateFlow<List<TourBooking>>(emptyList()) // Initialize with an empty Host
+    val completedTourBookings = _completedTourBookings.asStateFlow()
+
+    private val _completedMonthlyTourBookings = MutableStateFlow<List<TourBooking>>(emptyList()) // Initialize with an empty Host
+    val completedMonthlyTourBookings = _completedMonthlyTourBookings.asStateFlow()
 
     private val _tours = MutableStateFlow<List<Tour>>(emptyList()) // Initialize with an empty Host
     val tours = _tours.asStateFlow()
@@ -66,6 +73,12 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
     private val _cancelledBooks = MutableStateFlow(0.0)
     val cancelledBooks= _cancelledBooks.asStateFlow()
 
+    private val _cancelledTourBooks = MutableStateFlow(0.0)
+    val cancelledTourBooks= _cancelledTourBooks.asStateFlow()
+
+    private val _allTourBooks = MutableStateFlow(0)
+    val allTourBooks = _allTourBooks.asStateFlow()
+
     private val _allBooks = MutableStateFlow(0)
     val allBooks = _allBooks.asStateFlow()
 
@@ -93,9 +106,37 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
         }
     }
 
+    fun getTourCancellationRate(tourId: String){
+        viewModelScope.launch{
+            val cancelBook = repository.getCancelledTourBookingCount(tourId)
+            val allBook = repository.getTotalBookingCountForTour(tourId)
+
+            if(allBook != 0 && cancelBook != 0) {
+                val cancelRate = (cancelBook.toDouble() / allBook.toDouble()) * 100
+                _cancelledBooks.value = cancelRate
+                Log.d("Cancel Rate Computed", "$cancelRate")
+                Log.d("Cancel Rate cancelBook", "$cancelBook")
+                Log.d("Cancel Rate allBook", "$allBook")
+            } else {
+                _cancelledBooks.value = 0.0
+            }
+            Log.d("Cancel Rate", "${_cancelledBooks.value}")
+        }
+    }
+
     fun getReviewRatings(staycationId: String){
         viewModelScope.launch {
             val (averageRating, reviewCount) = repository.getAverageRatingAndReviewCountForStaycation(staycationId)
+            _aveRating.value = averageRating
+            _reviewCount.value = reviewCount
+            Log.d("ReviewCount", "$reviewCount")
+            Log.d("AveRating", "$averageRating")
+        }
+    }
+
+    fun getTourReviewRatings(tourId: String){
+        viewModelScope.launch {
+            val (averageRating, reviewCount) = repository.getAverageRatingAndReviewCountForTour(tourId)
             _aveRating.value = averageRating
             _reviewCount.value = reviewCount
             Log.d("ReviewCount", "$reviewCount")
@@ -107,6 +148,13 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
         viewModelScope.launch {
             _selectedYear.value = year
             getSales(year, staycationId)
+        }
+    }
+
+    fun setTourSelectedYear(year: Int,tourId: String) {
+        viewModelScope.launch {
+            _selectedYear.value = year
+            getTourSales(year, tourId)
         }
     }
     fun setSelectedStaycation(staycationId: String) {
@@ -188,6 +236,15 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
         }
     }
 
+    fun getCompletedTourBookings(tourId: String) {
+        viewModelScope.launch {
+            val tourBookings = repository.getCompletedTourBookingForTour(tourId)
+            _completedTourBookings.value = tourBookings
+            Log.d("completedTourBookings", "${_completedTourBookings.value}")
+
+        }
+    }
+
     fun getCompletedStaycationBookingsForMonth(staycationId: String) {
         viewModelScope.launch {
             val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
@@ -205,6 +262,27 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
 
             // Update the StateFlow with the filtered staycation bookings
             _completedMonthlyStaycationBookings.value = staycationBookingsForCurrentMonth
+
+        }
+    }
+
+    fun getCompletedTourBookingsForMonth(tourId: String) {
+        viewModelScope.launch {
+            val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
+
+            // Fetch all completed staycation bookings for the staycationId
+            val allCompletedTourBookings = repository.getCompletedTourBookingForTour(tourId)
+
+            // Filter staycation bookings for the current month
+            val tourBookingsForCurrentMonth = allCompletedTourBookings.filter { booking ->
+                val bookingCalendar = Calendar.getInstance().apply {
+                    time = booking.bookingDate // Assuming bookingDate is a Date type
+                }
+                bookingCalendar.get(Calendar.MONTH) + 1 == currentMonth
+            }
+
+            // Update the StateFlow with the filtered staycation bookings
+            _completedMonthlyTourBookings.value = tourBookingsForCurrentMonth
 
         }
     }
@@ -258,6 +336,26 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
         }
     }
 
+    fun getTourMonthlyRevenue(tourBooking: List<TourBooking>){
+        viewModelScope.launch {
+            val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
+
+            // Filter the bookings for the current month
+            val currentMonthBookings = tourBooking.filter { booking ->
+                val bookingCalendar = Calendar.getInstance().apply {
+                    time = booking.bookingDate // Assuming bookingDate is a Date type
+                }
+                bookingCalendar.get(Calendar.MONTH) + 1 == currentMonth
+            }
+            val totalRevenue = currentMonthBookings.sumOf { booking ->
+                booking.totalAmount
+            }
+            _monthlyRevenue.value = totalRevenue.toInt()
+            Log.d("totalRevenue", "$totalRevenue")
+
+
+        }
+    }
 
 
     fun getYearlyRevenue(staycationBooking: List<StaycationBooking>){
@@ -266,6 +364,30 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
 
             // Filter the bookings for the current year
             val currentYearBookings = staycationBooking.filter { booking ->
+                val bookingCalendar = Calendar.getInstance().apply {
+                    time = booking.bookingDate // Assuming bookingDate is a Date type
+                }
+                bookingCalendar.get(Calendar.YEAR) == currentYear
+            }
+
+            // Calculate the total revenue for the year
+            val totalRevenue = currentYearBookings.sumOf { booking ->
+                booking.totalAmount
+            }
+
+            // Update the revenue StateFlow with the total revenue for the year
+            _revenue.value = totalRevenue.toInt()
+
+            Log.d("totalRevenue", "$totalRevenue")
+        }
+    }
+
+    fun getTourYearlyRevenue(tourBooking: List<TourBooking>){
+        viewModelScope.launch {
+            val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+
+            // Filter the bookings for the current year
+            val currentYearBookings = tourBooking.filter { booking ->
                 val bookingCalendar = Calendar.getInstance().apply {
                     time = booking.bookingDate // Assuming bookingDate is a Date type
                 }
@@ -317,6 +439,49 @@ class InsightViewModel(private val repository: UserRepository = UserRepository()
         }
 
         return monthTotalList
+    }
+
+    fun aggregateTourSalesByMonth(tourBooking: List<TourBooking>, year: Int): List<MonthTotal> {
+        val salesByMonth = mutableMapOf<Int, Double>()
+
+        // Initialize salesByMonth with zero values for all months of the year
+        for (month in 1..12) {
+            salesByMonth[month] = 0.0
+        }
+
+        // Iterate through the sales data to aggregate by month
+        for (document in tourBooking) {
+            val date = document.bookingDate
+            val amount = document.totalAmount
+
+            // Extract the month and year from the date
+            val calendar = Calendar.getInstance()
+            calendar.time = date
+
+            val month = calendar.get(Calendar.MONTH) + 1 // Adjust for 0-based index
+            val docYear = calendar.get(Calendar.YEAR)
+
+            if (docYear == year) {
+                // Aggregate the amount for the corresponding month
+                val currentTotal = salesByMonth[month] ?: 0.0
+                salesByMonth[month] = currentTotal + (amount ?: 0.0)
+            }
+        }
+
+        // Convert the map to a list of MonthTotal objects
+        val monthTotalList = mutableListOf<MonthTotal>()
+        for ((month, totalAmount) in salesByMonth) {
+            monthTotalList.add(MonthTotal(month, totalAmount))
+        }
+
+        return monthTotalList
+    }
+    suspend fun getTourSales(year : Int, tourId: String) {
+        val salesCollection = repository.getCompletedTourBookingForTour(tourId)
+
+        val aggregatedData = aggregateTourSalesByMonth(salesCollection, year)
+        _aggregatedSalesData.value = aggregatedData
+        // Now aggregatedData contains a list of MonthTotal objects with the month and total amount
     }
 
     suspend fun getSales(year : Int, staycationId: String) {

@@ -35,7 +35,6 @@ import com.example.tripnila.data.Tourist
 import com.example.tripnila.data.TouristWallet
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -2698,6 +2697,61 @@ class UserRepository {
         }
         return emptyList()
     }
+
+    suspend fun getCompletedTourBookingForTour(tourId: String): List<TourBooking>{
+        try{
+            val query = tourBookingCollection
+                .whereEqualTo("tourId", tourId)
+
+            val result = query.get().await()
+
+            val tourBookings = mutableListOf<TourBooking>()
+
+            for (document in result.documents) {
+
+                val bookingStatus = document.getString("bookingStatus") ?: ""
+
+                if (bookingStatus == "Completed") {
+
+                    val bookingId = document.id
+
+                    val bookingDate = document.getDate("bookingDate") ?: Date()
+                    val startTime= document.getString("startTime") ?: String()
+                    val endTime = document.getString("endTime") ?: String()
+                    val touristId = document.getString("touristId") ?: String()
+                    val noOfGuests = document.getLong("noOfGuests")?.toInt() ?: 0
+                    val tourAvailabilityId = document.getString("tourAvailabilityId")?: String()
+                    val totalAmount = document.getLong("totalAmount")?.toDouble() ?: 0.0
+                    val commission= document.getLong("commission")?.toDouble() ?: 0.0
+                    val tourDate = document.getString("tourDate")?: String()
+                    val tour = getTourById(tourId) ?: Tour()
+                    val tourist = getTouristProfile(touristId) ?: Tourist()
+
+                    val tourBooking = TourBooking(
+                        tourBookingId = bookingId,
+                        bookingDate = bookingDate,
+                        bookingStatus = bookingStatus,
+                        startTime = startTime,
+                        endTime = endTime,
+                        noOfGuests = noOfGuests,
+                        tour = tour,
+                        totalAmount = totalAmount,
+                        tourAvailabilityId = tourAvailabilityId,
+                        tourist = tourist,
+                        tourDate = tourDate
+                    )
+
+                    tourBookings.add(tourBooking)
+                }
+
+
+            }
+            return tourBookings
+        }catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
     suspend fun getCancelledStaycationBookingForStaycation(staycationId: String): List<StaycationBooking>{
         try{
             val query = staycationBookingCollection
@@ -3279,6 +3333,89 @@ class UserRepository {
         return null
     }
 
+//    suspend fun getTourDetailsById(tourId: String): Tour? {
+//        try {
+//            val tourDocument = tourCollection.document(tourId).get().await()
+//
+//            if (tourDocument.exists()) {
+//                // Retrieve Staycation details
+//                val hasDangerousAnimal = staycationDocument.getBoolean("hasDangerousAnimal") ?: false
+//                val hasSecurityCamera = staycationDocument.getBoolean("hasSecurityCamera") ?: false
+//                val hasWeapon = staycationDocument.getBoolean("hasWeapon") ?: false
+//                val hostId = staycationDocument.getString("hostId") ?: ""
+//                val noOfBathrooms = staycationDocument.getLong("noOfBathrooms")?.toInt() ?: 0
+//                val noOfBedrooms = staycationDocument.getLong("noOfBedrooms")?.toInt() ?: 0
+//                val noOfBeds = staycationDocument.getLong("noOfBeds")?.toInt() ?: 0
+//                val noOfGuests = staycationDocument.getLong("noOfGuests")?.toInt() ?: 0
+//                val staycationDescription = staycationDocument.getString("staycationDescription") ?: ""
+//                val staycationLocation = staycationDocument.getString("staycationLocation") ?: ""
+//                val staycationLat = staycationDocument.getDouble("staycationLat") ?: 0.0
+//                val staycationLng = staycationDocument.getDouble("staycationLng") ?: 0.0
+//                val staycationPrice = staycationDocument.getDouble("staycationPrice") ?: 0.0
+//                val staycationSpace = staycationDocument.getString("staycationSpace") ?: ""
+//                val staycationTitle = staycationDocument.getString("staycationTitle") ?: ""
+//                val staycationType = staycationDocument.getString("staycationType") ?: ""
+//
+//
+//                // Fetch Staycation images
+//                val tourImages = getServiceImages(tourId, "Tour)
+//                val hostInfo = getHostInfo(hostId)
+//                val availableDates = getStaycationAvailability(staycationId)
+//
+//                Log.d("Host Id", hostInfo?.touristId ?: "")
+//
+//                return Staycation(
+//                    staycationId = staycationId,
+//                    hasDangerousAnimal = hasDangerousAnimal,
+//                    hasSecurityCamera = hasSecurityCamera,
+//                    hasWeapon = hasWeapon,
+//                    noOfBathrooms = noOfBathrooms,
+//                    noOfBedrooms = noOfBedrooms,
+//                    noOfBeds = noOfBeds,
+//                    noOfGuests = noOfGuests,
+//                    staycationDescription = staycationDescription,
+//                    staycationLocation = staycationLocation,
+//                    staycationLat = staycationLat,
+//                    staycationLng = staycationLng,
+//                    staycationPrice = staycationPrice,
+//                    staycationSpace = staycationSpace,
+//                    staycationTitle = staycationTitle,
+//                    staycationType = staycationType,
+//                    staycationImages = staycationImages,
+//
+//                    hasFirstAid = hasFirstAid,
+//                    hasFireExit = hasFireExit,
+//                    hasFireExtinguisher = hasFireExtinguisher,
+//                    maxNoOfGuests = maxNoOfGuests,
+//                    additionalFeePerGuest = additionalFeePerGuest,
+//                    additionalInfo = additionalInfo,
+//                    noisePolicy = noisePolicy,
+//                    allowPets = allowPets,
+//                    allowSmoking = allowSmoking,
+//                    noReschedule = noReschedule,
+//                    noCancel = noCancel,
+//                    phoneNo = phoneNo,
+//                    email = email,
+//
+//
+//                    availableDates = availableDates,
+//
+//                    host = Host(
+//                        profilePicture = hostInfo?.profilePicture ?: "",
+//                        firstName = hostInfo?.firstName ?: "",
+//                        middleName = hostInfo?.middleName ?: "",
+//                        lastName = hostInfo?.lastName ?: "",
+//                        touristId = hostInfo?.touristId ?: "",
+//                        hostId = hostId
+//                    )
+//                )
+//            }
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
+//        return null
+//    }
+
     suspend fun updatePendingBalance(hostMap: Map<String, Double>) {
         try {
             for ((hostId, totalAmount) in hostMap) {
@@ -3485,10 +3622,45 @@ class UserRepository {
         }
     }
 
+    suspend fun getCancelledTourBookingCount(tourId: String): Int {
+        return try {
+            val querySnapshot = tourBookingCollection
+                .whereEqualTo("tourId", tourId)
+                .whereEqualTo("bookingStatus", "Cancelled")
+                .get()
+                .await()
+
+            val cancelledBookingCount = querySnapshot.size() // Get the number of cancelled bookings
+            Log.d("TOTAL CANCELLED BOOKS","$cancelledBookingCount")
+            cancelledBookingCount // Return the count of cancelled bookings
+        } catch (e: Exception) {
+            // Handle any errors
+            e.printStackTrace()
+            0 // Return 0 if an error occurs
+        }
+    }
+
     suspend fun getTotalBookingCountForStaycation(staycationId: String): Int {
         return try {
             val querySnapshot = staycationBookingCollection
                 .whereEqualTo("staycationId", staycationId)
+                .get()
+                .await()
+
+            val totalBookingCount = querySnapshot.size() // Get the total number of bookings
+            Log.d("TOTAL BOOKS","$totalBookingCount")
+            totalBookingCount // Return the total count of bookings
+        } catch (e: Exception) {
+            // Handle any errors
+            e.printStackTrace()
+            0 // Return 0 if an error occurs
+        }
+    }
+
+    suspend fun getTotalBookingCountForTour(tourId: String): Int {
+        return try {
+            val querySnapshot = tourBookingCollection
+                .whereEqualTo("tourId", tourId)
                 .get()
                 .await()
 
@@ -3540,6 +3712,48 @@ class UserRepository {
             // Step 1: Query the staycationBookingCollection for the booking IDs
             val bookingIdsSnapshot = staycationBookingCollection
                 .whereEqualTo("staycationId", staycationId)
+                .get()
+                .await()
+
+            // Step 2: Iterate through the booking IDs and query the review collection for each booking
+            for (doc in bookingIdsSnapshot.documents) {
+                val bookingId = doc.id
+
+                val reviewsSnapshot = reviewCollection
+                    .whereEqualTo("bookingId", bookingId)
+                    .get()
+                    .await()
+
+                // Step 3: Extract reviewRating from each review and calculate totalRating and reviewCount
+                for (reviewDoc in reviewsSnapshot.documents) {
+                    val reviewRating = reviewDoc.getDouble("reviewRating") ?: 0.0
+                    totalRating += reviewRating
+                    reviewCount++
+                }
+            }
+        } catch (e: Exception) {
+            // Handle any errors
+            e.printStackTrace()
+        }
+
+        // Step 4: Calculate the average rating
+        val averageRating = if (reviewCount > 0) {
+            totalRating / reviewCount
+        } else {
+            0.0
+        }
+
+        return Pair(averageRating, reviewCount)
+    }
+
+    suspend fun getAverageRatingAndReviewCountForTour(tourId: String): Pair<Double, Int> {
+        var totalRating = 0.0
+        var reviewCount = 0
+
+        try {
+            // Step 1: Query the staycationBookingCollection for the booking IDs
+            val bookingIdsSnapshot = tourBookingCollection
+                .whereEqualTo("tourId", tourId)
                 .get()
                 .await()
 
