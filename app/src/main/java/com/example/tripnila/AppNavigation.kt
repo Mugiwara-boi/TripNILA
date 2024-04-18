@@ -414,21 +414,8 @@ fun NavGraphBuilder.homeGraph(
                 }
             )
         }
-        composable(
-            route = HostRoutes.GeneratedReport.name + "/{reportType}",
-            arguments = listOf(navArgument("reportType") {
-                type = NavType.StringType
-                defaultValue = ""
-            })
-        ) {
-            SalesReportScreen(
-                salesReportViewModel = SalesReportViewModel(),
-                reportType = it.arguments?.getString("reportType") ?: "",
-                onNavToBack = {
-                    onNavToBack(navController)
-                }
-            )
-        }
+
+
 
         composable(
             route = HomeRoutes.Itinerary.name + "/{touristId}",
@@ -981,6 +968,21 @@ fun NavGraphBuilder.hostGraph(
                     navigateToAddListingNext(navController, 11, listingType)
                 },
                 onNavToBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = HostRoutes.GeneratedReport.name + "/{reportType}",
+            arguments = listOf(navArgument("reportType") {
+                type = NavType.StringType
+                defaultValue = ""
+            })
+        ) {
+            SalesReportScreen(
+                salesReportViewModel = salesReportViewModel,
+                reportType = it.arguments?.getString("reportType") ?: "",
+                onNavToBack = {
+                    onNavToBack(navController)
+                }
             )
         }
 
