@@ -119,4 +119,7 @@ dependencies {
     implementation ("com.google.maps.android:android-maps-utils:2.4.0")
     implementation ("com.google.maps:google-maps-services:2.1.0")
     implementation ("org.slf4j:slf4j-nop:2.0.0")
+
+    implementation ("org.apache.poi:poi:5.2.5")
+    implementation ("org.apache.poi:poi-ooxml:5.2.5")
 }

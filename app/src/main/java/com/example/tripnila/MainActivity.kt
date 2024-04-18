@@ -86,6 +86,7 @@ import com.example.tripnila.model.PersonViewModel
 import com.example.tripnila.model.PreferenceViewModel
 import com.example.tripnila.model.ProfileViewModel
 import com.example.tripnila.model.ReviewViewModel
+import com.example.tripnila.model.SalesReportViewModel
 import com.example.tripnila.model.SignupViewModel
 import com.example.tripnila.model.StaycationManagerViewModel
 import com.example.tripnila.model.StaycationViewModel
@@ -149,6 +150,7 @@ class MainActivity : ComponentActivity() {
                 val hostInboxViewModel = viewModel(modelClass = HostInboxViewModel::class.java)
                 val verificationViewModel = viewModel(modelClass = VerificationViewModel::class.java)
                 val favoriteViewModel = viewModel(modelClass = FavoriteViewModel::class.java)
+                val salesReportViewModel = viewModel(modelClass = SalesReportViewModel::class.java)
 
                 Navigation(
                     loginViewModel = loginViewModel,
@@ -174,7 +176,8 @@ class MainActivity : ComponentActivity() {
                     reviewViewModel = reviewViewModel,
                     hostInboxViewModel = hostInboxViewModel,
                     verificationViewModel = verificationViewModel,
-                    favoriteViewModel = favoriteViewModel
+                    favoriteViewModel = favoriteViewModel,
+                    salesReportViewModel = salesReportViewModel,
                 )
             }
 

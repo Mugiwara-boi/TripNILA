@@ -28,6 +28,7 @@ import com.example.tripnila.model.LoginViewModel
 import com.example.tripnila.model.PreferenceViewModel
 import com.example.tripnila.model.ProfileViewModel
 import com.example.tripnila.model.ReviewViewModel
+import com.example.tripnila.model.SalesReportViewModel
 import com.example.tripnila.model.SignupViewModel
 import com.example.tripnila.model.StaycationManagerViewModel
 import com.example.tripnila.model.TourDetailsViewModel
@@ -72,6 +73,7 @@ import com.example.tripnila.screens.ItineraryScreen
 import com.example.tripnila.screens.LoginScreen
 import com.example.tripnila.screens.PreferenceScreen
 import com.example.tripnila.screens.ReviewsScreen
+import com.example.tripnila.screens.SalesReportScreen
 import com.example.tripnila.screens.SignupScreen
 import com.example.tripnila.screens.StaycationBookingRescheduleScreen
 import com.example.tripnila.screens.StaycationBookingScreen
@@ -147,6 +149,7 @@ enum class HostRoutes {
     AddListing15,
 
     Insights,
+    GeneratedReport,
 
     StaycationManager,
     BusinessManager,
@@ -186,6 +189,7 @@ fun Navigation(
     inboxViewModel: InboxViewModel,
     chatViewModel: ChatViewModel,
     insightViewModel: InsightViewModel,
+    salesReportViewModel: SalesReportViewModel,
     tourDetailsViewModel: TourDetailsViewModel,
     reviewViewModel: ReviewViewModel,
     hostInboxViewModel: HostInboxViewModel,
@@ -208,7 +212,7 @@ fun Navigation(
             navController = navController, hostDashboardViewModel = hostDashboardViewModel, addListingViewModel = addListingViewModel, locationViewModelFactory = locationViewModelFactory,
             hostTourViewModel = hostTourViewModel, addBusinessViewModel = addBusinessViewModel, staycationManagerViewModel = staycationManagerViewModel,
             tourManagerViewModel = tourManagerViewModel, businessManagerViewModel = businessManagerViewModel, insightViewModel = insightViewModel, hostInboxViewModel = hostInboxViewModel,
-            chatViewModel = chatViewModel, profileViewModel = profileViewModel, loginViewModel = loginViewModel
+            chatViewModel = chatViewModel, profileViewModel = profileViewModel, loginViewModel = loginViewModel, salesReportViewModel = salesReportViewModel,
         )
     }
 }
@@ -407,6 +411,21 @@ fun NavGraphBuilder.homeGraph(
                 receiverTouristId = entry.arguments?.getString("receiverTouristId") ?: "",
                 onBack = {
                     navController.popBackStack()
+                }
+            )
+        }
+        composable(
+            route = HostRoutes.GeneratedReport.name + "/{reportType}",
+            arguments = listOf(navArgument("reportType") {
+                type = NavType.StringType
+                defaultValue = ""
+            })
+        ) {
+            SalesReportScreen(
+                salesReportViewModel = SalesReportViewModel(),
+                reportType = it.arguments?.getString("reportType") ?: "",
+                onNavToBack = {
+                    onNavToBack(navController)
                 }
             )
         }
@@ -612,6 +631,7 @@ fun NavGraphBuilder.hostGraph(
     tourManagerViewModel: TourManagerViewModel,
     businessManagerViewModel: BusinessManagerViewModel,
     insightViewModel: InsightViewModel,
+    salesReportViewModel: SalesReportViewModel,
     hostInboxViewModel: HostInboxViewModel,
     chatViewModel: ChatViewModel,
     profileViewModel: ProfileViewModel,
@@ -1130,7 +1150,11 @@ fun NavGraphBuilder.hostGraph(
                 onBack = {
                     navController.popBackStack()
                 },
-                insightViewModel = insightViewModel
+                insightViewModel = insightViewModel,
+                salesReportViewModel = salesReportViewModel,
+                onNavToGeneratedReport = { reportType ->
+                    navigateToGeneratedReportScreen(navController, reportType)
+                }
 //                onNavToEditTour = { serviceId, hostId, listingType ->
 //                    navigateToEditListing(navController, serviceId, hostId, listingType)
 //                },
@@ -1314,6 +1338,9 @@ private fun navigateToAddTour3(navController: NavHostController, listingType: St
         launchSingleTop = true
     }
 }
+private fun onNavToBack(navController: NavHostController) {
+    navController.popBackStack()
+}
 
 private fun navigateToAddTour9(navController: NavHostController, listingType: String) {
     navController.navigate("${HostRoutes.AddTour9.name}/$listingType") {
@@ -1384,7 +1411,11 @@ private fun navigateToPreference(navController: NavHostController, touristId: St
         popUpTo(LoginRoutes.SignIn.name) { inclusive = true }
     }
 }
-
+private fun navigateToGeneratedReportScreen(navController: NavHostController, reportType: String) {
+    navController.navigate("${HostRoutes.GeneratedReport.name}/$reportType") {
+        launchSingleTop = true
+    }
+}
 
 private fun navigateToDetail(navController: NavHostController, touristId: String, staycationId: String) {
     navController.navigate("${HomeRoutes.Detail.name}/$touristId/$staycationId") {

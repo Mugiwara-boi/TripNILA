@@ -15,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,6 +47,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -63,6 +65,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -73,6 +77,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
@@ -102,6 +107,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -578,9 +584,54 @@ fun UnderlinedText(
 //        Text(text = buttonText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
 //    }
 //}
-
 @Composable
-fun AppFilledButton(buttonText: String, modifier: Modifier = Modifier) {
+fun AppFilledButton(
+    modifier: Modifier = Modifier,
+    buttonText: String,
+    buttonShape: RoundedCornerShape = RoundedCornerShape(10.dp),
+    onClick: () -> Unit,
+    containerColor: Color = Color(0xFFF9A664),
+    contentPadding: PaddingValues = PaddingValues(10.dp),
+    contentFontSize: TextUnit = 16.sp,
+    contentFontWeight: FontWeight = FontWeight.Medium,
+    contentColor: Color = Color.White,
+    isLoading: Boolean = false,
+    strokeWidth: Dp = 3.dp,
+    enabled: Boolean = true,
+    circularProgressIndicatorSize: Dp = 20.dp
+){
+
+    Button(
+        onClick = onClick,
+        shape = buttonShape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            disabledContainerColor = containerColor.copy(0.3f)
+        ),
+        contentPadding = contentPadding,
+        enabled = enabled,
+        modifier = modifier
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                color = Color.White,
+                strokeWidth = strokeWidth,
+                modifier = Modifier.size(circularProgressIndicatorSize)
+            )
+        } else {
+            Text(
+                text = buttonText,
+                fontSize = contentFontSize,
+                fontWeight = contentFontWeight,
+                color = contentColor
+            )
+        }
+
+    }
+
+}
+@Composable
+fun AppFilledButton1(buttonText: String, modifier: Modifier = Modifier) {
 
     Button(
         onClick = { },
@@ -600,6 +651,89 @@ fun AppFilledButton(buttonText: String, modifier: Modifier = Modifier) {
             )
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppTopBar(
+    modifier: Modifier = Modifier,
+    headerText: String,
+    color: Color = Color(0xFF999999),
+    scrollBehavior: TopAppBarScrollBehavior? = null,
+    navigationIcon: @Composable () -> Unit = {},
+){
+
+    //val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(state = rememberTopAppBarState())
+
+    TopAppBar(
+        title = {
+            Text(
+                text = headerText,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Medium
+            )
+        },
+        navigationIcon = navigationIcon,
+        scrollBehavior = scrollBehavior,
+        modifier = modifier
+            .drawWithContent {
+                drawContent()
+                drawLine(
+                    color = color,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = 2f
+                )
+            }
+
+    )
+
+}
+@Composable
+fun AppFilledButton2(
+    modifier: Modifier = Modifier,
+    buttonText: String,
+    buttonShape: RoundedCornerShape = RoundedCornerShape(10.dp),
+    onClick: () -> Unit,
+    containerColor: Color = Color(0xFFF9A664),
+    contentPadding: PaddingValues = PaddingValues(10.dp),
+    contentFontSize: TextUnit = 16.sp,
+    contentFontWeight: FontWeight = FontWeight.Medium,
+    contentColor: Color = Color.White,
+    isLoading: Boolean = false,
+    strokeWidth: Dp = 3.dp,
+    enabled: Boolean = true,
+    circularProgressIndicatorSize: Dp = 20.dp
+){
+
+    Button(
+        onClick = onClick,
+        shape = buttonShape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            disabledContainerColor = containerColor.copy(0.3f)
+        ),
+        contentPadding = contentPadding,
+        enabled = enabled,
+        modifier = modifier
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                color = Color.White,
+                strokeWidth = strokeWidth,
+                modifier = Modifier.size(circularProgressIndicatorSize)
+            )
+        } else {
+            Text(
+                text = buttonText,
+                fontSize = contentFontSize,
+                fontWeight = contentFontWeight,
+                color = contentColor
+            )
+        }
+
+    }
+
 }
 
 @Composable
@@ -1267,7 +1401,38 @@ fun EmptyPlaceholder(modifier: Modifier = Modifier) {
         }
     }
 }
+@Composable
+fun AppOutlinedButton1(
+    modifier: Modifier = Modifier,
+    buttonText: String,
+    containerColor: Color = Color.White,
+    buttonShape: RoundedCornerShape = RoundedCornerShape(10.dp),
+    borderStroke: BorderStroke = BorderStroke(1.dp, Color(0xFFF9A664)),
+    contentPadding: PaddingValues = PaddingValues(10.dp),
+    contentFontSize: TextUnit = 16.sp,
+    contentFontWeight: FontWeight = FontWeight.Medium,
+    contentColor: Color = Color(0xFFF9A664),
+    onClick: () -> Unit,
+    enableButton: Boolean = true
+){
 
+    OutlinedButton(
+        onClick = onClick,
+        border = if (enableButton) borderStroke else BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)),
+        shape = buttonShape,
+        colors = ButtonDefaults.outlinedButtonColors(containerColor),
+        contentPadding = contentPadding,
+        enabled = enableButton,
+        modifier = modifier
+    ) {
+        Text(
+            text = buttonText,
+            fontSize = contentFontSize,
+            fontWeight = contentFontWeight,
+            color = if (enableButton) contentColor else contentColor.copy(alpha = 0.3f)
+        )
+    }
+}
 @Composable
 fun AppOutlinedButton(modifier: Modifier = Modifier, buttonText: String, onClick: () -> Unit){
 

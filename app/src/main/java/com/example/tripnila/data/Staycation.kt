@@ -13,7 +13,53 @@ data class StaycationAvailability(
     val staycationAvailabilityId: String = "",
     val availableDate: Timestamp? = null
 )
-
+data class StaycationBooking1(
+    val host: Tourist,
+    val tourist: Tourist,
+    val staycation: Staycation1,
+    val checkInDate: Date,
+    val checkOutDate: Date,
+    val noOfGuests: Int,
+    val noOfInfants: Int,
+    val noOfPets: Int,
+    val additionalFee: Double,
+    val totalAmount: Double,
+    val commission: Double,
+    val bookingStatus: String,
+    val bookingDate: Date
+)
+data class Staycation1(
+    val staycationId: String = "",
+    val additionalFeePerGuest: Double = 0.0,
+    val additionalInfo: String = "",
+    val allowPets: Boolean = false,
+    val allowSmoking: Boolean = false,
+    val email: String = "",
+    val hasDangerousAnimal: Boolean = false,
+    val hasFireExit: Boolean = false,
+    val hasFireExtinguisher: Boolean = false,
+    val hasFirstAid: Boolean = false,
+    val hasSecurityCamera: Boolean = false,
+    val hasWeapon: Boolean = false,
+    val hostId: String = "",
+    val maxNoOfGuests: Int = 0,
+    val noCancel: Boolean = false,
+    val noOfBathrooms: Int = 0,
+    val noOfBedrooms: Int = 0,
+    val noOfBeds: Int = 0,
+    val noOfGuests: Int = 0,
+    val noReschedule: Boolean = false,
+    val noisePolicy: Boolean = false,
+    val phoneNo: String = "",
+    val staycationDescription: String = "",
+    val staycationLat: Double = 0.0,
+    val staycationLng: Double = 0.0,
+    val staycationLocation: String = "",
+    val staycationPrice: Double = 0.0,
+    val staycationSpace: String = "",
+    val staycationTitle: String = "",
+    val staycationType: String = ""
+)
 data class Staycation(
     val staycationId: String = "",
     val host: Host = Host(),

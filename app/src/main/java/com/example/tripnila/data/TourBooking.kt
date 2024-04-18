@@ -16,3 +16,17 @@ data class TourBooking(
     val tourAvailabilityId: String,
     val tourDate: String
 )
+
+data class TourBooking1(
+    val host: Tourist,
+    val tourist: Tourist,
+    val tour: Tour1,
+    val noOfGuests: Int,
+    val startTime: String,
+    val endTime: String,
+    val tourDate: String,
+    val totalAmount: Double,
+    val commission: Double,
+    val bookingStatus: String,
+    val bookingDate: Date
+)

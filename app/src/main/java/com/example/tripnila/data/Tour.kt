@@ -3,7 +3,23 @@ package com.example.tripnila.data
 import java.time.LocalDate
 
 
-
+data class Tour1(
+    val tourId: String = "",
+    val tourContact: String = "",
+    val tourDescription: String = "",
+    val tourDuration: String = "",
+    val tourEmail: String = "",
+    val tourFacebook: String = "",
+    val tourInstagram: String = "",
+    val tourLanguage: String = "",
+    val tourLat: Double = 0.0,
+    val tourLng: Double = 0.0,
+    val tourLocation: String = "",
+    val tourPrice: Double = 0.0,
+    val tourTitle: String = "",
+    val tourType: String = "",
+    val hostId: String = ""
+)
 data class Tour(
 
     val tourId: String = "",
@@ -29,6 +45,7 @@ data class Tour(
     val promotions: List<Promotion> = emptyList(),
     val schedule: List<TourSchedule> = emptyList(),
     val reviews: List<Review> = emptyList(),
+    val hostId: String = "",
 
 )
 
