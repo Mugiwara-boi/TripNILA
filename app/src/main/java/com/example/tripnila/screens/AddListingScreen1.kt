@@ -106,14 +106,21 @@ fun AddListingScreen1(
         "Staycation" -> {
             "In this step, we’ll ask you what type of property you want to list and " +
                     "if guests will book the entire space or just a room. Then tell us how many" +
-                    " guests will be allowed to book, and how many rooms does your space have."
+                    " guests will be allowed to book, and how many rooms does your space have. " +
+                    "We highly encourage promoting eco-friendly amenities and activities. " +
+                    "If you have any policies that are eco-friendly, let us know!"
         }
         "Business" -> {
             "In this step, we’ll ask you what type of business you want to upload, " +
-                    "and basic information about it."
+                    "and basic information about it. "+
+                    "We highly encourage promoting eco-friendly amenities and activities. " +
+                    "If you have any policies that are eco-friendly, let us know!"
+
         }
         else -> {
-            "In this step, we’ll ask you what type of tour you want to list, and basic information about it."
+            "In this step, we’ll ask you what type of tour you want to list, and basic information about it. "+
+                    "We highly encourage promoting eco-friendly amenities and activities. " +
+                    "If you have any policies that are eco-friendly, let us know!"
         }
     }
 
