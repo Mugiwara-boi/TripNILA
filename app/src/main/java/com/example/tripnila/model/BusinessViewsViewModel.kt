@@ -5,12 +5,12 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import com.example.tripnila.data.Business
-import com.example.tripnila.data.BusinessViews
 import com.example.tripnila.data.Staycation1
 import com.example.tripnila.data.StaycationBooking1
 import com.example.tripnila.data.Tour1
 import com.example.tripnila.data.TourBooking1
 import com.example.tripnila.data.Tourist
+import com.example.tripnila.data.View
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -58,8 +58,8 @@ class BusinessViewsViewModel: ViewModel() {
     private val _tourDataMap = MutableStateFlow<List<Map<String, String>>>(emptyList())
     val tourDataMap = _tourDataMap.asStateFlow()
 
-    private val _businessDataMap = MutableStateFlow<List<Any>>(emptyList())
-    val businessDataMap = _businessDataMap.asStateFlow()
+//    private val _businessDataMap = MutableStateFlow<List<Any>>(emptyList())
+//    val businessDataMap = _businessDataMap.asStateFlow()
 
     private val _staycationTotalCollectedCommission = MutableStateFlow<Double>(0.0)
     val staycationTotalCollectedCommission = _staycationTotalCollectedCommission.asStateFlow()
@@ -76,8 +76,8 @@ class BusinessViewsViewModel: ViewModel() {
     private val _business = MutableStateFlow(Business()) // Initialize with an empty Host
     val business = _business.asStateFlow()
 
-    private val _businessViews = MutableStateFlow<List<BusinessViews>>(emptyList()) // Initialize with an empty Host
-    val businessViews = _businessViews.asStateFlow()
+//    private val _businessViews = MutableStateFlow<List<BusinessViews>>(emptyList()) // Initialize with an empty Host
+//    val businessViews = _businessViews.asStateFlow()
 
     private val _selectedStaycation = MutableStateFlow(Staycation1()) // Initialize with an empty Host
     val selectedStaycation = _selectedStaycation.asStateFlow()
@@ -146,10 +146,132 @@ class BusinessViewsViewModel: ViewModel() {
     private val _selectedYear = MutableStateFlow(getCurrentYear())
     val selectedYear =_selectedYear.asStateFlow()
 
-
-
     private val _dateRange = MutableStateFlow(getDateRangeForMonth())
     val dateRange = _dateRange.asStateFlow()
+
+    // VINN
+    // ------------------------------------------------------------------------------------------------------------------
+
+
+    private val _businessViews = MutableStateFlow<List<View>>(emptyList())
+    val businessViews = _businessViews.asStateFlow()
+
+    private val _businessDataMap = MutableStateFlow<List<Map<String, String>>>(emptyList())
+    val businessDataMap = _businessDataMap.asStateFlow()
+
+    private val _viewCount = MutableStateFlow(0)
+    val viewCount = _viewCount.asStateFlow()
+
+    private val _insightsSelectedYear = MutableStateFlow("")
+    val insightsSelectedYear = _insightsSelectedYear.asStateFlow()
+
+    private val _viewsDateRange = MutableStateFlow("")
+    val viewsDateRange = _viewsDateRange.asStateFlow()
+
+    private val _isInitialLaunch = MutableStateFlow(true)
+    val isInitialLaunch = _isInitialLaunch.asStateFlow()
+
+    fun setInsightsSelectedYear(category: String) {
+        _insightsSelectedYear.value = category
+
+        val (startDate, endDate) = parseViewsDateRange(getViewsDateRangeForYear())
+
+        val tempBusinessViews = _businessViews.value.filter {
+            it.date in startDate..endDate
+        }
+
+        generateMapForBusinessViews(tempBusinessViews)
+
+    }
+
+    private fun generateMapForBusinessViews(views: List<View>) {
+
+        val listOfMap = views.map { view ->
+
+            mapOf(
+                "id" to view.id,
+                "month" to SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(view.date.time).toString(),
+                "views" to view.views.toString()
+            )
+        }
+
+        listOfMap.forEach { map ->
+            Log.d("Business Views Map", map.toString())
+        }
+        Log.d("Business Views Map", listOfMap.toString())
+
+        val totalViews = views.sumOf { it.views }
+
+        _businessDataMap.value = listOfMap
+        _viewCount.value = totalViews
+    }
+
+    private fun parseViewsDateRange(dateRange: String): Pair<Date, Date> {
+        val dateRangeParts = dateRange.split("-")
+        val startDateString = dateRangeParts.firstOrNull()
+        val endDateString = dateRangeParts.lastOrNull()
+
+        val startDate = LocalDate.parse(startDateString, DateTimeFormatter.ofPattern("MM/dd/yyyy"))
+        val endDate = LocalDate.parse(endDateString, DateTimeFormatter.ofPattern("MM/dd/yyyy"))
+
+        val startTimestamp =
+            Timestamp(startDate.atStartOfDay().toEpochSecond(ZoneOffset.ofHours(8)), 0)
+        val endTimestamp =
+            Timestamp(endDate.atTime(23, 59, 59).toEpochSecond(ZoneOffset.ofHours(8)), 0)
+
+        return Pair(startTimestamp.toDate(), endTimestamp.toDate())
+    }
+
+    private fun getViewsDateRangeForYear(): String {
+
+        val startYear = if (_insightsSelectedYear.value == "All") 2023 else _insightsSelectedYear.value.toInt()
+        val endYear = if (_insightsSelectedYear.value == "All") getCurrentYear() else _insightsSelectedYear.value.toInt()
+
+        val startDate = LocalDate.of(startYear, 1, 1)
+        val endDate = LocalDate.of(endYear, 12, 31)
+        val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
+        val startDateString = startDate.format(formatter)
+        val endDateString = endDate.format(formatter)
+
+        _viewsDateRange.value = "$startDateString-$endDateString"
+
+        return "$startDateString-$endDateString"
+    }
+
+
+    suspend fun fetchBusinessViews(serviceId: String): List<View> {
+
+        val views = mutableListOf<View>()
+
+        try {
+            val querySnapshot = db.collection("service_view")
+                .whereEqualTo("serviceId", serviceId)
+                .whereEqualTo("serviceType", "Business")
+                .get()
+                .await()
+
+            for (document in querySnapshot.documents) {
+                val viewCount = document.getLong("viewCount")?.toInt() ?: 0
+                val month = document.getLong("month")?.toInt() ?: 0
+
+                views.add(View(serviceId, month, viewCount))
+            }
+
+            _businessViews.value = views
+           // generateMapFromBusinessViews()
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return views
+    }
+
+
+
+    // --------------------------------------------------------------------------------------------------------------------------------
+
+
+
     fun setBusiness(business: Business) {
 
         _business.value = business
@@ -159,81 +281,81 @@ class BusinessViewsViewModel: ViewModel() {
     fun getViews(businessId: String){
 
     }
-    private fun generateMapFromBusinessViews() {
-
-        val businessViews = _businessViews.value.groupBy { it.serviceId }
-
-        val listOfMap = businessViews.flatMap { (_, views) ->
-            views.map { view ->
-                // Assuming serviceId is a string, change the type if needed
-                val serviceId = view.serviceId
-                // Assuming month is an integer representing the month number (1-12)
-                val month = view.month
-                val viewCount = view.viewCount
-
-                mapOf(
-                    "businessId" to serviceId,
-                    "month" to month.toString(), // Convert month to string
-                    "viewCount" to viewCount.toString() // Convert viewCount to string
-                )
-            }
-        }
-
-        listOfMap.forEach { map ->
-            Log.d("Business Views Map", map.toString())
-        }
-
-        // No need to calculate total values for view count
-        // If needed, you can sum the view counts here
-
-        // Update the value LiveData
-        _businessDataMap.value = listOfMap
-    }
+//    private fun generateMapFromBusinessViews() {
+//
+//        val businessViews = _businessViews.value.groupBy { it.serviceId }
+//
+//        val listOfMap = businessViews.flatMap { (_, views) ->
+//            views.map { view ->
+//                // Assuming serviceId is a string, change the type if needed
+//                val serviceId = view.serviceId
+//                // Assuming month is an integer representing the month number (1-12)
+//                val month = view.month
+//                val viewCount = view.viewCount
+//
+//                mapOf(
+//                    "businessId" to serviceId,
+//                    "month" to month.toString(), // Convert month to string
+//                    "viewCount" to viewCount.toString() // Convert viewCount to string
+//                )
+//            }
+//        }
+//
+//        listOfMap.forEach { map ->
+//            Log.d("Business Views Map", map.toString())
+//        }
+//
+//        // No need to calculate total values for view count
+//        // If needed, you can sum the view counts here
+//
+//        // Update the value LiveData
+//        _businessDataMap.value = listOfMap
+//    }
     fun resetFetchViewsStatus() {
         _isBusinessViewsFetched.value = false
     }
-    suspend fun fetchBusinessViews(businessId: String): List<BusinessViews> {
-
-        val businessViews = mutableListOf<BusinessViews>()
-
-        try {
-            val query = db.collection("service_view")
-                    .whereEqualTo("serviceId",businessId)
-
-
-            val querySnapshot = query.get().await()
-
-            for (document in querySnapshot.documents) {
-                val month = document.getLong("month")?.toInt() ?: 0
-                val viewCount = document.getLong("viewCount")?.toInt() ?: 0
-
-
-                val businessView = BusinessViews(
-                    month = month,
-                    viewCount = viewCount,
-                    serviceId = businessId,
-                )
-
-
-                businessViews.add(businessView)
-
-                Log.d("Business View", businessViews.toString())
-            }
-
-            _businessViews.value = businessViews
-            generateMapFromBusinessViews()
-
-            //  Log.d("Tour Bookings", _tourBookingReports.value.toString())
-
-        } catch (e: Exception) {
-            Log.e("Business Views", "Error fetching business views: ${e.message}")
-        } finally {
-            _isFetchingBusinessViews.value = false
-            _isBusinessViewsFetched.value = true
-        }
-
-        return businessViews
-    }
+//    suspend fun fetchBusinessViews(businessId: String): List<BusinessViews> {
+//
+//        val businessViews = mutableListOf<BusinessViews>()
+//
+//        try {
+//            val query = db.collection("service_view")
+//                    .whereEqualTo("serviceId",businessId)
+//
+//
+//            val querySnapshot = query.get().await()
+//
+//            for (document in querySnapshot.documents) {
+//                val month = document.getLong("month")?.toInt() ?: 0
+//                val viewCount = document.getLong("viewCount")?.toInt() ?: 0
+//
+//
+//                val businessView = BusinessViews(
+//                    month = month,
+//                    viewCount = viewCount,
+//                    serviceId = businessId,
+//                )
+//
+//
+//                businessViews.add(businessView)
+//
+//                Log.d("Business View", businessViews.toString())
+//            }
+//
+//            _businessViews.value = businessViews
+//            generateMapFromBusinessViews()
+//
+//            //  Log.d("Tour Bookings", _tourBookingReports.value.toString())
+//
+//        } catch (e: Exception) {
+//            Log.e("Business Views", "Error fetching business views: ${e.message}")
+//        } finally {
+//            _isFetchingBusinessViews.value = false
+//            _isBusinessViewsFetched.value = true
+//        }
+//
+//        return businessViews
+//    }
     fun setTotalGrossSales(sales:Double){
         _totalGrossSale.value = sales
         Log.d("Total Gross Sales", _totalGrossSale.value.toString())

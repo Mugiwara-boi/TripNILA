@@ -58,8 +58,10 @@ import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.model.BusinessManagerViewModel
 import com.example.tripnila.model.BusinessViewsViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 @Composable
 fun BusinessManagerScreen(
@@ -76,9 +78,11 @@ fun BusinessManagerScreen(
 
     LaunchedEffect(businessId) {
         businessManagerViewModel?.getSelectedBusiness(businessId)
+        businessViewsViewModel.fetchBusinessViews(businessId)
     }
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val business = businessManagerViewModel?.business?.collectAsState()?.value ?: Business()
     businessViewsViewModel.setBusiness(business)
     val touristId = hostId.substring(5)
@@ -92,17 +96,17 @@ fun BusinessManagerScreen(
         )
     } ?: emptyList()
 
-    val isFetchingBusinessViews by businessViewsViewModel.isFetchingBusinessViews.collectAsState()
-    val isBusinessViewsFetched by businessViewsViewModel.isBusinessViewsFetched.collectAsState()
+//    val isFetchingBusinessViews by businessViewsViewModel.isFetchingBusinessViews.collectAsState()
+//    val isBusinessViewsFetched by businessViewsViewModel.isBusinessViewsFetched.collectAsState()
 
-    LaunchedEffect(
-        isBusinessViewsFetched
-    ) {
-        if (isBusinessViewsFetched) {
-            onNavToGeneratedViewsReport("viewsReport")
-            businessViewsViewModel.resetFetchViewsStatus()
-        }
-    }
+//    LaunchedEffect(
+//        isBusinessViewsFetched
+//    ) {
+//        if (isBusinessViewsFetched) {
+//            onNavToGeneratedViewsReport("viewsReport")
+//            businessViewsViewModel.resetFetchViewsStatus()
+//        }
+//    }
     val dailySchedule = listOf(
         DailySchedule(
             day = "Monday",
@@ -266,10 +270,14 @@ fun BusinessManagerScreen(
 
                 item {
                     BusinessInsightsCard(
-                        amenities = amenities,
-                        withEditButton = false,
                         businessViewsViewModel = businessViewsViewModel,
-                        businessId = businessId,
+                        onClick = {
+                            scope.launch {
+                                onNavToGeneratedViewsReport("viewsReport")
+
+
+                            }
+                        },
                         modifier = Modifier
                             .offset(y = (-5).dp)
                             .padding(bottom = 12.dp)
@@ -333,24 +341,29 @@ private fun BusinessManagerItemPreviews(){
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BusinessInsightsCard(
     modifier: Modifier = Modifier,
-    amenities: List<AmenityBrief>,
-    withEditButton: Boolean = false,
-    businessViewsViewModel: BusinessViewsViewModel,
-    businessId: String,
+    onClick: () -> Unit,
+    businessViewsViewModel: BusinessViewsViewModel
+) {
+//    val scope = rememberCoroutineScope()
+//    var insightsSelectedCategory by remember { mutableStateOf("Monthly") }
 
-    ) {
-    val isFetchingBusinessViews by businessViewsViewModel.isFetchingBusinessViews.collectAsState()
-    val isBusinessViewsFetched by businessViewsViewModel.isBusinessViewsFetched.collectAsState()
-    val scope = rememberCoroutineScope()
-    var insightsSelectedCategory by remember { mutableStateOf("Monthly") }
-    val seeAllAmenities = remember { mutableStateOf(false) }
-    val amenitiesSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val horizontalPaddingValue = 16.dp
-    val verticalPaddingValue = 10.dp
+    val viewCount by businessViewsViewModel.viewCount.collectAsState()
+    val insightsSelectedYear by businessViewsViewModel.insightsSelectedYear.collectAsState()
+    val isInitialLaunch by businessViewsViewModel.isInitialLaunch.collectAsState()
+
+    val yearOptions = ((2023..LocalDate.now().year).toList().map { it.toString() } + "All").reversed()
+
+    LaunchedEffect(Unit) {
+        if (isInitialLaunch) {
+            businessViewsViewModel.setInsightsSelectedYear("All")
+        }
+    }
+
+
+
 
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -384,11 +397,11 @@ fun BusinessInsightsCard(
                     modifier = Modifier.weight(1f) // Allow text to expand to fill available space
                 )
                 AppDropDownFilterWithCallback(
-                    options = listOf("Monthly", "Yearly"),
+                    options = yearOptions,
                     fontSize = 10.sp,
-                    selectedCategory = insightsSelectedCategory,
+                    selectedCategory = insightsSelectedYear,
                     onCategorySelected = { newCategory ->
-                        insightsSelectedCategory = newCategory
+                        businessViewsViewModel.setInsightsSelectedYear(newCategory)
                     },
                     modifier = Modifier.align(Alignment.CenterVertically) // Align at the center vertically
                 )
@@ -397,87 +410,21 @@ fun BusinessInsightsCard(
                 modifier = Modifier.padding(top = 5.dp)
             ){
                 InsightInfoCard(
-                    modifier = Modifier.weight(.7f),
+                    modifier = Modifier.weight(.4f),
                     cardLabel = "Views",
-                    cardInfoCount = 12
+                    cardInfoCount = viewCount
                 )
                 AppFilledButton(
                     buttonText = "Generate Views Report",
-                    isLoading = isFetchingBusinessViews,
+                    isLoading = false, //isFetchingBusinessViews,
                     onClick = {
-                        scope.launch {
-                            val businessViewsDeferred = async { businessViewsViewModel.fetchBusinessViews(businessId) }
-                            businessViewsDeferred.await()
+                        onClick()
 
-
-                        }
                     },
                 )
             }
 
 
-
-        }
-    }
-
-    if (seeAllAmenities.value) {
-        ModalBottomSheet(
-            shape = RoundedCornerShape(20.dp),
-            containerColor = Color.White,
-            dragHandle = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start,
-                    modifier = Modifier
-                        .padding(start = 3.dp, end = 16.dp) //, top = 3.dp
-                        .fillMaxWidth()
-                ) {
-                    IconButton(
-                        onClick = { seeAllAmenities.value = false },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Close"
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-
-                }
-            },
-            onDismissRequest = { seeAllAmenities.value = false },
-            sheetState = amenitiesSheetState,
-            modifier = Modifier
-                .fillMaxHeight(0.8f) //0.693
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    // .padding(horizontal = 25.dp,)
-                    .background(Color.White)
-            ) {
-                Text(
-                    text = "Amenities and offers",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
-                        .fillMaxWidth()
-                )
-
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .fillMaxWidth()
-                        .weight(1f)
-                ) {
-                    items(amenities) { amenity ->
-                        BusinessAmenityDetail(amenity = amenity)
-                    }
-                }
-            }
 
         }
     }
