@@ -26,4 +26,10 @@ data class Business (
     val reviews: List<Review> = emptyList(),
 )
 
+data class BusinessViews(
+    val month: Int = 0,
+    val serviceId: String = "",
+    val viewCount: Int = 0,
+)
+
 

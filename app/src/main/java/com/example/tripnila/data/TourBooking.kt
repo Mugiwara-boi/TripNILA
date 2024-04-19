@@ -18,6 +18,7 @@ data class TourBooking(
 )
 
 data class TourBooking1(
+    val tourBookingId: String,
     val host: Tourist,
     val tourist: Tourist,
     val tour: Tour1,

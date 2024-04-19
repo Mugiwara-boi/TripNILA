@@ -186,12 +186,19 @@ fun InsightsScreen(
         }
 
     }
-    LaunchedEffect(generateExcelClicked) {
-        if (generateExcelClicked) {
-            salesReportViewModel.generateExcelFile(context)
-            generateExcelClicked = false
-        }
+    LaunchedEffect(isTourSelected){
+        salesReportViewModel.setIsTourSelected(isTourSelected)
     }
+
+    LaunchedEffect(selectedMonth){
+        salesReportViewModel.getDateRangeForMonth()
+    }
+//    LaunchedEffect(generateExcelClicked) {
+//        if (generateExcelClicked) {
+//            salesReportViewModel.generateExcelFile(context,)
+//            generateExcelClicked = false
+//        }
+//    }
     LaunchedEffect(
         isStaycationBookingsFetched,
         isTourBookingsFetched
@@ -777,11 +784,13 @@ fun InsightsScreen(
                             isLoading = isFetchingStaycationBookings || isFetchingTourBookings,
                             onClick = {
                                 scope.launch {
-                                    val staycationBookingsDeferred = async { salesReportViewModel.fetchStaycationBookings() }
+                                    val staycationBookingsDeferred = async { salesReportViewModel.fetchStaycationBookings(selectedStaycation.staycationId) }
                                     val tourBookingsDeferred = async { salesReportViewModel.fetchTourBookings() }
-
-                                    staycationBookingsDeferred.await()
-                                    tourBookingsDeferred.await()
+                                    if(isTourSelected){
+                                        tourBookingsDeferred.await()
+                                    }else if(!isTourSelected){
+                                        staycationBookingsDeferred.await()
+                                    }
 
                                 }
                             },
@@ -865,6 +874,7 @@ fun ChooseStaycationInsightDialog(
                             onSelectedChange = {
                                 selectedCard = it
                                 insightViewModel.setIsTourSelected(false)
+
                             },
                             modifier = Modifier.padding(vertical = 3.dp)
                         )

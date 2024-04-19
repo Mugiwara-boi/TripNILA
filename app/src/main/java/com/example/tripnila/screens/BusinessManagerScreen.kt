@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -37,6 +35,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,18 +46,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.tripnila.R
 import com.example.tripnila.common.AppDropDownFilterWithCallback
+import com.example.tripnila.common.AppFilledButton
 import com.example.tripnila.common.AppLocationCard
-import com.example.tripnila.common.AppOutlinedButton
-import com.example.tripnila.common.AppReviewsCard
 import com.example.tripnila.common.LoadingScreen
 import com.example.tripnila.data.AmenityBrief
+import com.example.tripnila.data.Business
 import com.example.tripnila.data.DailySchedule
 import com.example.tripnila.data.ReviewUiState
 import com.example.tripnila.model.BusinessManagerViewModel
+import com.example.tripnila.model.BusinessViewsViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 
 @Composable
 fun BusinessManagerScreen(
@@ -67,6 +68,8 @@ fun BusinessManagerScreen(
     hostId: String = "",
     onNavToEditBusiness: (String, String, String) -> Unit,
     onNavToDashboard: (String) -> Unit,
+    businessViewsViewModel: BusinessViewsViewModel,
+    onNavToGeneratedViewsReport: (String) -> Unit,
 ){
 
     Log.d("BusinessManagerScreen", "$businessId $hostId")
@@ -76,7 +79,8 @@ fun BusinessManagerScreen(
     }
 
     val context = LocalContext.current
-    val business = businessManagerViewModel?.business?.collectAsState()?.value
+    val business = businessManagerViewModel?.business?.collectAsState()?.value ?: Business()
+    businessViewsViewModel.setBusiness(business)
     val touristId = hostId.substring(5)
     val minSpend = business?.minSpend ?: 0.0
     val entranceFee = business?.entranceFee ?: 0.0
@@ -88,6 +92,17 @@ fun BusinessManagerScreen(
         )
     } ?: emptyList()
 
+    val isFetchingBusinessViews by businessViewsViewModel.isFetchingBusinessViews.collectAsState()
+    val isBusinessViewsFetched by businessViewsViewModel.isBusinessViewsFetched.collectAsState()
+
+    LaunchedEffect(
+        isBusinessViewsFetched
+    ) {
+        if (isBusinessViewsFetched) {
+            onNavToGeneratedViewsReport("viewsReport")
+            businessViewsViewModel.resetFetchViewsStatus()
+        }
+    }
     val dailySchedule = listOf(
         DailySchedule(
             day = "Monday",
@@ -253,6 +268,8 @@ fun BusinessManagerScreen(
                     BusinessInsightsCard(
                         amenities = amenities,
                         withEditButton = false,
+                        businessViewsViewModel = businessViewsViewModel,
+                        businessId = businessId,
                         modifier = Modifier
                             .offset(y = (-5).dp)
                             .padding(bottom = 12.dp)
@@ -322,8 +339,13 @@ fun BusinessInsightsCard(
     modifier: Modifier = Modifier,
     amenities: List<AmenityBrief>,
     withEditButton: Boolean = false,
+    businessViewsViewModel: BusinessViewsViewModel,
+    businessId: String,
 
     ) {
+    val isFetchingBusinessViews by businessViewsViewModel.isFetchingBusinessViews.collectAsState()
+    val isBusinessViewsFetched by businessViewsViewModel.isBusinessViewsFetched.collectAsState()
+    val scope = rememberCoroutineScope()
     var insightsSelectedCategory by remember { mutableStateOf("Monthly") }
     val seeAllAmenities = remember { mutableStateOf(false) }
     val amenitiesSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -378,6 +400,18 @@ fun BusinessInsightsCard(
                     modifier = Modifier.weight(.7f),
                     cardLabel = "Views",
                     cardInfoCount = 12
+                )
+                AppFilledButton(
+                    buttonText = "Generate Views Report",
+                    isLoading = isFetchingBusinessViews,
+                    onClick = {
+                        scope.launch {
+                            val businessViewsDeferred = async { businessViewsViewModel.fetchBusinessViews(businessId) }
+                            businessViewsDeferred.await()
+
+
+                        }
+                    },
                 )
             }
 
@@ -450,22 +484,23 @@ fun BusinessInsightsCard(
 
 }
 
-@Preview
-@Composable
-private fun BusinessManagerPreview() {
-
-    val businessManagerViewModel = viewModel(modelClass = BusinessManagerViewModel::class.java)
-
-    BusinessManagerScreen(
-        businessManagerViewModel = businessManagerViewModel,
-        businessId = "10001",
-        hostId = "HOST-ITZbCFfF7Fzqf1qPBiwx",
-        onNavToEditBusiness = { a,b,c ->
-
-        },
-        onNavToDashboard = {
-
-        }
-    )
-
-}
+//@Preview
+//@Composable
+//private fun BusinessManagerPreview() {
+//
+//    val businessManagerViewModel = viewModel(modelClass = BusinessManagerViewModel::class.java)
+//    val businessViewsViewModel = viewModel(modelClass = BusinessViewsViewModel::class.java)
+//    BusinessManagerScreen(
+//        businessManagerViewModel = businessManagerViewModel,
+//        businessViewsViewModel = businessViewsViewModel,
+//        businessId = "10001",
+//        hostId = "HOST-ITZbCFfF7Fzqf1qPBiwx",
+//        onNavToEditBusiness = { a,b,c ->
+//
+//        },
+//        onNavToDashboard = {
+//
+//        }
+//    )
+//
+//}

@@ -14,6 +14,7 @@ data class StaycationAvailability(
     val availableDate: Timestamp? = null
 )
 data class StaycationBooking1(
+    val bookingId: String,
     val host: Tourist,
     val tourist: Tourist,
     val staycation: Staycation1,

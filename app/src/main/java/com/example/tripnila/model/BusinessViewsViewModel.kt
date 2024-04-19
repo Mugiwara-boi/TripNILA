@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
+import com.example.tripnila.data.Business
+import com.example.tripnila.data.BusinessViews
 import com.example.tripnila.data.Staycation1
 import com.example.tripnila.data.StaycationBooking1
 import com.example.tripnila.data.Tour1
@@ -40,7 +42,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-class SalesReportViewModel: ViewModel() {
+class BusinessViewsViewModel: ViewModel() {
 
     private val db = FirebaseFirestore.getInstance()
 
@@ -56,6 +58,9 @@ class SalesReportViewModel: ViewModel() {
     private val _tourDataMap = MutableStateFlow<List<Map<String, String>>>(emptyList())
     val tourDataMap = _tourDataMap.asStateFlow()
 
+    private val _businessDataMap = MutableStateFlow<List<Any>>(emptyList())
+    val businessDataMap = _businessDataMap.asStateFlow()
+
     private val _staycationTotalCollectedCommission = MutableStateFlow<Double>(0.0)
     val staycationTotalCollectedCommission = _staycationTotalCollectedCommission.asStateFlow()
 
@@ -67,6 +72,12 @@ class SalesReportViewModel: ViewModel() {
 
     private val _staycationTotalGrossSale = MutableStateFlow<Double>(0.0)
     val staycationTotalGrossSale = _staycationTotalGrossSale.asStateFlow()
+
+    private val _business = MutableStateFlow(Business()) // Initialize with an empty Host
+    val business = _business.asStateFlow()
+
+    private val _businessViews = MutableStateFlow<List<BusinessViews>>(emptyList()) // Initialize with an empty Host
+    val businessViews = _businessViews.asStateFlow()
 
     private val _selectedStaycation = MutableStateFlow(Staycation1()) // Initialize with an empty Host
     val selectedStaycation = _selectedStaycation.asStateFlow()
@@ -99,6 +110,11 @@ class SalesReportViewModel: ViewModel() {
     private val _isFetchingTourBookings = MutableStateFlow(false)
     val isFetchingTourBookings = _isFetchingTourBookings.asStateFlow()
 
+    private val _isFetchingBusinessViews = MutableStateFlow(false)
+    val isFetchingBusinessViews = _isFetchingBusinessViews.asStateFlow()
+
+    private val _isBusinessViewsFetched = MutableStateFlow(false)
+    val isBusinessViewsFetched = _isBusinessViewsFetched.asStateFlow()
 
     private val _isStaycationBookingsFetched = MutableStateFlow(false)
     val isStaycationBookingsFetched = _isStaycationBookingsFetched.asStateFlow()
@@ -134,7 +150,90 @@ class SalesReportViewModel: ViewModel() {
 
     private val _dateRange = MutableStateFlow(getDateRangeForMonth())
     val dateRange = _dateRange.asStateFlow()
+    fun setBusiness(business: Business) {
 
+        _business.value = business
+        Log.d("ViewModel-business" , "${_business.value}")
+    }
+
+    fun getViews(businessId: String){
+
+    }
+    private fun generateMapFromBusinessViews() {
+
+        val businessViews = _businessViews.value.groupBy { it.serviceId }
+
+        val listOfMap = businessViews.flatMap { (_, views) ->
+            views.map { view ->
+                // Assuming serviceId is a string, change the type if needed
+                val serviceId = view.serviceId
+                // Assuming month is an integer representing the month number (1-12)
+                val month = view.month
+                val viewCount = view.viewCount
+
+                mapOf(
+                    "businessId" to serviceId,
+                    "month" to month.toString(), // Convert month to string
+                    "viewCount" to viewCount.toString() // Convert viewCount to string
+                )
+            }
+        }
+
+        listOfMap.forEach { map ->
+            Log.d("Business Views Map", map.toString())
+        }
+
+        // No need to calculate total values for view count
+        // If needed, you can sum the view counts here
+
+        // Update the value LiveData
+        _businessDataMap.value = listOfMap
+    }
+    fun resetFetchViewsStatus() {
+        _isBusinessViewsFetched.value = false
+    }
+    suspend fun fetchBusinessViews(businessId: String): List<BusinessViews> {
+
+        val businessViews = mutableListOf<BusinessViews>()
+
+        try {
+            val query = db.collection("service_view")
+                    .whereEqualTo("serviceId",businessId)
+
+
+            val querySnapshot = query.get().await()
+
+            for (document in querySnapshot.documents) {
+                val month = document.getLong("month")?.toInt() ?: 0
+                val viewCount = document.getLong("viewCount")?.toInt() ?: 0
+
+
+                val businessView = BusinessViews(
+                    month = month,
+                    viewCount = viewCount,
+                    serviceId = businessId,
+                )
+
+
+                businessViews.add(businessView)
+
+                Log.d("Business View", businessViews.toString())
+            }
+
+            _businessViews.value = businessViews
+            generateMapFromBusinessViews()
+
+            //  Log.d("Tour Bookings", _tourBookingReports.value.toString())
+
+        } catch (e: Exception) {
+            Log.e("Business Views", "Error fetching business views: ${e.message}")
+        } finally {
+            _isFetchingBusinessViews.value = false
+            _isBusinessViewsFetched.value = true
+        }
+
+        return businessViews
+    }
     fun setTotalGrossSales(sales:Double){
         _totalGrossSale.value = sales
         Log.d("Total Gross Sales", _totalGrossSale.value.toString())

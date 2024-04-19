@@ -13,6 +13,7 @@ import com.example.tripnila.model.AddBusinessViewModel
 import com.example.tripnila.model.AddListingViewModel
 import com.example.tripnila.model.BookingHistoryViewModel
 import com.example.tripnila.model.BusinessManagerViewModel
+import com.example.tripnila.model.BusinessViewsViewModel
 import com.example.tripnila.model.ChatViewModel
 import com.example.tripnila.model.DetailViewModel
 import com.example.tripnila.model.FavoriteViewModel
@@ -85,6 +86,7 @@ import com.example.tripnila.screens.TourDetailsScreen
 import com.example.tripnila.screens.TourManagerScreen
 import com.example.tripnila.screens.TouristProfileScreen
 import com.example.tripnila.screens.TouristWalletScreen
+import com.example.tripnila.screens.ViewsReportScreen
 import com.example.tripnila.screens.WithdrawScreen
 
 enum class LoginRoutes {
@@ -150,6 +152,7 @@ enum class HostRoutes {
 
     Insights,
     GeneratedReport,
+    GeneratedViewsReport,
 
     StaycationManager,
     BusinessManager,
@@ -194,7 +197,8 @@ fun Navigation(
     reviewViewModel: ReviewViewModel,
     hostInboxViewModel: HostInboxViewModel,
     verificationViewModel: VerificationViewModel,
-    favoriteViewModel: FavoriteViewModel
+    favoriteViewModel: FavoriteViewModel,
+    businessViewsViewModel: BusinessViewsViewModel,
 ) {
 
     NavHost(
@@ -212,7 +216,7 @@ fun Navigation(
             navController = navController, hostDashboardViewModel = hostDashboardViewModel, addListingViewModel = addListingViewModel, locationViewModelFactory = locationViewModelFactory,
             hostTourViewModel = hostTourViewModel, addBusinessViewModel = addBusinessViewModel, staycationManagerViewModel = staycationManagerViewModel,
             tourManagerViewModel = tourManagerViewModel, businessManagerViewModel = businessManagerViewModel, insightViewModel = insightViewModel, hostInboxViewModel = hostInboxViewModel,
-            chatViewModel = chatViewModel, profileViewModel = profileViewModel, loginViewModel = loginViewModel, salesReportViewModel = salesReportViewModel,
+            chatViewModel = chatViewModel, profileViewModel = profileViewModel, loginViewModel = loginViewModel, salesReportViewModel = salesReportViewModel, businessViewsViewModel = businessViewsViewModel,
         )
     }
 }
@@ -617,6 +621,7 @@ fun NavGraphBuilder.hostGraph(
     staycationManagerViewModel: StaycationManagerViewModel,
     tourManagerViewModel: TourManagerViewModel,
     businessManagerViewModel: BusinessManagerViewModel,
+    businessViewsViewModel: BusinessViewsViewModel,
     insightViewModel: InsightViewModel,
     salesReportViewModel: SalesReportViewModel,
     hostInboxViewModel: HostInboxViewModel,
@@ -986,6 +991,22 @@ fun NavGraphBuilder.hostGraph(
             )
         }
 
+        composable(
+            route = HostRoutes.GeneratedViewsReport.name + "/{reportType}",
+            arguments = listOf(navArgument("reportType") {
+                type = NavType.StringType
+                defaultValue = ""
+            })
+        ) {
+            ViewsReportScreen(
+                businessViewsViewModel = businessViewsViewModel,
+                reportType = it.arguments?.getString("reportType") ?: "",
+                onNavToBack = {
+                    onNavToBack(navController)
+                }
+            )
+        }
+
 
         composable(
             route = HostRoutes.StaycationManager.name + "/{hostId}/{staycationId}",
@@ -1024,6 +1045,10 @@ fun NavGraphBuilder.hostGraph(
                 onNavToDashboard = { touristId ->
                     navigateToHost(navController, touristId)
                 },
+                businessViewsViewModel = businessViewsViewModel,
+                onNavToGeneratedViewsReport = { reportType ->
+                    navigateToGeneratedViewsReportScreen(navController, reportType)
+                }
             )
         }
 
@@ -1415,6 +1440,12 @@ private fun navigateToPreference(navController: NavHostController, touristId: St
 }
 private fun navigateToGeneratedReportScreen(navController: NavHostController, reportType: String) {
     navController.navigate("${HostRoutes.GeneratedReport.name}/$reportType") {
+        launchSingleTop = true
+    }
+}
+
+private fun navigateToGeneratedViewsReportScreen(navController: NavHostController, reportType: String) {
+    navController.navigate("${HostRoutes.GeneratedViewsReport.name}/$reportType") {
         launchSingleTop = true
     }
 }

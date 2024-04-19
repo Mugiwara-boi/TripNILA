@@ -1,9 +1,6 @@
 package com.example.tripnila.screens
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.print.PrintAttributes
-import android.print.PrintManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.Column
@@ -30,18 +27,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.tripnila.common.AppFilledButton2
 import com.example.tripnila.common.AppTopBar
+import com.example.tripnila.data.Business
 import com.example.tripnila.data.Staycation1
 import com.example.tripnila.data.Tour1
-import com.example.tripnila.model.SalesReportViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.tripnila.model.BusinessViewsViewModel
 
 @SuppressLint("SetJavaScriptEnabled")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SalesReportScreen(
-    salesReportViewModel: SalesReportViewModel,
+fun ViewsReportScreen(
+    businessViewsViewModel: BusinessViewsViewModel,
     reportType: String,
     onNavToBack: () -> Unit
 ) {
@@ -54,44 +49,31 @@ fun SalesReportScreen(
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(state = rememberTopAppBarState())
 
-    val staycationData by salesReportViewModel.staycationDataMap.collectAsState()
-    val tourData by salesReportViewModel.tourDataMap.collectAsState()
+    val staycationData by businessViewsViewModel.staycationDataMap.collectAsState()
+    val tourData by businessViewsViewModel.tourDataMap.collectAsState()
+    val business by businessViewsViewModel.business.collectAsState()
+    val staycation by businessViewsViewModel.selectedStaycation.collectAsState()
+    val tour by businessViewsViewModel.selectedTour.collectAsState()
 
-    val staycation by salesReportViewModel.selectedStaycation.collectAsState()
-    val tour by salesReportViewModel.selectedTour.collectAsState()
+    val viewsData by businessViewsViewModel.businessDataMap.collectAsState()
+    val period by businessViewsViewModel.selectedPeriod.collectAsState()
+    val month by businessViewsViewModel.selectedMonth.collectAsState()
+    val year by businessViewsViewModel.selectedYear.collectAsState()
+    val startMonth by businessViewsViewModel.selectedStartMonth.collectAsState()
+    val endMonth by businessViewsViewModel.selectedEndMonth.collectAsState()
+    val dateRange by businessViewsViewModel.dateRange.collectAsState()
+    val isTourSelected by businessViewsViewModel.isTourSelected.collectAsState()
 
-//    val staycationData = listOf(
-//        mapOf("column1" to "", "column2" to "Data 2", "column3" to "Data 3", "column4" to "Data 2", "column5" to "Data 2", "column6" to "Data 2", "column7" to "Data 5"),
-//        mapOf("column1" to "", "column2" to "Data 5", "column3" to "Data 6", "column4" to "Data 2", "column5" to "Data 2", "column6" to "Data 2", "column7" to "Data 2"),
-//        mapOf("column1" to "", "column2" to "Data 8", "column3" to "Data 9", "column4" to "Data 2", "column5" to "Data 2", "column6" to "Data 2", "column7" to "Data 2")
-//    )
+    val staycationTotalCollectedCommission by businessViewsViewModel.staycationTotalCollectedCommission.collectAsState()
+    val staycationTotalPendingCommission by businessViewsViewModel.staycationTotalPendingCommission.collectAsState()
+    val staycationTotalGrossSale by businessViewsViewModel.staycationTotalGrossSale.collectAsState()
 
-
-    //  val tourData = emptyList<Map<String,String>>()
-//    val tourData = listOf(
-//        mapOf("column1" to "Data 1", "column2" to "Data 2", "column3" to "Data 3", "column4" to "Data 2", "column5" to "Data 2", "column6" to "Data 2", "column7" to "Data 5"),
-//        mapOf("column1" to "Data 4", "column2" to "Data 5", "column3" to "Data 6", "column4" to "Data 2", "column5" to "Data 2", "column6" to "Data 2", "column7" to "Data 2"),
-//        mapOf("column1" to "Data 7", "column2" to "Data 8", "column3" to "Data 9", "column4" to "Data 2", "column5" to "Data 2", "column6" to "Data 2", "column7" to "Data 2")
-//    )
-
-    val period by salesReportViewModel.selectedPeriod.collectAsState()
-    val month by salesReportViewModel.selectedMonth.collectAsState()
-    val year by salesReportViewModel.selectedYear.collectAsState()
-    val startMonth by salesReportViewModel.selectedStartMonth.collectAsState()
-    val endMonth by salesReportViewModel.selectedEndMonth.collectAsState()
-    val dateRange by salesReportViewModel.dateRange.collectAsState()
-    val isTourSelected by salesReportViewModel.isTourSelected.collectAsState()
-
-    val staycationTotalCollectedCommission by salesReportViewModel.staycationTotalCollectedCommission.collectAsState()
-    val staycationTotalPendingCommission by salesReportViewModel.staycationTotalPendingCommission.collectAsState()
-    val staycationTotalGrossSale by salesReportViewModel.staycationTotalGrossSale.collectAsState()
-
-    val tourTotalCollectedCommission by salesReportViewModel.tourTotalCollectedCommission.collectAsState()
-    val tourTotalPendingCommission by salesReportViewModel.tourTotalPendingCommission.collectAsState()
-    val tourTotalGrossSale by salesReportViewModel.tourTotalGrossSale.collectAsState()
+    val tourTotalCollectedCommission by businessViewsViewModel.tourTotalCollectedCommission.collectAsState()
+    val tourTotalPendingCommission by businessViewsViewModel.tourTotalPendingCommission.collectAsState()
+    val tourTotalGrossSale by businessViewsViewModel.tourTotalGrossSale.collectAsState()
 
     val reportHeader = when(reportType) {
-        "salesReport" -> "$period Sales Report"
+        "viewsReport" -> "$period Views Report"
         else -> {"Unregistered Report Type"}
     }
 
@@ -103,34 +85,22 @@ fun SalesReportScreen(
     }
 
     if(isTourSelected){
-        salesReportViewModel.setTotalGrossSales(tourTotalGrossSale)
-        salesReportViewModel.setTotalCollectedCommission(tourTotalCollectedCommission)
-        salesReportViewModel.setTotalPendingCommission(tourTotalPendingCommission)
+        businessViewsViewModel.setTotalGrossSales(tourTotalGrossSale)
+        businessViewsViewModel.setTotalCollectedCommission(tourTotalCollectedCommission)
+        businessViewsViewModel.setTotalPendingCommission(tourTotalPendingCommission)
     } else if(!isTourSelected){
-        salesReportViewModel.setTotalGrossSales(staycationTotalGrossSale)
-        salesReportViewModel.setTotalCollectedCommission(staycationTotalCollectedCommission)
-        salesReportViewModel.setTotalPendingCommission(staycationTotalPendingCommission)
+        businessViewsViewModel.setTotalGrossSales(staycationTotalGrossSale)
+        businessViewsViewModel.setTotalCollectedCommission(staycationTotalCollectedCommission)
+        businessViewsViewModel.setTotalPendingCommission(staycationTotalPendingCommission)
     }
-    val totalGrossSalesUnformat by salesReportViewModel.totalGrossSale.collectAsState()
-    val totalCollectedCommissionUnformat by salesReportViewModel.totalCollectedCommission.collectAsState()
-    val totalPendingCommissionUnformat by salesReportViewModel.totalPendingCommission.collectAsState()
+    val totalGrossSalesUnformat by businessViewsViewModel.totalGrossSale.collectAsState()
+    val totalCollectedCommissionUnformat by businessViewsViewModel.totalCollectedCommission.collectAsState()
+    val totalPendingCommissionUnformat by businessViewsViewModel.totalPendingCommission.collectAsState()
 
     val totalGrossSales = "₱ %.2f".format(totalGrossSalesUnformat)
     val totalCollectedCommission = "₱ %.2f".format(totalCollectedCommissionUnformat)
     val totalPendingCommission = "₱ %.2f".format(totalPendingCommissionUnformat)
     val totalNetSales = "₱ %.2f".format(totalGrossSalesUnformat - (totalPendingCommissionUnformat + totalCollectedCommissionUnformat))
-
-//    val totalGrossSales = "₱ ${staycationTotalGrossSale.plus(tourTotalGrossSale)}"
-//    val totalCollectedCommission = "₱ ${staycationTotalCollectedCommission.plus(tourTotalCollectedCommission)}"
-//    val totalPendingCommission = "₱ ${staycationTotalPendingCommission.plus(tourTotalPendingCommission)}"
-
-
-//    val dateRange = when(period) {
-//        "Monthly" -> adminReports.getDateRangeForMonth()
-//        "Bi-yearly" -> adminReports.getDateRangeForMonths()
-//        "Yearly" -> adminReports.getDateRangeForYear()
-//        else -> "Unregistered Report Type"
-//    }
 
     Surface(
         modifier = Modifier
@@ -182,7 +152,7 @@ fun SalesReportScreen(
                                 loadDataWithBaseURL(null,
                                     getHtmlContent(staycationData, tourData, reportHeader,
                                         dateHeader, dateRange, totalGrossSales, totalCollectedCommission,
-                                        totalPendingCommission, isTourSelected, staycation, tour, totalNetSales
+                                        totalPendingCommission, isTourSelected, staycation, tour, totalNetSales, business
                                     ),
 //                                    getHtmlContent(staycationData, tourData, reportHeader,
 //                                        dateHeader, dateRange),
@@ -198,7 +168,7 @@ fun SalesReportScreen(
                     view.loadDataWithBaseURL(null,
                         getHtmlContent(staycationData, tourData, reportHeader,
                             dateHeader, dateRange, totalGrossSales, totalCollectedCommission,
-                            totalPendingCommission,isTourSelected, staycation, tour, totalNetSales
+                            totalPendingCommission,isTourSelected, staycation, tour, totalNetSales, business
                         ),
                         "text/html",
                         "UTF-8",
@@ -225,6 +195,7 @@ private fun getHtmlContent(
     staycation: Staycation1,
     tour: Tour1,
     totalNetSales: String,
+    business: Business,
 ): String {
 
     return """
@@ -289,14 +260,14 @@ private fun getHtmlContent(
             </style>
         </head>
         <body>
-            <h1 id="report-id">$reportHeader</h1>
-            <h3 id="report-date">$dateHeader</h3>
+            <h1 id="report-id">Views Report</h1>
+            <h3 id="report-date">2024</h3>
         
-            <h2>${if (isTourSelected) tour.tourTitle else staycation.staycationTitle}</h2>
+            <h2>${business.businessTitle}</h2>
             
             <div id="contact">
                 <div id="address-date-range">
-                    <span id="date-range">$dateRange</span>
+                    <span id="date-range">2024</span>
                 </div>
             </div>
             
@@ -453,23 +424,6 @@ private fun getHtmlContent(
     """
 }
 
-fun exportAsPdf(fileName: String, webView: WebView?, context: Context) {
-
-    val sdf = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-    val fileNameWithDateTime = "$fileName ${sdf.format(Date())}"
-
-    if (webView != null) {
-        val printManager = context.getSystemService(Context.PRINT_SERVICE) as PrintManager
-        val printAdapter =
-            webView.createPrintDocumentAdapter(fileNameWithDateTime)
-        val printAttributes = PrintAttributes.Builder()
-            .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
-            .build()
-        printManager.print(fileNameWithDateTime,
-            printAdapter,
-            printAttributes)
-    }
-}
 
 @Preview
 @Composable
